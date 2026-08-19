@@ -1,0 +1,41 @@
+
+# =============================================================================
+# config/urls.py  — Root URL config
+# =============================================================================
+from django.conf import settings
+from django.contrib import admin
+from django.urls import path, include
+from django.conf import settings
+from django.conf.urls.static import static
+from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
+
+API = "api/"
+
+urlpatterns = [
+    path("admin/",     admin.site.urls),
+
+    # API apps
+    path(API, include("apps.users.api.urls")),
+    path(API, include("apps.catalog.api.urls")),
+    path(API, include("apps.inventory.api.urls")),
+    path(API, include("apps.orders.api.urls")),
+    path(API, include("apps.payments.api.urls")),
+    path(API, include("apps.shipping.api.urls")),
+    path(API, include("apps.promotions.api.urls")),
+    path(API, include("apps.notifications.api.urls")),
+    path(API, include("apps.chat.api.urls")),
+    path(API, include("apps.analytics.api.urls")),
+
+    # OpenAPI docs
+    path("api/schema/",          SpectacularAPIView.as_view(),        name="schema"),
+    path("api/docs/",            SpectacularSwaggerView.as_view(),    name="swagger-ui"),
+    path("api/redoc/",           SpectacularRedocView.as_view(),      name="redoc"),
+]
+
+if settings.DEBUG:
+    import debug_toolbar
+    urlpatterns += [
+        path("__debug__/", include(debug_toolbar.urls)),
+    ]
+if settings.DEBUG:
+        urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

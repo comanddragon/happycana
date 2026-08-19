@@ -1,0 +1,18 @@
+# =============================================================================
+# requirements/production.txt
+# =============================================================================
+-r base.txt
+
+# Error tracking
+sentry-sdk
+
+# Structured JSON logging
+python-json-logger
+
+# Email (choose one based on your provider)
+# SendGrid
+sendgrid
+# Amazon SES — already covered by boto3 in base.txt
+
+# Security
+django-ratelimit        # Rate limiting on sensitive endpoints

@@ -1,0 +1,41 @@
+# =============================================================================
+# requirements/base.txt
+# Packages required in every environment
+# =============================================================================
+
+# Core
+Django
+dotenv
+psycopg2-binary        # PostgreSQL adapter
+
+# REST API
+djangorestframework
+djangorestframework-simplejwt
+django-cors-headers
+django-tasks
+django-filter
+drf-spectacular        # OpenAPI / Swagger schema generation
+
+# Realtime
+channels
+channels-redis
+daphne                 # ASGI server
+
+# Cache & storage
+redis
+django-storages        # S3 / GCS backends
+boto3                  # AWS SDK (S3, SES, SQS)
+
+# Static files
+whitenoise
+
+# Utilities
+Pillow                 # Image processing
+python-decouple        # Read .env.example variables cleanly
+python-slugify
+phonenumbers           # Phone number parsing & validation
+
+stripe
+requests
+
+twisted[tls,http2]

@@ -1,0 +1,114 @@
+
+# =============================================================================
+# apps/orders/api/views.py
+# =============================================================================
+from rest_framework import generics, permissions, status, filters
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from django_filters.rest_framework import DjangoFilterBackend
+from core.permissions import IsOwnerOrAdmin
+from apps.orders.models import Cart, CartItem, Order
+from services.checkout import CheckoutService
+from .serializers import (
+    CartSerializer, CartItemWriteSerializer,
+    OrderSerializer, OrderCreateSerializer, OrderStatusSerializer,
+)
+
+
+class CartView(APIView):
+    """Always returns or creates the current user's cart."""
+    def get(self, request):
+        cart, _ = Cart.objects.prefetch_related(
+            "items__variant__attributes"
+        ).get_or_create(user=request.user)
+        return Response(CartSerializer(cart).data)
+
+
+class CartItemAddView(APIView):
+    def post(self, request):
+        cart, _ = Cart.objects.get_or_create(user=request.user)
+        s = CartItemWriteSerializer(data=request.data)
+        s.is_valid(raise_exception=True)
+        variant  = s.validated_data["variant"]
+        quantity = s.validated_data["quantity"]
+        item, created = CartItem.objects.get_or_create(cart=cart, variant=variant)
+        if not created:
+            item.quantity += quantity
+        else:
+            item.quantity = quantity
+        item.save()
+        return Response(CartSerializer(cart).data, status=status.HTTP_200_OK)
+
+
+class CartItemUpdateView(APIView):
+    def patch(self, request, pk):
+        item = CartItem.objects.get(pk=pk, cart__user=request.user)
+        s = CartItemWriteSerializer(item, data=request.data, partial=True)
+        s.is_valid(raise_exception=True)
+        s.save()
+        return Response(CartSerializer(item.cart).data)
+
+    def delete(self, request, pk):
+        CartItem.objects.filter(pk=pk, cart__user=request.user).delete()
+        cart = Cart.objects.get(user=request.user)
+        return Response(CartSerializer(cart).data)
+
+
+class OrderListView(generics.ListAPIView):
+    serializer_class = OrderSerializer
+    filter_backends  = [DjangoFilterBackend, filters.OrderingFilter]
+    filterset_fields = ["status"]
+    ordering_fields  = ["created_at", "total"]
+    ordering         = ["-created_at"]
+
+    def get_queryset(self):
+        user = self.request.user
+        qs   = Order.objects.select_related("address", "coupon").prefetch_related("items__variant")
+        return qs if user.is_staff else qs.filter(user=user)
+
+
+class OrderDetailView(generics.RetrieveAPIView):
+    serializer_class   = OrderSerializer
+    permission_classes = [IsOwnerOrAdmin]
+
+    def get_queryset(self):
+        return Order.objects.select_related("address", "coupon").prefetch_related("items__variant")
+
+
+class OrderCreateView(APIView):
+    """Delegates to CheckoutService — cart → order → stock reservation."""
+    def post(self, request):
+        s = OrderCreateSerializer(data=request.data, context={"request": request})
+        s.is_valid(raise_exception=True)
+        try:
+            order = CheckoutService.create_order(
+                user       = request.user,
+                address_id = s.validated_data["address_id"],
+                coupon_code= s.validated_data.get("coupon_code"),
+            )
+            return Response(OrderSerializer(order).data, status=status.HTTP_201_CREATED)
+        except ValueError as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+from apps.orders.state_machine import OrderStateMachine, InvalidTransitionError
+
+class OrderCancelView(APIView):
+    permission_classes = [IsOwnerOrAdmin]
+
+    def post(self, request, pk):
+        order = Order.objects.get(pk=pk)
+        self.check_object_permissions(request, order)
+        try:
+            sm = OrderStateMachine(order)
+            sm.cancel()
+        except InvalidTransitionError as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(OrderSerializer(order).data)
+
+
+class OrderStatusUpdateView(generics.UpdateAPIView):
+    """Admin-only — manually advance an order's status."""
+    queryset           = Order.objects.all()
+    serializer_class   = OrderStatusSerializer
+    permission_classes = [permissions.IsAdminUser]

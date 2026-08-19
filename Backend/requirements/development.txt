@@ -1,0 +1,26 @@
+# =============================================================================
+# requirements/development.txt
+# =============================================================================
+-r base.txt
+
+# Debugging
+django-debug-toolbar
+
+# Testing
+pytest
+pytest-django
+pytest-asyncio         # Async consumer tests
+factory-boy            # Model factories for test data
+Faker                  # Realistic fake data
+model-bakery           # Quick model instance creation
+
+# Code quality
+black
+flake8
+isort
+mypy
+django-stubs
+
+# Shell & REPL
+ipython
+django-extensions
