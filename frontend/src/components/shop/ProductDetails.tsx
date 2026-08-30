@@ -272,7 +272,7 @@ export function ProductDetails({ product }: { product: Product }) {
                         {addToCart.isPending ? 'Adding…' : 'Add to Cart'}
                     </Button>
 
-                    {/* Product details — weight, sub-type, potency, terpenes, COA.
+                    {/* Product details — weight, subtype, potency, terpenes, COA.
                         Falls back to the generic attribute table only for
                         products that still carry old-style EAV attributes. */}
                     {variant && variant.attributes.length > 0 ? (
@@ -312,7 +312,7 @@ export function ProductDetails({ product }: { product: Product }) {
 // Replaces the old generic attribute table for products that now carry
 // their weight/potency/terpene data in real columns instead of EAV
 // Attribute rows. Renders nothing if there's genuinely nothing to show
-// (e.g. an accessory with no weight, no lab, no sub-type).
+// (e.g. an accessory with no weight, no lab, no subtype).
 
 function ProductSpecs({ product, variant }: { product: Product; variant: ProductVariant | null }) {
     const lab = variant?.lab ?? null

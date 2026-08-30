@@ -18,8 +18,8 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model  = User
-        fields = ["id", "email", "first_name", "last_name", "phone", "is_active", "created_at", "addresses"]
-        read_only_fields = ["id", "is_active", "created_at"]
+        fields = ["id", "email", "first_name", "last_name", "phone", "is_active", "is_guest", "created_at", "addresses"]
+        read_only_fields = ["id", "is_active", "is_guest", "created_at"]
 
 
 class RegisterSerializer(serializers.ModelSerializer):
@@ -37,6 +37,30 @@ class RegisterSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         return User.objects.create_user(**validated_data)
+
+
+class GuestSessionSerializer(serializers.Serializer):
+    """
+    Optional email — chat can open a guest session with no email yet;
+    checkout supplies one so the admin notification has somewhere to reply.
+    """
+    email = serializers.EmailField(required=False, allow_blank=True)
+
+    def validate_email(self, value):
+        if not value:
+            return value
+        # Only a real (registered, password-holding) account should block a
+        # guest session — a leftover guest row from a previous checkout with
+        # the same email is not something the person can "sign in" to.
+        qs = User.objects.filter(email__iexact=value, is_guest=False)
+        exclude_id = self.context.get("exclude_user_id")
+        if exclude_id:
+            qs = qs.exclude(id=exclude_id)
+        if qs.exists():
+            raise serializers.ValidationError(
+                "An account with this email already exists. Please sign in instead."
+            )
+        return value
 
 
 class ChangePasswordSerializer(serializers.Serializer):
@@ -61,4 +85,3 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         data = super().validate(attrs)
         data["user"] = UserSerializer(self.user).data
         return data
-

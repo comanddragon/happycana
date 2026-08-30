@@ -1,0 +1,12 @@
+{% extends "emails/base_email.txt" %}
+
+{% block content %}
+Delivered
+
+Order #{{ order.id }} was delivered{% if shipment.delivered_at %} on {{ shipment.delivered_at|date:"M j, Y" }}{% endif %}.
+We hope you like what you ordered.
+
+Leave a review: {{ store_url }}/orders/{{ order.id }}/review
+
+Something wrong with your order? Reach us at {{ support_email }} and we'll help sort it out.
+{% endblock %}

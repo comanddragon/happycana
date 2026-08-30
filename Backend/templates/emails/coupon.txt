@@ -1,0 +1,12 @@
+{% extends "emails/base_email.txt" %}
+
+{% block content %}
+A discount just for you
+
+{% if coupon.discount_type == "percentage" %}Save {{ coupon.discount_value|floatformat:0 }}% on your next order{% else %}Save ${{ coupon.discount_value }} on your next order{% endif %}{% if coupon.min_order_value %} with a minimum order of ${{ coupon.min_order_value }}{% endif %}.
+
+Code: {{ coupon.code }}
+{% if coupon.expires_at %}Expires {{ coupon.expires_at|date:"M j, Y" }}.
+{% endif %}
+Shop now: {{ store_url }}
+{% endblock %}

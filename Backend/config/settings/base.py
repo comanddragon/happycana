@@ -4,6 +4,7 @@
 import os
 from pathlib import Path
 from datetime import timedelta
+from urllib.parse import urlparse
 from dotenv import load_dotenv
 load_dotenv()
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
@@ -123,7 +124,11 @@ CHANNEL_LAYERS = {
 # ---------------------------------------------------------------------------
 TASKS = {
     "default": {
-        "BACKEND": "django.db.backends.task",
+        # There's no separate worker process in this project, so run tasks
+        # synchronously in-process rather than queuing them to a backend
+        # that's never drained. Swap for a real queuing backend once a
+        # worker exists.
+        "BACKEND": "django.tasks.backends.immediate.ImmediateBackend",
     }
 }
 
@@ -149,6 +154,7 @@ USE_TZ        = True
 # Static & Media
 # ---------------------------------------------------------------------------
 STATIC_URL  = "/static/"
+STATICFILES_DIRS = [BASE_DIR / "static"]
 STATIC_ROOT = BASE_DIR / "staticfiles"
 MEDIA_URL   = "/media/"
 MEDIA_ROOT  = BASE_DIR / "media"
@@ -168,5 +174,26 @@ SPECTACULAR_SETTINGS = {
 # ---------------------------------------------------------------------------
 # Email (base — overridden per environment)
 # ---------------------------------------------------------------------------
-DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "noreply@example.com")
+DEFAULT_FROM_EMAIL = os.environ.get(
+    "RESEND_FROM_EMAIL", os.environ.get("DEFAULT_FROM_EMAIL", "noreply@example.com")
+)
 
+# Resend — all transactional email goes through services/email.py.
+RESEND_API_KEY = os.environ.get("RESEND_API_KEY", "")
+ADMIN_NOTIFICATION_EMAIL = os.environ.get("ADMIN_NOTIFICATION_EMAIL", "")
+
+# Branding vars injected into every templates/emails/*.html render.
+STORE_NAME    = os.environ.get("STORE_NAME", "Our Store")
+FRONTEND_URL  = os.environ.get("FRONTEND_URL", "https://example.com")
+# The logo is a Django static file served by THIS backend, not the frontend
+# app — build its URL from the backend's own public domain. Set BACKEND_URL
+# in production to your real API domain (e.g. https://api.yourstore.com).
+# Falls back to localhost if BACKEND_URL is unset OR set to something with no
+# actual host (e.g. "http://" from a script that interpolated an empty var).
+_backend_url_env = os.environ.get("BACKEND_URL", "")
+BACKEND_URL = _backend_url_env if urlparse(_backend_url_env).netloc else "http://localhost:8000"
+STORE_LOGO_URL= os.environ.get(
+    "STORE_LOGO_URL", f"{BACKEND_URL}{STATIC_URL}branding/logo-lockup-light-bg.png"
+)
+SUPPORT_EMAIL = os.environ.get("SUPPORT_EMAIL", "support@example.com")
+STORE_ADDRESS = os.environ.get("STORE_ADDRESS", "")

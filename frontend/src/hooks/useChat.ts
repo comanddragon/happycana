@@ -19,10 +19,11 @@ export const chatQk = {
 
 // ─── REST hooks ───────────────────────────────────────────────────────────────
 
-export function useChatRooms(params?: { status?: string }) {
+export function useChatRooms(params?: { status?: string }, enabled = true) {
     return useQuery({
         queryKey: chatQk.rooms(params),
         queryFn:  () => chatService.listRooms(params),
+        enabled,
         staleTime: 15_000,
         refetchInterval: 30_000,
     })
@@ -34,15 +35,6 @@ export function useChatRoom(id: string | null) {
         queryFn:  () => chatService.getRoom(id!),
         enabled:  !!id,
         staleTime: 10_000,
-    })
-}
-
-export function useChatMessages(roomId: string | null) {
-    return useQuery({
-        queryKey: chatQk.messages(roomId!),
-        queryFn:  () => chatService.listMessages(roomId!),
-        enabled:  !!roomId,
-        staleTime: 0,
     })
 }
 
@@ -84,6 +76,11 @@ export type ChatWsState = {
     messages: WSChatMessage[]
     typers: string[]
     connected: boolean
+    /** True when the socket was rejected (4001 no/invalid token, 4003 not a
+     *  participant) rather than just dropped by the network. Reconnecting
+     *  with the same token/room won't help — the caller should prompt a
+     *  refresh or bail out of the room instead of showing "Connecting...". */
+    authError: boolean
     sendMessage: (body: string, messageType?: string) => void
     sendTyping: (isTyping: boolean) => void
     markRead: () => void
@@ -99,6 +96,7 @@ export function useChatRoomWS(roomId: string | null): ChatWsState {
     const [messages,  setMessages]  = useState<WSChatMessage[]>([])
     const [typers,    setTypers]    = useState<string[]>([])
     const [connected, setConnected] = useState(false)
+    const [authError, setAuthError] = useState(false)
 
     useEffect(() => {
         mountedRef.current = true
@@ -157,6 +155,7 @@ export function useChatRoomWS(roomId: string | null): ChatWsState {
 
         closedRef.current = false
         retriesRef.current = 0
+        setAuthError(false)
 
         function connect() {
             if (closedRef.current) return
@@ -168,7 +167,20 @@ export function useChatRoomWS(roomId: string | null): ChatWsState {
             ws.onmessage = (e) => handleMessage(e.data)
             ws.onclose = (e) => {
                 setConnected(false)
-                if (closedRef.current || e.code === 4001 || e.code === 4003) return
+                if (closedRef.current) return
+                // 4001 = no/invalid token, 4003 = authenticated but not a participant
+                // in this room. Both are terminal — retrying with the same token
+                // and room id will never succeed, so stop and surface it instead
+                // of leaving the UI stuck on "Connecting..." forever.
+                if (e.code === 4001 || e.code === 4003) {
+                    setAuthError(true)
+                    toast.error(
+                        e.code === 4001
+                            ? 'Chat session expired — refresh the page to reconnect.'
+                            : "You don't have access to this conversation."
+                    )
+                    return
+                }
                 if (retriesRef.current < 5) {
                     retriesRef.current++
                     timerRef.current = setTimeout(connect, Math.min(1000 * 2 ** retriesRef.current, 30_000))
@@ -187,6 +199,7 @@ export function useChatRoomWS(roomId: string | null): ChatWsState {
             setConnected(false)
             setMessages([])
             setTypers([])
+            setAuthError(false)
         }
     }, [roomId, handleMessage])
 
@@ -208,5 +221,5 @@ export function useChatRoomWS(roomId: string | null): ChatWsState {
         }
     }, [])
 
-    return { messages, typers, connected, sendMessage, sendTyping, markRead }
+    return { messages, typers, connected, authError, sendMessage, sendTyping, markRead }
 }

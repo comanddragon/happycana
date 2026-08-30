@@ -1,4 +1,3 @@
-
 # =============================================================================
 # config/settings/development.py
 # =============================================================================
@@ -7,6 +6,31 @@ from .base import *  # noqa
 DEBUG = True
 
 ALLOWED_HOSTS = ["*"]
+
+# ---------------------------------------------------------------------------
+# BACKEND_URL override — set this to your ngrok tunnel (or any publicly
+# reachable URL pointing at this dev server) so outgoing emails show a real,
+# loadable logo instead of an unreachable http://localhost:8000 one. Falls
+# back to the base.py default when unset, so this is a no-op until you set it.
+# e.g. BACKEND_URL=https://abcd1234.ngrok-free.app python manage.py runserver
+# ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# BACKEND_URL override — set this to your ngrok tunnel (or any publicly
+# reachable URL pointing at this dev server) so outgoing emails show a real,
+# loadable logo instead of an unreachable http://localhost:8000 one. Falls
+# back to the base.py value if unset, blank, or hostless (e.g. "http://" from
+# a script that interpolated an empty var), so this is a no-op until you set
+# it properly. e.g. BACKEND_URL=https://abcd1234.ngrok-free.app manage.py runserver
+# ---------------------------------------------------------------------------
+_backend_url_env = os.environ.get("BACKEND_URL", "")
+if urlparse(_backend_url_env).netloc:
+    BACKEND_URL = _backend_url_env
+# STORE_LOGO_URL was already built from the old BACKEND_URL in base.py, so it
+# needs recomputing here — unless the user explicitly set STORE_LOGO_URL
+# themselves, which should win either way.
+STORE_LOGO_URL = os.environ.get(
+    "STORE_LOGO_URL", f"{BACKEND_URL}{STATIC_URL}branding/logo-lockup-light-bg.png"
+)
 
 # SQLite for quick local dev — swap to Postgres if you need relational features
 DATABASES = {
@@ -27,9 +51,6 @@ CORS_ALLOW_ALL_ORIGINS = True
 INSTALLED_APPS += ["debug_toolbar"]
 MIDDLEWARE.insert(1, "debug_toolbar.middleware.DebugToolbarMiddleware")
 INTERNAL_IPS   = ["127.0.0.1"]
-
-# Email printed to console instead of sent
-EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
 # Logging — print SQL queries to console
 LOGGING = {
@@ -59,6 +80,11 @@ LOGGING = {
             "propagate": False,
         },
         "daphne": {
+            "handlers": ["console"],
+            "level":    "INFO",
+            "propagate": False,
+        },
+        "services.email": {
             "handlers": ["console"],
             "level":    "INFO",
             "propagate": False,

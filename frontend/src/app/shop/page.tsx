@@ -164,7 +164,7 @@ export default async function ShopPage() {
                     <BrandStrip />
                 </Reveal>
 
-                {/* Best sellers */}
+                {/* Bestsellers */}
                 {bestSellers.results.length > 0 && (
                     <Reveal>
                         <div className="flex items-end justify-between mb-7">

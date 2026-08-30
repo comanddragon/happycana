@@ -1,0 +1,35 @@
+{% extends "emails/base_email.html" %}
+
+{% block title %}A discount just for you{% endblock %}
+{% block preheader %}Use code {{ coupon.code }} at checkout.{% endblock %}
+
+{% block content %}
+<h1 style="margin:0 0 16px;font-family:Georgia,'Times New Roman',serif;font-size:34px;line-height:40px;
+           font-weight:400;color:#141413;">
+  A discount just for you
+</h1>
+<p style="margin:0 0 28px;font-size:16px;line-height:24px;color:#141413;">
+  {% if coupon.discount_type == "percentage" %}
+    Save {{ coupon.discount_value|floatformat:0 }}% on your next order
+  {% else %}
+    Save ${{ coupon.discount_value }} on your next order
+  {% endif %}
+  {% if coupon.min_order_value %} with a minimum order of ${{ coupon.min_order_value }}{% endif %}.
+</p>
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:28px;">
+  <tr>
+    <td align="center" style="padding:20px;border:1px dashed #141413;border-radius:8px;">
+      <span style="font-family:Georgia,'Times New Roman',serif;font-size:24px;letter-spacing:.06em;color:#141413;">{{ coupon.code }}</span>
+    </td>
+  </tr>
+</table>
+
+{% if coupon.expires_at %}
+<p style="margin:0 0 28px;font-size:14px;color:#6E6C66;">Expires {{ coupon.expires_at|date:"M j, Y" }}.</p>
+{% endif %}
+
+<div class="btn">
+  <a href="{{ store_url }}">Shop Now</a>
+</div>
+{% endblock %}

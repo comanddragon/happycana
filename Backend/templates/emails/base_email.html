@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml" style="margin:0;padding:0;">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="x-apple-disable-message-reformatting">
+<title>{% block title %}{{ store_name }}{% endblock %}</title>
+<style>
+  *{margin:0;padding:0;}
+  body{width:100%;background:#ffffff;font-family:'Helvetica Neue',Arial,sans-serif;}
+  table{border-collapse:collapse;mso-table-lspace:0;mso-table-rspace:0;}
+  img{border:0;display:block;}
+  a{color:inherit;}
+  .btn a{display:inline-block;padding:12px 28px;background:#141413;color:#ffffff !important;
+         text-decoration:none;border-radius:8px;font-size:16px;font-weight:400;}
+  @media only screen and (max-width:480px){
+    .container{width:100% !important;}
+    .px{padding-left:24px !important;padding-right:24px !important;}
+    h1{font-size:26px !important;line-height:32px !important;}
+  }
+</style>
+</head>
+<body style="margin:0;padding:0;background:#ffffff;">
+<span style="display:none;font-size:1px;color:#faf9f5;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;">
+  {% block preheader %}{% endblock %}
+</span>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#ffffff;">
+<tr><td align="center">
+
+  <table role="presentation" width="600" class="container" cellpadding="0" cellspacing="0"
+         style="width:600px;max-width:600px;background:#faf9f5;">
+    <tr>
+      <td class="px" style="padding:32px 50px 24px;">
+        <a href="{{ store_url }}" style="text-decoration:none;">
+          <img src="{{ logo_url }}" alt="{{ store_name }}" width="120" style="max-width:120px;">
+        </a>
+      </td>
+    </tr>
+    <tr>
+      <td class="px" style="padding:0 50px 44px;">
+        {% block content %}{% endblock %}
+      </td>
+    </tr>
+  </table>
+
+  <table role="presentation" width="600" class="container" cellpadding="0" cellspacing="0"
+         style="width:600px;max-width:600px;background:#141413;">
+    <tr>
+      <td class="px" align="center" style="padding:40px 50px;">
+        <p style="margin:0 0 8px;font-size:12px;line-height:18px;color:#9C9A92;">&reg; {{ store_name }}</p>
+        <p style="margin:0 0 16px;font-size:12px;line-height:18px;color:#9C9A92;">{{ store_address }}</p>
+        <p style="margin:0;font-size:12px;line-height:18px;color:#9C9A92;">
+          Questions? Email <a href="mailto:{{ support_email }}" style="color:#B0AEA5;text-decoration:underline;">{{ support_email }}</a>.
+          {% block unsubscribe %}<br>To opt out of future emails, <a href="{{ unsubscribe_url }}" style="color:#B0AEA5;text-decoration:underline;">unsubscribe</a>.{% endblock %}
+        </p>
+      </td>
+    </tr>
+  </table>
+
+</td></tr>
+</table>
+</body>
+</html>

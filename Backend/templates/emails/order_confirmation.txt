@@ -1,0 +1,23 @@
+{% extends "emails/base_email.txt" %}
+
+{% block content %}
+Order confirmed
+
+Thanks{% if order.user.first_name %}, {{ order.user.first_name }}{% endif %} — we've got your order.
+Here's your receipt for order #{{ order.id }}, placed {{ order.created_at|date:"M j, Y" }}.
+
+Items:
+{% for item in items %}- {{ item.quantity }}x {{ item.variant.product.name }} ({{ item.variant.sku }}) — ${{ item.total_price }}
+{% endfor %}
+Subtotal: ${{ order.subtotal }}
+{% if order.discount_amount %}Discount: -${{ order.discount_amount }}
+{% endif %}Shipping: ${{ order.shipping_cost }}
+Total: ${{ order.total }}
+
+Shipping to:
+{{ order.address.line1 }}{% if order.address.line2 %}, {{ order.address.line2 }}{% endif %}
+{{ order.address.city }}, {{ order.address.state }} {{ order.address.postal_code }}
+{{ order.address.country }}
+
+View your order: {{ store_url }}/orders/{{ order.id }}
+{% endblock %}

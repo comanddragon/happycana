@@ -1,6 +1,6 @@
 'use client'
 
-import {useState, useEffect} from 'react'
+import {useState} from 'react'
 import { MessageSquarePlus, Inbox } from 'lucide-react'
 import { useChatRooms, useCreateChatRoom } from '@/hooks/useChat'
 import { ChatRoomList } from '@/components/chat/ChatRoomList'
@@ -22,19 +22,12 @@ export default function ChatPage() {
 
     const rooms = data?.results ?? []
 
-    // Derive the active room from the latest server data.
-    // Auto-select: if nothing is selected yet AND data has arrived, pick the first room
-    // and immediately commit its ID to state so this only ever fires once.
-    // Using a ref flag instead of a fallback expression avoids re-selecting on every
-    // render where activeRoomId happens to still be null (e.g. while typing).
-    useEffect(() => {
-        if (!activeRoomId && rooms.length > 0) {
-            setActiveRoomId(rooms[0].id)
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [activeRoomId, rooms.length])
-
-    const activeRoom: ChatRoom | null = rooms.find(r => r.id === activeRoomId) ?? null
+    // Derive the active room straight from render — no effect needed.
+    // Nothing selected yet → default to the first room once data has
+    // arrived. Once the visitor picks one, activeRoomId is set and this
+    // stops falling back, even if that room later drops out of `rooms`.
+    const activeRoom: ChatRoom | null =
+        (activeRoomId ? rooms.find(r => r.id === activeRoomId) : rooms[0]) ?? null
 
     const handleSelectRoom = (room: ChatRoom) => {
         setActiveRoomId(room.id)

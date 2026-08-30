@@ -3,13 +3,18 @@
 # Orchestrates the full cart → order → stock reservation → payment flow.
 # =============================================================================
 from decimal import Decimal
+import logging
 from django.db import transaction
 from django.utils import timezone
 from apps.orders.models import Cart, Order, OrderItem
 from apps.inventory.models import Stock
+from apps.shipping.models import ShippingMethod
 from apps.promotions.models import Coupon
 from apps.payments.models import Payment
 from apps.notifications.models import Notification
+from services.email import EmailService
+
+logger = logging.getLogger(__name__)
 
 
 class CheckoutError(Exception):
@@ -20,7 +25,7 @@ class CheckoutService:
 
     @classmethod
     @transaction.atomic
-    def create_order(cls, user, address_id, coupon_code=None):
+    def create_order(cls, user, address_id, shipping_method_id, coupon_code=None):
         """
         Full checkout pipeline:
           1. Validate cart is not empty
@@ -34,7 +39,14 @@ class CheckoutService:
         Returns the created Order instance.
         """
         cart = cls._get_cart(user)
-        items = list(cart.items.select_related("variant__stock_levels").all())
+        # NOTE: stock is intentionally NOT select_related/prefetched here —
+        # _reserve_stock() takes a row-level lock (select_for_update) on the
+        # matching Stock row per item at reservation time, so a prefetched
+        # snapshot would be stale and wouldn't hold the lock anyway.
+        # `stock_levels` is also a reverse FK (Stock.variant), which
+        # select_related can't traverse in the first place — only forward
+        # FK/O2O relations like `variant` and `variant__lab` are valid here.
+        items = list(cart.items.select_related("variant").all())
 
         if not items:
             raise CheckoutError("Your cart is empty.")
@@ -45,7 +57,7 @@ class CheckoutService:
         # 2. Resolve coupon & calculate totals via PromotionEngine
         from apps.promotions.engine import PromotionEngine, CartContext
         subtotal      = cls._calculate_subtotal(items)
-        shipping_cost = cls._calculate_shipping(items)
+        shipping_cost = cls._calculate_shipping(shipping_method_id)
 
         if coupon_code:
             ctx    = CartContext(subtotal=subtotal, item_count=len(items))
@@ -62,6 +74,7 @@ class CheckoutService:
         order = Order.objects.create(
             user            = user,
             address_id      = address_id,
+            shipping_method_id = shipping_method_id,
             coupon          = coupon,
             status          = Order.Status.PENDING,
             subtotal        = subtotal,
@@ -100,7 +113,26 @@ class CheckoutService:
             body  = f"Your order #{order.id} has been placed successfully. Total: ${order.total}",
         )
 
+        # 9. Email the admin the order details, and the customer their
+        #    receipt, once the order is actually committed. The order has
+        #    already succeeded at this point — a transport failure sending
+        #    either email (e.g. an unverified Resend sending domain) must be
+        #    logged, not allowed to turn a successful checkout into a 500.
+        transaction.on_commit(lambda: cls._notify_safely(
+            "admin notification", EmailService.send_order_notification_to_admin, order
+        ))
+        transaction.on_commit(lambda: cls._notify_safely(
+            "order placed email", EmailService.send_order_placed, order
+        ))
+
         return order
+
+    @staticmethod
+    def _notify_safely(label, fn, *args):
+        try:
+            fn(*args)
+        except Exception:
+            logger.exception("Post-checkout %s failed", label)
 
     # ------------------------------------------------------------------
     # Private helpers
@@ -152,8 +184,8 @@ class CheckoutService:
         return sum(item.variant.price * item.quantity for item in items)
 
     @staticmethod
-    def _calculate_shipping(items):
-        # Placeholder — plug in your shipping rate provider here
-        # e.g. call ShippingService.calculate_rate(items, address)
-        return Decimal("5.99")
-
+    def _calculate_shipping(shipping_method_id):
+        try:
+            return ShippingMethod.objects.get(id=shipping_method_id, is_active=True).price
+        except ShippingMethod.DoesNotExist:
+            raise CheckoutError("Shipping method not found.")

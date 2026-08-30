@@ -59,7 +59,7 @@ api.interceptors.response.use(
 
             try {
                 const { data } = await axios.post(`${BASE_URL}/auth/token/refresh/`, { refresh })
-                setTokens(data.access, refresh)
+                setTokens(data.access, data.refresh)
                 processQueue(null, data.access)
                 original.headers.Authorization = `Bearer ${data.access}`
                 return api(original)

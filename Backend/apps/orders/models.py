@@ -49,6 +49,7 @@ class Order(models.Model):
     id              = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user            = models.ForeignKey(User, on_delete=models.PROTECT, related_name="orders")
     address         = models.ForeignKey(Address, on_delete=models.PROTECT)
+    shipping_method = models.ForeignKey("shipping.ShippingMethod", on_delete=models.PROTECT, null=True, blank=True)
     coupon          = models.ForeignKey(Coupon, null=True, blank=True, on_delete=models.SET_NULL)
     status          = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
     subtotal        = models.DecimalField(max_digits=12, decimal_places=2)
@@ -66,6 +67,10 @@ class Order(models.Model):
     def __str__(self):
         return f"Order {self.id} — {self.status}"
 
+    @property
+    def short_id(self):
+        return str(self.id)[:8].upper()
+
 
 class OrderItem(models.Model):
     id          = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -80,4 +85,3 @@ class OrderItem(models.Model):
 
     def __str__(self):
         return f"{self.quantity}x {self.variant.sku} on Order {self.order_id}"
-

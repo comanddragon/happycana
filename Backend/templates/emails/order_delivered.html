@@ -1,0 +1,26 @@
+{% extends "emails/base_email.html" %}
+
+{% block title %}Order Delivered{% endblock %}
+{% block preheader %}Order #{{ order.id }} has been delivered.{% endblock %}
+
+{% block content %}
+<h1 style="margin:0 0 16px;font-family:Georgia,'Times New Roman',serif;font-size:34px;line-height:40px;
+           font-weight:400;color:#141413;">
+  Delivered
+</h1>
+<p style="margin:0 0 32px;font-size:16px;line-height:24px;color:#141413;">
+  Order <strong>#{{ order.id }}</strong> was delivered
+  {% if shipment.delivered_at %}on {{ shipment.delivered_at|date:"M j, Y" }}{% endif %}.
+  We hope you like what you ordered.
+</p>
+
+<div class="btn" style="margin-bottom:32px;">
+  <a href="{{ store_url }}/orders/{{ order.id }}/review">Leave a Review</a>
+</div>
+
+<p style="margin:0;font-size:14px;line-height:20px;color:#6E6C66;">
+  Something wrong with your order? Reach us at
+  <a href="mailto:{{ support_email }}" style="color:#141413;text-decoration:underline;">{{ support_email }}</a>
+  and we'll help sort it out.
+</p>
+{% endblock %}

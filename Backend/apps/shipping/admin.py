@@ -4,7 +4,7 @@
 # apps/shipping/admin.py
 # =============================================================================
 from django.contrib import admin
-from apps.shipping.models import Shipment, TrackingEvent
+from apps.shipping.models import Shipment, TrackingEvent, ShippingMethod
 
 
 class TrackingEventInline(admin.TabularInline):
@@ -23,6 +23,11 @@ class ShipmentAdmin(admin.ModelAdmin):
     readonly_fields = ["shipped_at", "delivered_at"]
     raw_id_fields   = ["order", "warehouse"]
 
+@admin.register(ShippingMethod)
+class ShippingMethodAdmin(admin.ModelAdmin):
+    list_display    = ["name", "carrier", "price", "estimated_days_min", "estimated_days_max"]
+    list_filter     = ["name", "carrier"]
+    search_fields   = ["name", "carrier"]
 
 @admin.register(TrackingEvent)
 class TrackingEventAdmin(admin.ModelAdmin):

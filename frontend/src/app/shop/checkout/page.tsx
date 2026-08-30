@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft } from 'lucide-react'
 import { toast } from 'sonner'
@@ -8,32 +8,52 @@ import {
     useCart, useAddresses, useShippingMethods,
     useValidateCoupon, useCheckout, useCreateAddress,
 } from '@/hooks/useApi'
+import { useAuthStore } from '@/store/auth'
+import { ensureGuestSession } from '@/lib/guestSession'
 import { Reveal } from '@/components/home/Reveal'
 import type { CheckoutPayload } from '@/types'
 import { StepRail } from '@/components/checkout/StepRail'
 import { AddressStep } from '@/components/checkout/AddressStep'
 import { ShippingStep } from '@/components/checkout/ShippingStep'
-import { PaymentStep } from '@/components/checkout/PaymentStep'
+import { ContactStep } from '@/components/checkout/ContactStep'
+import { ThankYouOverlay } from '@/components/checkout/ThankYouOverlay'
 import { OrderSummary } from '@/components/checkout/OrderSummary'
 import { EmptyCartState } from '@/components/checkout/EmptyCartState'
-import type { PaymentGateway, CouponResult } from '@/components/checkout/types'
+import type { CouponResult } from '@/components/checkout/types'
 import type { AddressForm } from '@/lib/checkout/schema'
+
+function isValidEmail(value: string) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
+}
 
 export default function CheckoutPage() {
     const router = useRouter()
+    const isAuthenticated      = useAuthStore(s => s.isAuthenticated)
+    const isGuest               = useAuthStore(s => s.isGuest)
+    const user                  = useAuthStore(s => s.user)
     const { data: cart }       = useCart()
     const { data: addresses }  = useAddresses()
     const { data: methods }    = useShippingMethods()
     const validateCoupon       = useValidateCoupon()
-    const checkout             = useCheckout()
+    const checkout              = useCheckout()
     const createAddress        = useCreateAddress()
 
     const [selectedAddress,  setSelectedAddress]  = useState<string>('')
     const [selectedShipping, setSelectedShipping] = useState<string>('')
     const [couponCode,       setCouponCode]        = useState('')
     const [couponResult,     setCouponResult]      = useState<CouponResult | null>(null)
-    const [gateway,          setGateway]           = useState<PaymentGateway>('stripe')
+    const [contactEmail,     setContactEmail]      = useState('')
     const [newAddrOpen,      setNewAddrOpen]       = useState(false)
+    const [placedOrderId,    setPlacedOrderId]     = useState<string | null>(null)
+
+    // A visitor can land here (e.g. a returning guest whose session expired,
+    // or a direct link) with no session at all yet — bootstrap one so the
+    // cart/addresses queries below actually have something to fetch.
+    useEffect(() => {
+        if (!isAuthenticated) {
+            ensureGuestSession().catch(() => {})
+        }
+    }, [isAuthenticated])
 
     const selectedMethod = methods?.find(m => m.id === selectedShipping)
     const subtotal       = parseFloat(cart?.total_price ?? '0')
@@ -44,7 +64,7 @@ export default function CheckoutPage() {
     // Step completion — purely derived, no new state.
     const addressDone  = !!selectedAddress
     const shippingDone = addressDone && !!selectedShipping
-    const paymentDone  = shippingDone && !!gateway
+    const contactDone  = shippingDone && (!isGuest || isValidEmail(contactEmail))
 
     const handleApplyCoupon = async () => {
         if (!couponCode.trim()) return
@@ -69,30 +89,27 @@ export default function CheckoutPage() {
     const handleCheckout = async () => {
         if (!selectedAddress) return toast.error('Please select a delivery address')
         if (!selectedShipping) return toast.error('Please select a shipping method')
+        if (isGuest && !isValidEmail(contactEmail)) return toast.error('Please enter a valid email so we can reach you')
         if (!cart?.items.length) return toast.error('Your cart is empty')
 
+        // Attach the guest's email before placing the order, so the admin
+        // notification (and any follow-up) has somewhere to reply to.
+        if (isGuest) {
+            await ensureGuestSession(contactEmail)
+        }
+
         const payload: CheckoutPayload = {
-            address_id:        selectedAddress,
-            // shipping_method_id: selectedShipping,
-            coupon_code:       couponResult ? couponCode : undefined,
-            gateway,
-            cart_items: cart.items.map(i => ({ variant: i.variant.id, quantity: i.quantity })),
+            address_id: selectedAddress,
+            shipping_method_id: selectedShipping, // add this
+            coupon_code: couponResult ? couponCode : undefined,
         }
 
-        const result = await checkout.mutateAsync(payload)
-
-        if (result.payment_url) {
-            // PayPal — redirect to approval URL
-            window.location.href = result.payment_url
-        } else {
-            // Stripe — redirect to order success (would normally load Stripe Elements)
-            toast.success('Order placed!')
-            router.push(`/account/orders/${result.order.id}`)
-        }
+        const order = await checkout.mutateAsync(payload)
+        setPlacedOrderId(order.id)
     }
 
     // Empty-cart guard — cart has loaded and there's genuinely nothing to check out.
-    if (cart && cart.items.length === 0) {
+    if (cart && cart.items.length === 0 && !placedOrderId) {
         return <EmptyCartState />
     }
 
@@ -116,7 +133,7 @@ export default function CheckoutPage() {
                         </div>
                         <h1 className="font-hc-display text-3xl font-normal text-hc-ink sm:text-4xl">Checkout</h1>
                     </div>
-                    <StepRail addressDone={addressDone} shippingDone={shippingDone} paymentDone={paymentDone} />
+                    <StepRail addressDone={addressDone} shippingDone={shippingDone} paymentDone={contactDone} />
                 </div>
 
                 <div className="grid gap-6 lg:grid-cols-5 lg:gap-8">
@@ -144,9 +161,11 @@ export default function CheckoutPage() {
                         </Reveal>
 
                         <Reveal delay={160}>
-                            <PaymentStep
-                                gateway={gateway}
-                                onSelect={setGateway}
+                            <ContactStep
+                                isGuest={isGuest}
+                                knownEmail={user?.email}
+                                email={contactEmail}
+                                onEmailChange={setContactEmail}
                                 locked={!shippingDone}
                             />
                         </Reveal>
@@ -173,6 +192,13 @@ export default function CheckoutPage() {
                     </div>
                 </div>
             </div>
+
+            {placedOrderId && (
+                <ThankYouOverlay
+                    orderId={placedOrderId}
+                    onContinue={() => router.push(isAuthenticated && !isGuest ? `/account/orders/${placedOrderId}` : '/shop/products')}
+                />
+            )}
         </div>
     )
 }

@@ -2,7 +2,8 @@ import Link from 'next/link'
 import { Menu, X } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetDescription } from '@/components/ui/sheet'
-import { AMBER_DOT, NAV_LINKS } from './constants'
+import { NAV_LINKS } from './constants'
+import { Logo } from '../Logo'
 import { useCategoriesMenuTree } from '@/hooks/useCategoriesMenuTree'
 import { NavMobileTreeItem } from '@/components/layout/navbar/NavMobileTreeItem'
 
@@ -44,10 +45,7 @@ export function NavbarMobileMenu({
                 </SheetDescription>
 
                 <div className="flex items-center gap-2.5 p-4 border-b border-hc-paper/10">
-                    <span className="h-[18px] w-[18px] rounded-full" style={AMBER_DOT} />
-                    <span className="font-hc-display italic font-medium text-hc-paper">
-                        HappyCana
-                    </span>
+                    <Logo height={20} />
                 </div>
 
                 <div className="p-4 space-y-1">
@@ -65,7 +63,7 @@ export function NavbarMobileMenu({
                                 <NavMobileTreeItem
                                     key={item.label}
                                     node={{ label: item.label, children: rootNodes }}
-                                    onNavigate={() => setOpen(false)}
+                                    onNavigateAction={() => setOpen(false)}
                                 />
                             )
                         }

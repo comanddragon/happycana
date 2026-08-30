@@ -1,0 +1,12 @@
+{% extends "emails/base_email.txt" %}
+
+{% block content %}
+Refund processed
+
+We've processed a refund of ${{ refund.amount }} for order #{{ refund.payment.order.id }}.
+It should appear on your original payment method within a few business days, depending on your bank.
+
+View order: {{ store_url }}/orders/{{ refund.payment.order.id }}
+
+Questions about this refund? Reach us at {{ support_email }}.
+{% endblock %}

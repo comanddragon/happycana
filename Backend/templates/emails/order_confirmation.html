@@ -1,0 +1,53 @@
+{% extends "emails/base_email.html" %}
+
+{% block title %}Order Confirmed{% endblock %}
+{% block preheader %}Order #{{ order.id }} is confirmed — here's your receipt.{% endblock %}
+
+{% block content %}
+<h1 style="margin:0 0 8px;font-family:Georgia,'Times New Roman',serif;font-size:34px;line-height:40px;
+           font-weight:400;color:#141413;">
+  Order confirmed
+</h1>
+<p style="margin:0 0 32px;font-size:16px;line-height:24px;color:#141413;">
+  Thanks{% if order.user.first_name %}, {{ order.user.first_name }}{% endif %} — we've got your order.
+  Here's your receipt for order <strong>#{{ order.id }}</strong>, placed {{ order.created_at|date:"M j, Y" }}.
+</p>
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
+  <tr>
+    <td style="padding:0 0 12px;border-bottom:1px solid #D9D8D5;font-size:12px;color:#6E6C66;text-transform:uppercase;letter-spacing:.04em;">Item</td>
+    <td align="center" style="padding:0 0 12px;border-bottom:1px solid #D9D8D5;font-size:12px;color:#6E6C66;text-transform:uppercase;letter-spacing:.04em;">Qty</td>
+    <td align="right" style="padding:0 0 12px;border-bottom:1px solid #D9D8D5;font-size:12px;color:#6E6C66;text-transform:uppercase;letter-spacing:.04em;">Total</td>
+  </tr>
+  {% for item in items %}
+  <tr>
+    <td style="padding:14px 0;border-bottom:1px solid #EDECE7;font-size:14px;color:#141413;">
+      {{ item.variant.product.name }}<br>
+      <span style="font-size:12px;color:#6E6C66;">{{ item.variant.sku }}</span>
+    </td>
+    <td align="center" style="padding:14px 0;border-bottom:1px solid #EDECE7;font-size:14px;color:#141413;">{{ item.quantity }}</td>
+    <td align="right" style="padding:14px 0;border-bottom:1px solid #EDECE7;font-size:14px;color:#141413;">${{ item.total_price }}</td>
+  </tr>
+  {% endfor %}
+</table>
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:32px;">
+  <tr><td style="padding:4px 0;font-size:14px;color:#6E6C66;">Subtotal</td><td align="right" style="padding:4px 0;font-size:14px;color:#141413;">${{ order.subtotal }}</td></tr>
+  {% if order.discount_amount %}
+  <tr><td style="padding:4px 0;font-size:14px;color:#6E6C66;">Discount</td><td align="right" style="padding:4px 0;font-size:14px;color:#141413;">-${{ order.discount_amount }}</td></tr>
+  {% endif %}
+  <tr><td style="padding:4px 0;font-size:14px;color:#6E6C66;">Shipping</td><td align="right" style="padding:4px 0;font-size:14px;color:#141413;">${{ order.shipping_cost }}</td></tr>
+  <tr><td style="padding:12px 0 0;font-size:16px;color:#141413;font-weight:700;">Total</td><td align="right" style="padding:12px 0 0;font-size:16px;color:#141413;font-weight:700;">${{ order.total }}</td></tr>
+</table>
+
+<h3 style="margin:0 0 8px;font-family:Georgia,'Times New Roman',serif;font-size:16px;font-weight:400;color:#141413;">Shipping to</h3>
+<p style="margin:0 0 32px;font-size:14px;line-height:20px;color:#6E6C66;">
+  {{ order.address.line1 }}{% if order.address.line2 %}, {{ order.address.line2 }}{% endif %}<br>
+  {{ order.address.city }}, {{ order.address.state }} {{ order.address.postal_code }}<br>
+  {{ order.address.country }}
+</p>
+
+<div class="btn">
+  <a href="{{ store_url }}/orders/{{ order.id }}">View Order</a>
+</div>
+{% endblock %}

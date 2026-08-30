@@ -1,0 +1,32 @@
+{% extends "emails/base_email.html" %}
+
+{% block title %}Order Shipped{% endblock %}
+{% block preheader %}Order #{{ order.id }} is on its way.{% endblock %}
+
+{% block content %}
+<h1 style="margin:0 0 16px;font-family:Georgia,'Times New Roman',serif;font-size:34px;line-height:40px;
+           font-weight:400;color:#141413;">
+  On its way
+</h1>
+<p style="margin:0 0 32px;font-size:16px;line-height:24px;color:#141413;">
+  Order <strong>#{{ order.id }}</strong> has shipped
+  {% if shipment.shipped_at %}on {{ shipment.shipped_at|date:"M j, Y" }}{% endif %}.
+  {% if shipment.tracking_number %}You can track it below.{% endif %}
+</p>
+
+{% if shipment.tracking_number %}
+<p style="margin:0 0 32px;font-size:14px;line-height:20px;color:#6E6C66;">
+  Carrier: {{ shipment.provider|upper }}<br>
+  Tracking number: <strong style="color:#141413;">{{ shipment.tracking_number }}</strong>
+</p>
+{% endif %}
+
+<div class="btn" style="margin-bottom:32px;">
+  <a href="{{ store_url }}/orders/{{ order.id }}">Track Order</a>
+</div>
+
+<p style="margin:0;font-size:14px;line-height:20px;color:#6E6C66;">
+  Questions about your shipment? Reach us at
+  <a href="mailto:{{ support_email }}" style="color:#141413;text-decoration:underline;">{{ support_email }}</a>.
+</p>
+{% endblock %}

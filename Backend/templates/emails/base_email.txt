@@ -1,0 +1,7 @@
+{% block content %}{% endblock %}
+
+--
+{{ store_name }}
+{{ store_address }}
+Questions? {{ support_email }}
+{% block unsubscribe %}Unsubscribe: {{ unsubscribe_url }}{% endblock %}

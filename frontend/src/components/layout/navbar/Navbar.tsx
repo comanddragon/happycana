@@ -1,3 +1,5 @@
+// noinspection DuplicatedCode
+
 'use client'
 
 import { useState, useSyncExternalStore } from 'react'
@@ -34,7 +36,10 @@ export function Navbar() {
 
     const itemCount = useCartStore(s => s.itemCount())
     const toggleCart = useCartStore(s => s.toggleCart)
-    const { user, isAuthenticated, logout } = useAuthStore()
+    const { user, isAuthenticated, isGuest, logout } = useAuthStore()
+    // Guests hold a real JWT (so cart/chat "just work") but shouldn't look
+    // signed in — the account menu and notifications bell stay hidden for them.
+    const showAccountUI = isAuthenticated && !isGuest
     const { data: notifData } = useNotifications()
     const markRead = useMarkNotificationRead()
     useNotificationsWS()
@@ -75,7 +80,7 @@ export function Navbar() {
                     {/* Right actions */}
                     <div className="flex items-center gap-1">
 
-                        {mounted && isAuthenticated && (
+                        {mounted && showAccountUI && (
                             <NavbarNotifications
                                 notifications={notifData?.results}
                                 unread={unread}
@@ -87,7 +92,7 @@ export function Navbar() {
 
                         <NavbarUserMenu
                             mounted={mounted}
-                            isAuthenticated={isAuthenticated}
+                            isAuthenticated={showAccountUI}
                             user={user}
                             onLogout={handleLogout}
                         />

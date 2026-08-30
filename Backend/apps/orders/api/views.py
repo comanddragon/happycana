@@ -1,4 +1,3 @@
-
 # =============================================================================
 # apps/orders/api/views.py
 # =============================================================================
@@ -8,7 +7,7 @@ from rest_framework.views import APIView
 from django_filters.rest_framework import DjangoFilterBackend
 from core.permissions import IsOwnerOrAdmin
 from apps.orders.models import Cart, CartItem, Order
-from services.checkout import CheckoutService
+from services.checkout import CheckoutService, CheckoutError
 from .serializers import (
     CartSerializer, CartItemWriteSerializer,
     OrderSerializer, OrderCreateSerializer, OrderStatusSerializer,
@@ -82,12 +81,13 @@ class OrderCreateView(APIView):
         s.is_valid(raise_exception=True)
         try:
             order = CheckoutService.create_order(
-                user       = request.user,
-                address_id = s.validated_data["address_id"],
-                coupon_code= s.validated_data.get("coupon_code"),
+                user               = request.user,
+                address_id         = s.validated_data["address_id"],
+                coupon_code        = s.validated_data.get("coupon_code"),
+                shipping_method_id = s.validated_data["shipping_method_id"],
             )
             return Response(OrderSerializer(order).data, status=status.HTTP_201_CREATED)
-        except ValueError as e:
+        except CheckoutError as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 

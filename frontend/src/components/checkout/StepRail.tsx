@@ -12,7 +12,7 @@ export function StepRail({ addressDone, shippingDone, paymentDone }: StepRailPro
     const steps = [
         { label: 'Address',  done: addressDone },
         { label: 'Shipping', done: shippingDone },
-        { label: 'Payment',  done: paymentDone },
+        { label: 'Contact',  done: paymentDone },
         { label: 'Review',   done: false },
     ]
     return (

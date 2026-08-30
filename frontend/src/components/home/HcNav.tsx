@@ -1,8 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import Link from 'next/link'
 import { Menu, X } from 'lucide-react'
+import { Logo } from '../layout/Logo'
 
 const LINKS = [
     { label: 'Flower', href: '#batch' },
@@ -19,13 +19,7 @@ export function HcNav() {
         <header className="sticky top-0 z-[100] border-b border-hc-paper/[0.08] bg-hc-canopy/[0.86] backdrop-blur-md">
             <div className="mx-auto max-w-[1180px] px-7">
                 <nav className="flex items-center justify-between py-4">
-                    <Link href="#top" className="flex items-center gap-2.5">
-                        <span
-                            className="h-[22px] w-[22px] rounded-full"
-                            style={{ background: 'radial-gradient(circle at 32% 28%, var(--color-hc-amber-light), var(--color-hc-amber) 60%, var(--color-hc-amber-dim))' }}
-                        />
-                        <span className="font-hc-display italic text-xl font-medium text-hc-paper">HappyCana</span>
-                    </Link>
+                    <Logo height={22} href="#top" />
 
                     <ul className="hidden md:flex items-center gap-8">
                         {LINKS.map(link => (

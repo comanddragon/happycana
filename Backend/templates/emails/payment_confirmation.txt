@@ -1,0 +1,14 @@
+{% extends "emails/base_email.txt" %}
+
+{% block content %}
+Payment received
+
+We've received your payment for order #{{ payment.order.id }}. Here's your receipt.
+
+Amount: {{ payment.amount }} {{ payment.currency }}
+Method: {{ payment.gateway|capfirst }}
+Transaction ID: {{ payment.gateway_ref }}
+Date: {{ payment.created_at|date:"M j, Y" }}
+
+View your order: {{ store_url }}/orders/{{ payment.order.id }}
+{% endblock %}

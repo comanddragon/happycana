@@ -17,6 +17,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     date_of_birth = models.DateField(null=True, blank=True)
     is_age_verified = models.BooleanField(default=False)
     age_verified_at = models.DateTimeField(null=True, blank=True)
+    is_guest = models.BooleanField(default=False)  # created for guest checkout/chat, no password
 
     USERNAME_FIELD  = "email"
     REQUIRED_FIELDS = []
@@ -47,4 +48,3 @@ class Address(models.Model):
 
     def __str__(self):
         return f"{self.line1}, {self.city} ({self.user.email})"
-

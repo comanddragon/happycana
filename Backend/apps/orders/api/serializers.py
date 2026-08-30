@@ -1,4 +1,3 @@
-
 # =============================================================================
 # apps/orders/api/serializers.py
 # =============================================================================
@@ -81,11 +80,18 @@ class OrderCreateSerializer(serializers.Serializer):
     """
     address_id = serializers.UUIDField()
     coupon_code= serializers.CharField(required=False, allow_blank=True)
+    shipping_method_id = serializers.UUIDField()
 
     def validate_address_id(self, value):
         user = self.context["request"].user
         if not user.addresses.filter(id=value).exists():
             raise serializers.ValidationError("Address not found.")
+        return value
+
+    def validate_shipping_method_id(self, value):
+        from apps.shipping.models import ShippingMethod
+        if not ShippingMethod.objects.filter(id=value, is_active=True).exists():
+            raise serializers.ValidationError("Shipping method not found.")
         return value
 
 
@@ -94,4 +100,3 @@ class OrderStatusSerializer(serializers.ModelSerializer):
     class Meta:
         model  = Order
         fields = ["status"]
-

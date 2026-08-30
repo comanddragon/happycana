@@ -1,0 +1,12 @@
+{% extends "emails/base_email.txt" %}
+
+{% block content %}
+Welcome{% if user.first_name %}, {{ user.first_name }}{% endif %}!
+
+Your account is set up and ready to go. Browse the catalog, save items to your
+cart, and check out whenever you're ready.
+
+Start shopping: {{ store_url }}
+
+Need help getting started? Reach us at {{ support_email }}.
+{% endblock %}

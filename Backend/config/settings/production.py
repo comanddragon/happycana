@@ -68,14 +68,8 @@ AWS_DEFAULT_ACL       = "private"
 AWS_S3_FILE_OVERWRITE = False
 
 # ---------------------------------------------------------------------------
-# Email — production SMTP (e.g. SendGrid, SES)
+# Email — sent via Resend (services/email.py); RESEND_API_KEY must be set.
 # ---------------------------------------------------------------------------
-EMAIL_BACKEND  = "django.core.mail.backends.smtp.EmailBackend"
-EMAIL_HOST     = os.environ["EMAIL_HOST"]
-EMAIL_PORT     = int(os.environ.get("EMAIL_PORT", 587))
-EMAIL_USE_TLS  = True
-EMAIL_HOST_USER     = os.environ["EMAIL_HOST_USER"]
-EMAIL_HOST_PASSWORD = os.environ["EMAIL_HOST_PASSWORD"]
 
 # ---------------------------------------------------------------------------
 # Sentry — error tracking

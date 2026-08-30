@@ -36,6 +36,7 @@ python-slugify
 phonenumbers           # Phone number parsing & validation
 
 stripe
+resend
 requests
 
 twisted[tls,http2]

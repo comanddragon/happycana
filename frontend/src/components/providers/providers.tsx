@@ -31,7 +31,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
         <QueryClientProvider client={queryClient}>
             {children}
             <Toaster
-                position="bottom-right"
+                position="bottom-left"
                 richColors
                 toastOptions={{
                     style: { borderRadius: '12px', fontSize: '14px' },

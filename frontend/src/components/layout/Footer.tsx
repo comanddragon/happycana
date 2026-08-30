@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { Logo } from './Logo'
 
 const COLUMNS: Record<string, { label: string; href: string }[]> = {
   Shop: [
@@ -15,7 +16,7 @@ const COLUMNS: Record<string, { label: string; href: string }[]> = {
   Support: [
     { label: 'Contact', href: '/help/faq' },
     { label: 'FAQ', href: '/help/faq' },
-    { label: 'Track an order', href: '/account/orders' },
+    { label: 'Track an order', href: 'https://shipradarx.com/' },
   ],
 }
 
@@ -26,13 +27,7 @@ export function Footer() {
         <div className="grid grid-cols-2 gap-8 border-b border-hc-paper/10 pb-11 md:grid-cols-[1.4fr_1fr_1fr_1fr]">
           {/* Brand */}
           <div>
-            <Link href="/shop" className="flex items-center gap-2.5">
-              <span
-                className="h-[22px] w-[22px] rounded-full"
-                style={{ background: 'radial-gradient(circle at 32% 28%, var(--color-hc-amber-light), var(--color-hc-amber) 60%, var(--color-hc-amber-dim))' }}
-              />
-              <span className="font-hc-display italic text-xl font-medium text-hc-paper">HappyCana</span>
-            </Link>
+            <Logo height={22} href="/shop" />
             <p className="mt-4 max-w-[260px] text-[13.5px] leading-relaxed text-hc-sage-dim">
               A licensed cannabis retailer offering same-day pickup and delivery, with every batch independently lab-tested.
             </p>

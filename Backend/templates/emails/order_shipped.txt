@@ -1,0 +1,14 @@
+{% extends "emails/base_email.txt" %}
+
+{% block content %}
+On its way
+
+Order #{{ order.id }} has shipped{% if shipment.shipped_at %} on {{ shipment.shipped_at|date:"M j, Y" }}{% endif %}.
+{% if shipment.tracking_number %}
+Carrier: {{ shipment.provider|upper }}
+Tracking number: {{ shipment.tracking_number }}
+{% endif %}
+Track your order: {{ store_url }}/orders/{{ order.id }}
+
+Questions about your shipment? Reach us at {{ support_email }}.
+{% endblock %}

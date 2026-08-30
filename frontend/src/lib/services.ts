@@ -38,6 +38,13 @@ export const authService = {
         await api.post('/auth/logout/', { refresh })
         clearTokens()
     },
+
+    /** Passwordless guest identity — used for guest checkout and guest chat. */
+    async guestSession(email?: string): Promise<RegisterResponse> {
+        const { data } = await api.post<RegisterResponse>('/auth/guest/', email ? { email } : {})
+        setTokens(data.access, data.refresh)
+        return data
+    },
 }
 
 // ─── Users ────────────────────────────────────────────────────────────────────
@@ -176,7 +183,9 @@ export const orderService = {
 
 export const checkoutService = {
     async checkout(payload: CheckoutPayload): Promise<CheckoutResult> {
-        const { data } = await api.post<CheckoutResult>('/checkout/', payload)
+        // NOTE: the real endpoint is /orders/checkout/ (OrderCreateView) —
+        // /checkout/ doesn't exist and this call has never actually worked.
+        const { data } = await api.post<CheckoutResult>('/orders/checkout/', payload)
         return data
     },
 

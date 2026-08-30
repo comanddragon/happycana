@@ -1,0 +1,25 @@
+{% extends "emails/base_email.html" %}
+
+{% block title %}Refund Processed{% endblock %}
+{% block preheader %}Your refund of ${{ refund.amount }} has been processed.{% endblock %}
+
+{% block content %}
+<h1 style="margin:0 0 16px;font-family:Georgia,'Times New Roman',serif;font-size:34px;line-height:40px;
+           font-weight:400;color:#141413;">
+  Refund processed
+</h1>
+<p style="margin:0 0 32px;font-size:16px;line-height:24px;color:#141413;">
+  We've processed a refund of <strong>${{ refund.amount }}</strong> for order
+  <strong>#{{ refund.payment.order.id }}</strong>. It should appear on your original
+  payment method within a few business days, depending on your bank.
+</p>
+
+<div class="btn" style="margin-bottom:32px;">
+  <a href="{{ store_url }}/orders/{{ refund.payment.order.id }}">View Order</a>
+</div>
+
+<p style="margin:0;font-size:14px;line-height:20px;color:#6E6C66;">
+  Questions about this refund? Reach us at
+  <a href="mailto:{{ support_email }}" style="color:#141413;text-decoration:underline;">{{ support_email }}</a>.
+</p>
+{% endblock %}

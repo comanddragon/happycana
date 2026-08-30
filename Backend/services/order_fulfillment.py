@@ -83,6 +83,7 @@ class FulfillmentService:
         order.save(update_fields=["status"])
 
         SMSService.send_delivery_confirmation(order)
+        EmailService.send_order_delivered(order)
         Notification.objects.create(
             user  = order.user,
             type  = Notification.Type.ORDER,

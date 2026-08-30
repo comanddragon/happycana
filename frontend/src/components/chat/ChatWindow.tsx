@@ -124,7 +124,15 @@ const MessageBubble = memo(function MessageBubble({
 
 // ─── Connection status pill ───────────────────────────────────────────────────
 
-function ConnectionPill({ connected }: { connected: boolean }) {
+function ConnectionPill({ connected, authError }: { connected: boolean; authError: boolean }) {
+    if (authError) {
+        return (
+            <span className="flex items-center gap-1.5 text-[10px] font-mono px-2 py-1 rounded-full text-red-600 bg-red-50">
+                <span className="h-1.5 w-1.5 rounded-full bg-red-500" />
+                Disconnected
+            </span>
+        )
+    }
     return (
         <span className={cn(
             'flex items-center gap-1.5 text-[10px] font-mono px-2 py-1 rounded-full',
@@ -153,7 +161,7 @@ export function ChatWindow({ room, onBack, onRoomUpdate }: ChatWindowProps) {
     const scrollViewportRef = useRef<HTMLDivElement>(null)
     const textareaRef       = useRef<HTMLTextAreaElement>(null)
 
-    const { messages, typers, connected, sendMessage, sendTyping, markRead } =
+    const { messages, typers, connected, authError, sendMessage, sendTyping, markRead } =
         useChatRoomWS(room.id)
 
     const resolveRoom = useResolveRoom()
@@ -272,7 +280,7 @@ export function ChatWindow({ room, onBack, onRoomUpdate }: ChatWindowProps) {
               <span className="text-sm font-semibold text-surface-900 leading-tight">
                 {customerName}
               </span>
-                            <ConnectionPill connected={connected} />
+                            <ConnectionPill connected={connected} authError={authError} />
                         </div>
                         {room.subject && (
                             <p className="text-xs text-surface-500 truncate max-w-[200px] sm:max-w-xs leading-snug">
@@ -343,7 +351,13 @@ export function ChatWindow({ room, onBack, onRoomUpdate }: ChatWindowProps) {
 
             {/* ── Input bar ───────────────────────────────────────────────────── */}
             <div className="px-4 py-3 border-t border-border shrink-0 bg-white">
-                {isClosed ? (
+                {authError ? (
+                    <div className="flex items-center justify-center gap-2 py-2.5 rounded-xl bg-red-50 border border-red-100">
+                        <span className="text-sm text-red-600">
+                            Connection lost. <button onClick={() => window.location.reload()} className="font-medium underline underline-offset-2">Refresh</button> to reconnect.
+                        </span>
+                    </div>
+                ) : isClosed ? (
                     <div className="flex items-center justify-center gap-2 py-2.5 rounded-xl bg-surface-50 border border-border">
                         <CheckCircle2 className="h-4 w-4 text-emerald-500" />
                         <span className="text-sm text-surface-500">

@@ -5,8 +5,10 @@ import './globals.css'
 import { Providers } from '@/components/providers/providers'
 import {AgeGate} from "@/components/home/AgeGate";
 import {CartDrawer} from "@/components/shop/CartDrawer";
+// import {FloatingChatButton} from '@/components/chat/FloatingChatButton'
 import React from "react";
 import {SiteShell} from "@/components/layout/SiteShell";
+import Script from 'next/script'
 
 // next/font/google self-hosts these at build time (no runtime request to
 // fonts.googleapis.com, no render-blocking <link>, no layout shift) and
@@ -45,6 +47,10 @@ export const metadata: Metadata = {
         siteName: 'HappyCana',
     },
     robots: { index: true, follow: true },
+    icons: {
+        icon: '/favicon.ico',
+        apple: '/apple-touch-icon.png',
+    },
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -58,8 +64,27 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Providers>
             <AgeGate />
             <CartDrawer />
+            {/*<FloatingChatButton />*/}
             <SiteShell>{children}</SiteShell>
         </Providers>
+        <Script id="smartsupp-widget" strategy="lazyOnload">
+            {`
+            var _smartsupp = _smartsupp || {};
+            _smartsupp.key = '${process.env.NEXT_PUBLIC_SMARTSUPP_KEY}';
+            window.smartsupp || (function (d) {
+              var s, c, o = smartsupp = function () { o._.push(arguments) };
+              o._ = [];
+              s = d.getElementsByTagName('script')[0];
+              c = d.createElement('script');
+              c.type = 'text/javascript';
+              c.charset = 'utf-8';
+              c.async = true;
+              c.src = 'https://www.smartsuppchat.com/loader.js?';
+              s.parentNode.insertBefore(c, s);
+            })(document);
+          `}
+        </Script>
+        <noscript>Powered by <a href="https://www.smartsupp.com" target="_blank">Smartsupp</a></noscript>
         </body>
         </html>
     )

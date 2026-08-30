@@ -18,6 +18,7 @@ export interface User {
     phone: string
     is_active: boolean
     is_staff: boolean
+    is_guest: boolean
     created_at: string
     updated_at: string
 }
@@ -422,17 +423,15 @@ export interface ApiError {
 
 export interface CheckoutPayload {
     address_id: string
+    shipping_method_id: string
     coupon_code?: string
-    gateway: PaymentGateway
-    cart_items: { variant: string; quantity: number }[]
 }
 
-export interface CheckoutResult {
-    order: Order
-    payment_url?: string        // PayPal approval URL
-    client_secret?: string      // Stripe payment intent
-    payment_intent_id?: string
-}
+// The endpoint (OrderCreateView) returns the created Order directly — there's
+// no separate payment step today (payments are decoupled; InitiatePaymentView
+// is a distinct call the checkout flow never reaches). Keeping this as its
+// own type in case a real payment step gets wired back in later.
+export type CheckoutResult = Order
 
 // types/chat.ts
 // Mirrors apps/chat/models.py and serializers exactly

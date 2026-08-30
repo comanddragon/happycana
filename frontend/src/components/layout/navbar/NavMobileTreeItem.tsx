@@ -8,11 +8,11 @@ import type { MenuNode } from '@/components/layout/navbar/NavFlyoutItem'
 export function NavMobileTreeItem({
     node,
     depth = 0,
-    onNavigate,
+    onNavigateAction,
 }: {
     node: MenuNode
     depth?: number
-    onNavigate: () => void
+    onNavigateAction: () => void
 }) {
     const [open, setOpen] = useState(false)
     const hasChildren = !!node.children?.length
@@ -21,7 +21,7 @@ export function NavMobileTreeItem({
         return (
             <Link
                 href={node.href ?? '#'}
-                onClick={onNavigate}
+                onClick={onNavigateAction}
                 className="block rounded-lg px-3 py-2 text-sm text-hc-sage transition-colors hover:bg-hc-paper/5 hover:text-hc-paper"
             >
                 {node.label}
@@ -36,7 +36,7 @@ export function NavMobileTreeItem({
                 className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm text-hc-sage transition-colors hover:bg-hc-paper/5 hover:text-hc-paper"
             >
                 {node.href ? (
-                    <Link href={node.href} onClick={onNavigate} className="flex-1 text-left">
+                    <Link href={node.href} onClick={onNavigateAction} className="flex-1 text-left">
                         {node.label}
                     </Link>
                 ) : (
@@ -52,7 +52,7 @@ export function NavMobileTreeItem({
                             key={`${child.label}-${child.href ?? i}`}
                             node={child}
                             depth={depth + 1}
-                            onNavigate={onNavigate}
+                            onNavigateAction={onNavigateAction}
                         />
                     ))}
                 </div>

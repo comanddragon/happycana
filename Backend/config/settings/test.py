@@ -26,6 +26,6 @@ CHANNEL_LAYERS = {
 # Faster password hashing in tests
 PASSWORD_HASHERS = ["django.contrib.auth.hashers.MD5PasswordHasher"]
 
-EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
+RESEND_API_KEY = "test-key"  # tests must mock resend.Emails.send — real calls will fail/hang
 
 

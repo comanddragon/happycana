@@ -10,6 +10,7 @@ import {
 import { useCartStore } from '@/store/cart'
 import { useAuthStore } from '@/store/auth'
 import { extractErrorMessage } from '@/lib/api'
+import { ensureGuestSession } from '@/lib/guestSession'
 import type {
     ProductFilterParams,
 } from '@/types'
@@ -110,13 +111,15 @@ export function useCart() {
 
 export function useAddToCart() {
     const qc = useQueryClient()
-    const openCart = useCartStore(s => s.openCart)
     return useMutation({
-        mutationFn: ({ variant, quantity }: { variant: string; quantity: number }) =>
-            cartService.addItem(variant, quantity),
+        mutationFn: async ({ variant, quantity }: { variant: string; quantity: number }) => {
+            // Cart endpoints require auth — bootstrap a guest session first
+            // if this visitor doesn't have one yet. No-op once they do.
+            await ensureGuestSession()
+            return cartService.addItem(variant, quantity)
+        },
         onSuccess: () => {
             qc.invalidateQueries({ queryKey: qk.cart() })
-            openCart()
             toast.success('Added to cart')
         },
         onError: (e) => toast.error(extractErrorMessage(e)),

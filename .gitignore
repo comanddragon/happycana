@@ -4,10 +4,9 @@ __pycache__/
 .env
 *.sqlite3
 /Backend/staticfiles/
-/Backend/media/
-/Backend/output/
-/Backend/clean_data/
-/Backend/scripts/
+/Backend/.output/
+/Backend/.clean_data/
+/Backend/.scripts/
 node_modules/
 .next/
 frontend/.env
