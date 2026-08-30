@@ -13,6 +13,8 @@ class CategorySerializer(serializers.ModelSerializer):
         model  = Category
         fields = ["id", "parent", "name", "slug", "description", "image", "image_url", "is_active", "children"]
         read_only_fields = ["id"]
+        extra_kwargs = {"image": {"write_only": True}}
+
 
     def get_children(self, obj):
         qs = obj.children.filter(is_active=True)

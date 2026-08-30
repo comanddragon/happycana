@@ -6,25 +6,12 @@ import { CategoryGrid } from '@/components/shop/CategoryGrid'
 import { BrandStrip } from '@/components/shop/BrandStrip'
 import { Reveal } from '@/components/home/Reveal'
 import { CtaBand } from '@/components/home/CtaBand'
-import { Category, Product, Effect } from "@/types"
+import { Product, Effect } from "@/types"
 import type { Metadata } from "next"
-
-async function getCategories(): Promise<Category[]> {
-    try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/catalog/categories/`, {
-            next: { revalidate: 3600 }
-        })
-        if (!res.ok) return []
-        const data = await res.json()
-        return Array.isArray(data) ? data : (data?.results ?? [])
-    } catch {
-        return []
-    }
-}
 
 async function getProducts(query: string): Promise<{ results: Product[] }> {
     try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/catalog/products/?${query}`, {
+        const res = await fetch(`${process.env.API_URL}/catalog/products/?${query}`, {
             next: { revalidate: 3600 }
         })
         if (!res.ok) return { results: [] }
@@ -40,7 +27,7 @@ const getBestSellers  = () => getProducts('ordering=-units_sold_hint&page_size=4
 
 async function getEffects(): Promise<Effect[]> {
     try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/catalog/effects/`, {
+        const res = await fetch(`${process.env.API_URL}/catalog/effects/`, {
             next: { revalidate: 3600 }
         })
         if (!res.ok) return []
@@ -50,6 +37,8 @@ async function getEffects(): Promise<Effect[]> {
         return []
     }
 }
+
+export const dynamic = 'force-dynamic'
 
 export const metadata: Metadata = {
     title: 'Shop the Menu | HappyCana',
@@ -61,8 +50,7 @@ export const metadata: Metadata = {
 }
 
 export default async function ShopPage() {
-    const [categories, newArrivals, bestSellers, effects] = await Promise.all([
-        getCategories(),
+    const [newArrivals, bestSellers, effects] = await Promise.all([
         getNewArrivals(),
         getBestSellers(),
         getEffects(),
@@ -95,44 +83,12 @@ export default async function ShopPage() {
 
                 {/* Category grid */}
                 <Reveal>
+                    <div className="mb-7 inline-flex items-center gap-2 font-hc-mono text-xs uppercase tracking-[0.12em] text-hc-sage-dim before:h-px before:w-3.5 before:bg-current before:opacity-50">
+                        Categories
+                    </div>
+                    <h2 className="font-hc-display text-2xl font-medium text-hc-ink mb-6">Categories</h2>
                     <CategoryGrid />
                 </Reveal>
-
-                {/* All categories list with subcategories */}
-                {categories.length > 0 && (
-                    <Reveal>
-                        <div className="mb-7 inline-flex items-center gap-2 font-hc-mono text-xs uppercase tracking-[0.12em] text-hc-sage-dim before:h-px before:w-3.5 before:bg-current before:opacity-50">
-                            Browse
-                        </div>
-                        <h2 className="font-hc-display text-2xl font-medium text-hc-ink mb-6">All Departments</h2>
-                        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {categories.map((cat: Category) => (
-                                <div key={cat.id} className="rounded-2xl border border-hc-ink/[0.08] bg-white p-5 transition-colors hover:border-hc-amber">
-                                    <Link
-                                        href={`/shop/products?category=${cat.slug}`}
-                                        className="group flex items-center justify-between font-hc-display text-lg font-medium text-hc-ink transition-colors hover:text-hc-amber-dim"
-                                    >
-                                        {cat.name}
-                                        <ArrowRight className="h-4 w-4 text-hc-ink-soft transition-colors group-hover:text-hc-amber-dim" />
-                                    </Link>
-                                    {cat.children && cat.children.length > 0 && (
-                                        <div className="mt-3 flex flex-wrap gap-2">
-                                            {cat.children.map(child => (
-                                                <Link
-                                                    key={child.id}
-                                                    href={`/shop/products?category=${child.slug}`}
-                                                    className="rounded-full bg-hc-paper-2 px-2.5 py-1 font-hc-mono text-[11px] text-hc-ink-soft transition-colors hover:bg-hc-amber-light/20 hover:text-hc-amber-dim"
-                                                >
-                                                    {child.name}
-                                                </Link>
-                                            ))}
-                                        </div>
-                                    )}
-                                </div>
-                            ))}
-                        </div>
-                    </Reveal>
-                )}
 
                 {/* Shop by effect */}
                 {effects.length > 0 && (

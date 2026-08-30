@@ -7,6 +7,7 @@ import { toast } from 'sonner'
 import Cookies from 'js-cookie'
 import { extractErrorMessage } from '@/lib/api'
 import { chatService } from '@/lib/services'
+import { getWsBase } from '@/hooks/useWebSocket'
 import type { WSChatMessage } from '@/types'
 
 // ─── Query keys ───────────────────────────────────────────────────────────────
@@ -66,7 +67,7 @@ export function useResolveRoom() {
 
 // ─── WebSocket hook ───────────────────────────────────────────────────────────
 
-const WS_BASE = process.env.NEXT_PUBLIC_WS_URL
+const WS_BASE = getWsBase()
 
 function getToken() {
     return Cookies.get('access_token') ?? null

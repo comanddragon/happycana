@@ -10,10 +10,12 @@ export function Logo({
     variant = 'dark-bg',
     height = 28,
     href = '/',
+    priority = false,
 }: {
     variant?: keyof typeof VARIANTS
     height?: number
     href?: string
+    priority?: boolean
 }) {
     const { src, aspect } = VARIANTS[variant]
     return (
@@ -23,7 +25,7 @@ export function Logo({
                 alt="HappyCana"
                 height={height}
                 width={Math.round(height * aspect)}
-                priority
+                priority={priority}
             />
         </Link>
     )

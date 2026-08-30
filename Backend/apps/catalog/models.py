@@ -57,11 +57,6 @@ class VideoMixin(models.Model):
         return self.external_url
 
 class Brand(models.Model):
-    """
-    NEW MODEL. 176 distinct brands found in the scraped catalog, several
-    with their own logo/description/website. Currently Product has no way
-    to reference a brand at all.
-    """
     id          = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name        = models.CharField(max_length=255, unique=True)
     slug        = models.SlugField(max_length=255, unique=True)
@@ -106,6 +101,15 @@ class Category(UUIDModel):
     class Meta:
         db_table            = "categories"
         verbose_name_plural = "categories"
+
+    def save(self, *args, **kwargs):
+        if self.image and self.image.name.startswith(("http://", "https://")):
+            raise ValueError(
+                f"Category.image must be an uploaded file, not a URL: {self.image.name!r}. "
+                "Download the image and assign it via ContentFile, e.g. "
+                "category.image.save(filename, ContentFile(response.content))."
+            )
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.name

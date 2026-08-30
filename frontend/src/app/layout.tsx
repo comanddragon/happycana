@@ -10,9 +10,6 @@ import React from "react";
 import {SiteShell} from "@/components/layout/SiteShell";
 import Script from 'next/script'
 
-// next/font/google self-hosts these at build time (no runtime request to
-// fonts.googleapis.com, no render-blocking <link>, no layout shift) and
-// exposes each family as a CSS variable we wire into Tailwind below.
 const fraunces = Fraunces({
     subsets: ['latin'],
     weight: ['300', '400', '500', '600', '700'],
@@ -36,7 +33,7 @@ const ibmPlexMono = IBM_Plex_Mono({
 })
 
 export const metadata: Metadata = {
-    metadataBase: new URL('https://yourstore.com'),
+    metadataBase: new URL(`${process.env.NEXT_PUBLIC_FRONTEND_URL}`),
     title: {
         default: 'HappyCana — Modern Dispensary',
         template: '%s | HappyCana',

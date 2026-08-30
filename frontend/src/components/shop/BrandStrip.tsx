@@ -3,7 +3,6 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { useBrands } from '@/hooks/useApi'
-import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area'
 import { mediaUrl } from '@/lib/utils'
 
 export function BrandStrip() {
@@ -22,12 +21,17 @@ export function BrandStrip() {
     const withLogos = (brands ?? []).filter(b => b.logo_url)
     if (withLogos.length === 0) return null
 
+    const duration = withLogos.length * 4
+
     return (
-        <ScrollArea className="w-full">
-            <div className="flex gap-3 pb-2">
-                {withLogos.map(brand => (
+        <div className="group/marquee w-full overflow-hidden [mask-image:linear-gradient(to_right,transparent,black_24px,black_calc(100%-24px),transparent)]">
+            <div
+                className="flex w-max gap-3 pb-2 group-hover/marquee:[animation-play-state:paused]"
+                style={{ animation: `hc-marquee ${duration}s linear infinite` }}
+            >
+                {[...withLogos, ...withLogos].map((brand, i) => (
                     <Link
-                        key={brand.id}
+                        key={`${brand.id}-${i}`}
                         href={`/shop/products?brand=${brand.slug}`}
                         className="group flex h-20 w-32 shrink-0 flex-col items-center justify-center gap-2 rounded-2xl border border-hc-ink/[0.08] bg-white px-3 transition-all duration-200 hover:-translate-y-1 hover:border-hc-amber hover:shadow-[0_16px_30px_-14px_rgba(23,20,15,0.25)]"
                     >
@@ -46,7 +50,6 @@ export function BrandStrip() {
                     </Link>
                 ))}
             </div>
-            <ScrollBar orientation="horizontal" />
-        </ScrollArea>
+        </div>
     )
 }

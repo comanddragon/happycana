@@ -6,15 +6,15 @@ export default async function sitemap() {
     const data = await res.json()
 
     const products = data.results.map((p: Product) => ({
-        url: `https://yourstore.com/shop/products/${p.slug}`,
+        url: `${process.env.NEXT_PUBLIC_FRONTEND_URL}/shop/products/${p.slug}`,
         lastModified: p.updated_at,
         changeFrequency: 'weekly',
         priority: 0.8,
     }))
 
     return [
-        { url: 'https://yourstore.com', priority: 1 },
-        { url: 'https://yourstore.com/shop', priority: 0.9 },
+        { url: `${process.env.NEXT_PUBLIC_FRONTEND_URL}`, priority: 1 },
+        { url: `${process.env.NEXT_PUBLIC_FRONTEND_URL}/shop`, priority: 0.9 },
         ...products,
     ]
 }

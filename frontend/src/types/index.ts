@@ -59,6 +59,7 @@ export interface Category {
     name: string
     slug: string
     description: string
+    image: string
     image_url: string
     is_active: boolean
     children?: Category[]

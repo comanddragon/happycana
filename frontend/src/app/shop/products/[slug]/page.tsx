@@ -12,7 +12,7 @@ interface PageProps {
 // ── Data fetching ──────────────────────────────────────────────────────────
 
 async function getProduct(slug: string) {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/catalog/products/${slug}/`, {
+    const res = await fetch(`${process.env.API_URL}/catalog/products/${slug}/`, {
         next: { revalidate: 60 },
     })
     if (res.status === 404) notFound()

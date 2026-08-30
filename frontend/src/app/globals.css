@@ -153,3 +153,8 @@
     0%, 100% { transform: rotate(-3deg) translateY(0); }
     50%      { transform: rotate(-3deg) translateY(-10px); }
 }
+
+@keyframes hc-marquee {
+    from { transform: translateX(0); }
+    to   { transform: translateX(-50%); }
+}

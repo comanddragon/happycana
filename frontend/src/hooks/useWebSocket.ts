@@ -27,7 +27,14 @@ type WSMessage = {
 
 // ─── Shared helpers ───────────────────────────────────────────────────────────
 
-const WS_BASE = (process.env.NEXT_PUBLIC_WS_URL)
+export function getWsBase() {
+    if (process.env.NEXT_PUBLIC_WS_URL) return process.env.NEXT_PUBLIC_WS_URL
+    if (typeof window === 'undefined') return ''
+    const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+    return `${proto}//${window.location.hostname}:8000/ws`
+}
+
+const WS_BASE = getWsBase()
 
 function getToken() {
     return Cookies.get('access_token') ?? null

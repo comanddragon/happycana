@@ -1,0 +1,31 @@
+{
+  "total_products": 1689,
+  "total_brands": 175,
+  "products_by_compliance_category": {
+    "edibles": 190,
+    "flower": 345,
+    "accessories": 432,
+    "vaporizers": 346,
+    "merchandise": 28,
+    "concentrates": 61,
+    "pre_rolls": 249,
+    "tinctures": 17,
+    "beverages": 18,
+    "topicals": 3
+  },
+  "duplicate_slugs": {},
+  "duplicate_skus_found_and_reset": {
+    "810139762645": 2,
+    "vbcfl042825": 2,
+    "794677768881": 2,
+    "LCG-IN-08": 2
+  },
+  "missing_brand": 6,
+  "missing_images": 0,
+  "missing_price": 0,
+  "missing_description": 43,
+  "missing_sku": 885,
+  "invalid_sku_dropped": 70,
+  "unknown_compliance_category": {},
+  "unknown_cannabis_type": {}
+}

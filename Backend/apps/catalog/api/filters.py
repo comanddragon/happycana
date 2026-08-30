@@ -70,9 +70,10 @@ class ProductFilter(django_filters.FilterSet):
     # -- Ordering --
     ordering = django_filters.OrderingFilter(
         fields=(
-            ("base_price",  "base_price"),
-            ("created_at",  "created_at"),
-            ("name",        "name"),
+            ("base_price",       "base_price"),
+            ("created_at",       "created_at"),
+            ("name",             "name"),
+            ("units_sold_hint",  "units_sold_hint"),
         ),
         label="Sort results",
     )

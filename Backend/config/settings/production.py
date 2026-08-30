@@ -1,7 +1,8 @@
-
 # =============================================================================
 # config/settings/production.py
 # =============================================================================
+from urllib.parse import urlparse, parse_qsl
+
 from .base import *  # noqa
 
 DEBUG = False
@@ -11,29 +12,38 @@ ALLOWED_HOSTS = os.environ["ALLOWED_HOSTS"].split(",")
 # ---------------------------------------------------------------------------
 # Database — Postgres with connection pooling
 # ---------------------------------------------------------------------------
-tmpPostgres = urlparse(os.getenv("DATABASE_URL"))
+tmpPostgres = urlparse(os.environ["DATABASE_URL"])
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': tmpPostgres.path.replace('/', ''),
-        'USER': tmpPostgres.username,
-        'PASSWORD': tmpPostgres.password,
-        'HOST': tmpPostgres.hostname,
-        'PORT': 5432,
-        'OPTIONS': dict(parse_qsl(tmpPostgres.query)),
+    "default": {
+        "ENGINE":   "django.db.backends.postgresql",
+        "NAME":     tmpPostgres.path.lstrip("/"),
+        "USER":     tmpPostgres.username,
+        "PASSWORD": tmpPostgres.password,
+        "HOST":     tmpPostgres.hostname,
+        "PORT":     tmpPostgres.port or 5432,
+        "CONN_MAX_AGE": 60,
+        "DISABLE_SERVER_SIDE_CURSORS": True,
+        "OPTIONS": {
+            "connect_timeout": 10,
+            "isolation_level": 2,  # psycopg2.extensions.ISOLATION_LEVEL_READ_COMMITTED
+            **dict(parse_qsl(tmpPostgres.query)),
+        },
     }
 }
 
 # ---------------------------------------------------------------------------
 # Security hardening
 # ---------------------------------------------------------------------------
-SECURE_SSL_REDIRECT            = True
+def _env_bool(name, default):
+    return os.environ.get(name, str(default)).lower() in ("true", "1", "yes")
+
+SECURE_SSL_REDIRECT            = _env_bool("SECURE_SSL_REDIRECT", True)
 SECURE_HSTS_SECONDS            = 31536000
 SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 SECURE_HSTS_PRELOAD            = True
-SESSION_COOKIE_SECURE          = True
-CSRF_COOKIE_SECURE             = True
+SESSION_COOKIE_SECURE          = _env_bool("SESSION_COOKIE_SECURE", True)
+CSRF_COOKIE_SECURE             = _env_bool("CSRF_COOKIE_SECURE", True)
 SECURE_BROWSER_XSS_FILTER      = True
 SECURE_CONTENT_TYPE_NOSNIFF    = True
 X_FRAME_OPTIONS                = "DENY"
@@ -79,7 +89,7 @@ sentry_sdk.init(
     dsn=os.environ["SENTRY_DSN"],
     integrations=[DjangoIntegration()],
     traces_sample_rate=0.2,
-    send_default_pii=False,
+    send_default_pii=True,
 )
 
 # ---------------------------------------------------------------------------
@@ -87,7 +97,7 @@ sentry_sdk.init(
 # ---------------------------------------------------------------------------
 LOGGING = {
     "version": 1,
-    "disable_existing_loggers": False,
+    "disable_existing_loggers": True,
     "formatters": {
         "json": {
             "()": "pythonjsonlogger.jsonlogger.JsonFormatter",
