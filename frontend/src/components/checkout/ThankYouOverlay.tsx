@@ -40,7 +40,7 @@ export function ThankYouOverlay({ orderId, onContinue }: ThankYouOverlayProps) {
                     has landed safely with us. We&apos;ll be in touch <em>very</em> soon to confirm the details
                     and sort out payment — sit tight, good things are on the way!
                 </p>
-                <p className="mt-2 text-xs text-hc-ink-soft">
+                <p className="mt-2 text-xs text-red-600">
                     Copy your order number and paste in the chat at the bottom right of your screen
                 </p>
                 <div className="relative inline-block">
