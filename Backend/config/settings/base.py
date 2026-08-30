@@ -2,10 +2,11 @@
 # config/settings/base.py
 # =============================================================================
 import os
-from pathlib import Path
 from datetime import timedelta
-from urllib.parse import urlparse
+from pathlib import Path
+
 from dotenv import load_dotenv
+
 load_dotenv()
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
@@ -185,15 +186,8 @@ ADMIN_NOTIFICATION_EMAIL = os.environ.get("ADMIN_NOTIFICATION_EMAIL", "")
 # Branding vars injected into every templates/emails/*.html render.
 STORE_NAME    = os.environ.get("STORE_NAME", "Our Store")
 FRONTEND_URL  = os.environ.get("FRONTEND_URL", "https://example.com")
-# The logo is a Django static file served by THIS backend, not the frontend
-# app — build its URL from the backend's own public domain. Set BACKEND_URL
-# in production to your real API domain (e.g. https://api.yourstore.com).
-# Falls back to localhost if BACKEND_URL is unset OR set to something with no
-# actual host (e.g. "http://" from a script that interpolated an empty var).
-_backend_url_env = os.environ.get("BACKEND_URL", "")
-BACKEND_URL = _backend_url_env if urlparse(_backend_url_env).netloc else "http://localhost:8000"
-STORE_LOGO_URL= os.environ.get(
-    "STORE_LOGO_URL", f"{BACKEND_URL}{STATIC_URL}branding/logo-lockup-light-bg.png"
-)
+
+BACKEND_URL = os.environ.get("BACKEND_URL", "")
+STORE_LOGO_URL= os.environ.get("STORE_LOGO_URL", "")
 SUPPORT_EMAIL = os.environ.get("SUPPORT_EMAIL", "support@example.com")
 STORE_ADDRESS = os.environ.get("STORE_ADDRESS", "")

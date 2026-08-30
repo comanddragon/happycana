@@ -11,19 +11,17 @@ ALLOWED_HOSTS = os.environ["ALLOWED_HOSTS"].split(",")
 # ---------------------------------------------------------------------------
 # Database — Postgres with connection pooling
 # ---------------------------------------------------------------------------
+tmpPostgres = urlparse(os.getenv("DATABASE_URL"))
+
 DATABASES = {
-    "default": {
-        "ENGINE":   "django.db.backends.postgresql",
-        "NAME":     os.environ["DB_NAME"],
-        "USER":     os.environ["DB_USER"],
-        "PASSWORD": os.environ["DB_PASSWORD"],
-        "HOST":     os.environ["DB_HOST"],
-        "PORT":     os.environ.get("DB_PORT", "5432"),
-        "CONN_MAX_AGE": 60,
-        "OPTIONS": {
-            "connect_timeout": 10,
-            "options":         "-c default_transaction_isolation=read committed",
-        },
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': tmpPostgres.path.replace('/', ''),
+        'USER': tmpPostgres.username,
+        'PASSWORD': tmpPostgres.password,
+        'HOST': tmpPostgres.hostname,
+        'PORT': 5432,
+        'OPTIONS': dict(parse_qsl(tmpPostgres.query)),
     }
 }
 
