@@ -14,7 +14,7 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from '@/components/ui/sheet'
 import { CANNABIS_TYPE_LABEL, THC_PRESETS } from '@/lib/utils'
-import type { CannabisType, PaginatedResponse } from '@/types'
+import type { CannabisType } from '@/types'
 
 const SORT_OPTIONS = [
     { label: 'Newest',      value: '-created_at' },
@@ -28,35 +28,6 @@ const ALL_CATEGORIES = '__all__'
 const ALL_BRANDS      = '__all__'
 const ALL_TYPES        = '__all__'
 const CANNABIS_TYPES: CannabisType[] = ['sativa', 'indica', 'hybrid', 'hybrid_sativa', 'hybrid_indica']
-
-interface PaginationProps {
-    data: Pick<PaginatedResponse<unknown>, 'count' | 'next' | 'previous'> | undefined
-    page: number
-    onPageChange: (page: number) => void
-    className?: string
-}
-
-function Pagination({ data, page, onPageChange, className = '' }: PaginationProps) {
-    if (!data || data.count <= 20) return null
-
-    return (
-        <div className={`flex items-center justify-center gap-2 z-100 ${className}`}>
-            {data.previous ? (
-                <Button variant="outline" size="sm" onClick={() => onPageChange(page - 1)}>
-                    Previous
-                </Button>
-            ) : null}
-            <span className="text-sm text-surface-500">
-        Page {page} of {Math.ceil(data.count / 20)}
-      </span>
-            {data.next ? (
-                <Button size="sm" onClick={() => onPageChange(page + 1)}>
-                    Next
-                </Button>
-            ) : null}
-        </div>
-    )
-}
 
 interface Props {
     initialCategory?: string
@@ -254,7 +225,23 @@ export function ProductsGrid({ initialCategory = '', initialOrdering = '-created
             )}
 
             {/* Pagination (top) */}
-            <Pagination data={data} page={page} onPageChange={p => setParam('page', String(p))} className="mb-12" />
+            {data && data.count > 20 ? (
+                <div className="flex items-center justify-center gap-2 mb-4 z-100">
+                    {data.previous ? (
+                        <Button variant="outline" size="sm" onClick={() => setParam('page', String(page - 1))}>
+                            Previous
+                        </Button>
+                    ) : null}
+                    <span className="text-sm text-surface-500">
+            Page {page} of {Math.ceil(data.count / 20)}
+          </span>
+                    {data.next ? (
+                        <Button size="sm" onClick={() => setParam('page', String(page + 1))}>
+                            Next
+                        </Button>
+                    ) : null}
+                </div>
+            ) : null}
 
             {/* Grid */}
             {isLoading ? (
@@ -285,7 +272,23 @@ export function ProductsGrid({ initialCategory = '', initialOrdering = '-created
             )}
 
             {/* Pagination (bottom) */}
-            <Pagination data={data} page={page} onPageChange={p => setParam('page', String(p))} className="mt-12" />
+            {data && data.count > 20 ? (
+                <div className="flex items-center justify-center gap-2 mt-12 z-100">
+                    {data.previous ? (
+                        <Button variant="outline" size="sm" onClick={() => setParam('page', String(page - 1))}>
+                            Previous
+                        </Button>
+                    ) : null}
+                    <span className="text-sm text-surface-500">
+            Page {page} of {Math.ceil(data.count / 20)}
+          </span>
+                    {data.next ? (
+                        <Button size="sm" onClick={() => setParam('page', String(page + 1))}>
+                            Next
+                        </Button>
+                    ) : null}
+                </div>
+            ) : null}
 
             {/* Advanced filters */}
             <Sheet open={filtersOpen} onOpenChange={setFiltersOpen}>

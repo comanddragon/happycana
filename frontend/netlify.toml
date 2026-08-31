@@ -1,0 +1,70 @@
+[images]
+remote_images = [
+  "^(?:https:\\/(?:\\/(?!\\.)(?:(?:(?!(?:^|\\/)\\.).)*?)|$))$",
+  "^(?:http:\\/\\/localhost:8000(?:\\/(?!\\.)(?:(?:(?!(?:^|\\/)\\.).)*?)|$))$",
+  "^(?:http:\\/\\/192\\.168\\.1\\.182:8000(?:\\/(?!\\.)(?:(?:(?!(?:^|\\/)\\.).)*?)|$))$"
+]
+
+[[headers]]
+for = "/_next/static/*"
+for = "/*"   
+  [headers.values]
+  Cache-Control = "public, max-age=31536000, immutable"
+  Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' https://*.smartsuppchat.com https://*.smartsuppcdn.com; style-src 'self' 'unsafe-inline' https://*.smartsuppcdn.com; img-src 'self' data: https: https://*.smartsuppcdn.com; font-src 'self' data: https://*.smartsuppcdn.com; media-src 'self' https://*.smartsuppcdn.com; connect-src 'self' https://happycana.onrender.com https://*.smartsupp.com wss://*.smartsupp.com https://*.smartsuppchat.com https://*.smartsuppcdn.com; frame-ancestors 'self'"
+
+[[redirects]]
+from = "/_next/image"
+to = "/.netlify/images?url=:url&w=:width&q=:quality"
+status = 200
+
+  [redirects.query]
+  url = ":url"
+  w = ":width"
+  q = ":quality"
+
+[[redirects]]
+from = "/_ipx/*"
+to = "/.netlify/images?url=:url&w=:width&q=:quality"
+status = 200
+
+  [redirects.query]
+  url = ":url"
+  w = ":width"
+  q = ":quality"
+
+[[redirects]]
+from = "/_next/image"
+to = "/.netlify/images"
+status = 200
+
+[context]
+
+  [context.production]
+
+    [context.production.images]
+    remote_images = [
+      "^(?:https:\\/(?:\\/(?!\\.)(?:(?:(?!(?:^|\\/)\\.).)*?)|$))$",
+      "^(?:http:\\/\\/localhost:8000(?:\\/(?!\\.)(?:(?:(?!(?:^|\\/)\\.).)*?)|$))$",
+      "^(?:http:\\/\\/192\\.168\\.1\\.182:8000(?:\\/(?!\\.)(?:(?:(?!(?:^|\\/)\\.).)*?)|$))$"
+    ]
+
+    [[context.production.headers]]
+    for = "/_next/static/*"
+
+      [context.production.headers.values]
+      Cache-Control = "public, max-age=31536000, immutable"
+
+  [context.main]
+
+    [context.main.images]
+    remote_images = [
+      "^(?:https:\\/(?:\\/(?!\\.)(?:(?:(?!(?:^|\\/)\\.).)*?)|$))$",
+      "^(?:http:\\/\\/localhost:8000(?:\\/(?!\\.)(?:(?:(?!(?:^|\\/)\\.).)*?)|$))$",
+      "^(?:http:\\/\\/192\\.168\\.1\\.182:8000(?:\\/(?!\\.)(?:(?:(?!(?:^|\\/)\\.).)*?)|$))$"
+    ]
+
+    [[context.main.headers]]
+    for = "/_next/static/*"
+
+      [context.main.headers.values]
+      Cache-Control = "public, max-age=31536000, immutable"
