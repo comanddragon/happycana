@@ -3,6 +3,7 @@
 # config/urls.py  — Root URL config
 # =============================================================================
 from django.contrib import admin
+from django.http import JsonResponse
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
@@ -13,7 +14,11 @@ admin.site.site_title  = settings.STORE_NAME
 
 API = "api/"
 
+def health(request):
+    return JsonResponse({"status": "ok"})
+
 urlpatterns = [
+    path("", health),
     path("admin/",     admin.site.urls),
 
     # API apps
