@@ -66,6 +66,7 @@ class Brand(models.Model):
     is_active   = models.BooleanField(default=True)
 
     class Meta:
+        ordering = ["name", "id"]
         db_table = "brands"
 
     def __str__(self):
@@ -81,6 +82,7 @@ class Effect(models.Model):
     slug = models.SlugField(max_length=50, unique=True)
 
     class Meta:
+        ordering = ["name", "id"]
         db_table = "effects"
 
     def __str__(self):
@@ -99,6 +101,7 @@ class Category(UUIDModel):
     objects = CategoryManager()
 
     class Meta:
+        ordering = ["name", "id"]
         db_table            = "categories"
         verbose_name_plural = "categories"
 
