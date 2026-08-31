@@ -43,7 +43,7 @@ export const ProductCard = memo(function ProductCard({ product, className, prior
     return (
         <div
             className={cn(
-                'group relative rounded-[22px] bg-gradient-to-b from-[#fbf7ee] to-hc-paper-2 p-3.5 pt-5 text-hc-ink shadow-[0_20px_40px_-24px_rgba(23,20,15,0.35)] transition-transform duration-300 hover:-translate-y-1.5 hover:rotate-[-0.6deg] hover:shadow-[0_28px_48px_-20px_rgba(23,20,15,0.32)]',
+                'group relative min-w-0 rounded-[22px] bg-gradient-to-b from-[#fbf7ee] to-hc-paper-2 p-3.5 pt-5 text-hc-ink shadow-[0_20px_40px_-24px_rgba(23,20,15,0.35)] transition-transform duration-300 hover:-translate-y-1.5 hover:rotate-[-0.6deg] hover:shadow-[0_28px_48px_-20px_rgba(23,20,15,0.32)]',
                 className,
             )}
         >
@@ -58,7 +58,6 @@ export const ProductCard = memo(function ProductCard({ product, className, prior
                                unoptimized
                                sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
                                priority={priority}
-                               loading="eager"
                                className="object-cover bg-white transition-transform duration-300 group-hover:scale-105" />
                     ) : (
                         <div className="h-full w-full flex items-center justify-center">
@@ -93,11 +92,11 @@ export const ProductCard = memo(function ProductCard({ product, className, prior
                 </div>
 
                 {stats.length > 0 && (
-                    <div className="mt-3 flex gap-4 font-hc-mono text-[11px] text-hc-ink-soft">
+                    <div className="mt-3 flex flex-col gap-1 sm:flex-row sm:gap-4 font-hc-mono text-[11px] text-hc-ink-soft">
                         {stats.map(stat => (
-                            <div key={stat.label}>
-                                <b className="block text-[14px] text-hc-ink">{stat.value}</b>
-                                {stat.label}
+                            <div key={stat.label} className="flex min-w-0 items-baseline gap-1 sm:block">
+                                <b className="truncate text-[14px] text-hc-ink sm:block">{stat.value}</b>
+                                <span>{stat.label}</span>
                             </div>
                         ))}
                     </div>
