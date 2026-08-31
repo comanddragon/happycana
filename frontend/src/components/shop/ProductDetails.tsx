@@ -291,7 +291,7 @@ export function ProductDetails({ product }: { product: Product }) {
                     {/* Perks */}
                     <div className="grid grid-cols-3 gap-3">
                         {[
-                            { icon: Truck,       text: 'Free shipping $75+' },
+                            { icon: Truck,       text: 'Free shipping $100+' },
                             { icon: RotateCcw,   text: '30-day returns'     },
                             { icon: ShieldCheck, text: 'Secure checkout'    },
                         ].map(({ icon: Icon, text }) => (
