@@ -58,6 +58,7 @@ export const ProductCard = memo(function ProductCard({ product, className, prior
                                unoptimized
                                sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
                                priority={priority}
+                               loading="eager"
                                className="object-cover bg-white transition-transform duration-300 group-hover:scale-105" />
                     ) : (
                         <div className="h-full w-full flex items-center justify-center">

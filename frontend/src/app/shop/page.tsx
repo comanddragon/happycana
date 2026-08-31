@@ -1,4 +1,5 @@
 // app/(shop)/shop/page.tsx  — NO 'use client'
+import { Suspense } from 'react'
 import Link from 'next/link'
 import { ArrowRight, Truck, RotateCcw, ShieldCheck, FlaskConical } from 'lucide-react'
 import { ProductCard } from '@/components/shop/ProductCard'
@@ -38,8 +39,6 @@ async function getEffects(): Promise<Effect[]> {
     }
 }
 
-export const dynamic = 'force-dynamic'
-
 export const metadata: Metadata = {
     title: 'Shop the Menu | HappyCana',
     description: 'Flower, edibles, vapes, and concentrates from small-batch growers, third-party tested and ready for same-day pickup or delivery.',
@@ -49,13 +48,111 @@ export const metadata: Metadata = {
     }
 }
 
-export default async function ShopPage() {
-    const [newArrivals, bestSellers, effects] = await Promise.all([
-        getNewArrivals(),
-        getBestSellers(),
-        getEffects(),
-    ])
+function SectionHeading({ eyebrow, title }: { eyebrow: string; title: string }) {
+    return (
+        <>
+            <div className="mb-7 inline-flex items-center gap-2 font-hc-mono text-xs uppercase tracking-[0.12em] text-hc-sage-dim before:h-px before:w-3.5 before:bg-current before:opacity-50">
+                {eyebrow}
+            </div>
+            <h2 className="font-hc-display text-2xl font-medium text-hc-ink mb-6">{title}</h2>
+        </>
+    )
+}
 
+function ProductGridSkeleton() {
+    return (
+        <div className="grid grid-cols-2 gap-x-5 gap-y-8 sm:grid-cols-4">
+            {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="aspect-[3/4] animate-pulse rounded-2xl bg-hc-paper-2" />
+            ))}
+        </div>
+    )
+}
+
+async function EffectsSection() {
+    const effects = await getEffects()
+    if (effects.length === 0) return null
+
+    return (
+        <Reveal>
+            <div className="mb-7 inline-flex items-center gap-2 font-hc-mono text-xs uppercase tracking-[0.12em] text-hc-sage-dim before:h-px before:w-3.5 before:bg-current before:opacity-50">
+                Mood &amp; effect
+            </div>
+            <h2 className="font-hc-display text-2xl font-medium text-hc-ink mb-6">Shop by Effect</h2>
+            <div className="flex flex-wrap gap-2.5">
+                {effects.map((effect: Effect) => (
+                    <Link
+                        key={effect.id}
+                        href={`/shop/products?effect=${effect.slug}`}
+                        className="rounded-full border border-hc-ink/[0.08] bg-white px-4.5 py-2.5 font-hc-mono text-xs uppercase tracking-wide text-hc-ink-soft transition-colors hover:border-hc-amber hover:bg-hc-amber-light/15 hover:text-hc-amber-dim"
+                    >
+                        {effect.name}
+                    </Link>
+                ))}
+            </div>
+        </Reveal>
+    )
+}
+
+async function BestSellersSection() {
+    const bestSellers = await getBestSellers()
+    if (bestSellers.results.length === 0) return null
+
+    return (
+        <Reveal>
+            <div className="flex items-end justify-between mb-7">
+                <div>
+                    <div className="mb-2 inline-flex items-center gap-2 font-hc-mono text-xs uppercase tracking-[0.12em] text-hc-sage-dim before:h-px before:w-3.5 before:bg-current before:opacity-50">
+                        Crowd favorites
+                    </div>
+                    <h2 className="font-hc-display text-2xl font-medium text-hc-ink">Best Sellers</h2>
+                </div>
+                <Link
+                    href="/shop/products?ordering=-units_sold_hint"
+                    className="inline-flex items-center gap-1.5 font-hc-mono text-xs uppercase tracking-wide text-hc-amber-dim hover:text-hc-amber transition-colors"
+                >
+                    See all <ArrowRight className="h-3.5 w-3.5" />
+                </Link>
+            </div>
+            <div className="grid grid-cols-2 gap-x-5 gap-y-8 sm:grid-cols-4">
+                {bestSellers.results.map((product: Product) => (
+                    <ProductCard key={product.id} product={product} />
+                ))}
+            </div>
+        </Reveal>
+    )
+}
+
+async function NewArrivalsSection() {
+    const newArrivals = await getNewArrivals()
+    if (newArrivals.results.length === 0) return null
+
+    return (
+        <Reveal>
+            <div className="flex items-end justify-between mb-7">
+                <div>
+                    <div className="mb-2 inline-flex items-center gap-2 font-hc-mono text-xs uppercase tracking-[0.12em] text-hc-sage-dim before:h-px before:w-3.5 before:bg-current before:opacity-50">
+                        Fresh batch
+                    </div>
+                    <h2 className="font-hc-display text-2xl font-medium text-hc-ink">New Arrivals</h2>
+                </div>
+                <Link
+                    href="/shop/products?ordering=-created_at"
+                    className="inline-flex items-center gap-1.5 font-hc-mono text-xs uppercase tracking-wide text-hc-amber-dim hover:text-hc-amber transition-colors"
+                >
+                    See all <ArrowRight className="h-3.5 w-3.5" />
+                </Link>
+            </div>
+            <div className="grid grid-cols-2 gap-x-5 gap-y-8 sm:grid-cols-4">
+                {newArrivals.results.map((product: Product) => (
+                    <ProductCard key={product.id} product={product} />
+                ))}
+            </div>
+        </Reveal>
+    )
+}
+
+export default function ShopPage() {
     return (
         <div className="bg-hc-paper">
 
@@ -83,92 +180,30 @@ export default async function ShopPage() {
 
                 {/* Category grid */}
                 <Reveal>
-                    <div className="mb-7 inline-flex items-center gap-2 font-hc-mono text-xs uppercase tracking-[0.12em] text-hc-sage-dim before:h-px before:w-3.5 before:bg-current before:opacity-50">
-                        Categories
-                    </div>
-                    <h2 className="font-hc-display text-2xl font-medium text-hc-ink mb-6">Categories</h2>
+                    <SectionHeading eyebrow="Categories" title="Select a Category" />
                     <CategoryGrid />
                 </Reveal>
 
                 {/* Shop by effect */}
-                {effects.length > 0 && (
-                    <Reveal>
-                        <div className="mb-7 inline-flex items-center gap-2 font-hc-mono text-xs uppercase tracking-[0.12em] text-hc-sage-dim before:h-px before:w-3.5 before:bg-current before:opacity-50">
-                            Mood &amp; effect
-                        </div>
-                        <h2 className="font-hc-display text-2xl font-medium text-hc-ink mb-6">Shop by Effect</h2>
-                        <div className="flex flex-wrap gap-2.5">
-                            {effects.map((effect: Effect) => (
-                                <Link
-                                    key={effect.id}
-                                    href={`/shop/products?effect=${effect.slug}`}
-                                    className="rounded-full border border-hc-ink/[0.08] bg-white px-4.5 py-2.5 font-hc-mono text-xs uppercase tracking-wide text-hc-ink-soft transition-colors hover:border-hc-amber hover:bg-hc-amber-light/15 hover:text-hc-amber-dim"
-                                >
-                                    {effect.name}
-                                </Link>
-                            ))}
-                        </div>
-                    </Reveal>
-                )}
+                <Suspense fallback={null}>
+                    <EffectsSection />
+                </Suspense>
 
                 {/* Shop by brand */}
                 <Reveal>
-                    <div className="mb-7 inline-flex items-center gap-2 font-hc-mono text-xs uppercase tracking-[0.12em] text-hc-sage-dim before:h-px before:w-3.5 before:bg-current before:opacity-50">
-                        Brands
-                    </div>
-                    <h2 className="font-hc-display text-2xl font-medium text-hc-ink mb-6">Shop by Brand</h2>
+                    <SectionHeading eyebrow="Brands" title="Shop by Brand" />
                     <BrandStrip />
                 </Reveal>
 
                 {/* Bestsellers */}
-                {bestSellers.results.length > 0 && (
-                    <Reveal>
-                        <div className="flex items-end justify-between mb-7">
-                            <div>
-                                <div className="mb-2 inline-flex items-center gap-2 font-hc-mono text-xs uppercase tracking-[0.12em] text-hc-sage-dim before:h-px before:w-3.5 before:bg-current before:opacity-50">
-                                    Crowd favorites
-                                </div>
-                                <h2 className="font-hc-display text-2xl font-medium text-hc-ink">Best Sellers</h2>
-                            </div>
-                            <Link
-                                href="/shop/products?ordering=-units_sold_hint"
-                                className="inline-flex items-center gap-1.5 font-hc-mono text-xs uppercase tracking-wide text-hc-amber-dim hover:text-hc-amber transition-colors"
-                            >
-                                See all <ArrowRight className="h-3.5 w-3.5" />
-                            </Link>
-                        </div>
-                        <div className="grid grid-cols-2 gap-x-5 gap-y-8 sm:grid-cols-4">
-                            {bestSellers.results.map((product: Product) => (
-                                <ProductCard key={product.id} product={product} />
-                            ))}
-                        </div>
-                    </Reveal>
-                )}
+                <Suspense fallback={<ProductGridSkeleton />}>
+                    <BestSellersSection />
+                </Suspense>
 
                 {/* New arrivals */}
-                {newArrivals.results.length > 0 && (
-                    <Reveal>
-                        <div className="flex items-end justify-between mb-7">
-                            <div>
-                                <div className="mb-2 inline-flex items-center gap-2 font-hc-mono text-xs uppercase tracking-[0.12em] text-hc-sage-dim before:h-px before:w-3.5 before:bg-current before:opacity-50">
-                                    Fresh batch
-                                </div>
-                                <h2 className="font-hc-display text-2xl font-medium text-hc-ink">New Arrivals</h2>
-                            </div>
-                            <Link
-                                href="/shop/products?ordering=-created_at"
-                                className="inline-flex items-center gap-1.5 font-hc-mono text-xs uppercase tracking-wide text-hc-amber-dim hover:text-hc-amber transition-colors"
-                            >
-                                See all <ArrowRight className="h-3.5 w-3.5" />
-                            </Link>
-                        </div>
-                        <div className="grid grid-cols-2 gap-x-5 gap-y-8 sm:grid-cols-4">
-                            {newArrivals.results.map((product: Product) => (
-                                <ProductCard key={product.id} product={product} />
-                            ))}
-                        </div>
-                    </Reveal>
-                )}
+                <Suspense fallback={<ProductGridSkeleton />}>
+                    <NewArrivalsSection />
+                </Suspense>
 
             </div>
 

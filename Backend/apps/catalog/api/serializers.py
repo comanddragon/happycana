@@ -17,7 +17,7 @@ class CategorySerializer(serializers.ModelSerializer):
 
 
     def get_children(self, obj):
-        qs = obj.children.filter(is_active=True)
+        qs = [c for c in obj.children.all() if c.is_active]
         return CategorySerializer(qs, many=True, context=self.context).data
 
     def get_image_url(self, obj):
