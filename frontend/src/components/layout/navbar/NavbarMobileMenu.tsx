@@ -48,7 +48,7 @@ export function NavbarMobileMenu({
                     <Logo height={20} />
                 </div>
 
-                <div className="p-4 space-y-1">
+                <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-1">
                     <Input
                         placeholder="Search the menu…"
                         className="mb-3 border-hc-paper/20 bg-hc-paper/[0.06] text-hc-paper placeholder:text-hc-sage-dim focus-visible:ring-hc-amber-light/40"

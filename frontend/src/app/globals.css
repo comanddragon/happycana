@@ -158,3 +158,13 @@
     from { transform: translateX(0); }
     to   { transform: translateX(-50%); }
 }
+
+.hc-marquee-track {
+    display: flex;
+    width: max-content;
+    animation: hc-marquee var(--hc-marquee-duration, 30s) linear infinite;
+}
+
+.hc-marquee-track:hover {
+    animation-play-state: paused;
+}

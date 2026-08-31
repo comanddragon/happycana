@@ -116,7 +116,7 @@ export const catalogService = {
     // Requires backend_patch/api_patch.py's BrandListView/BrandDetailView.
     // Matches the /catalog/brands/ endpoints proposed there.
     async listBrands(): Promise<Brand[]> {
-        const { data } = await api.get('/catalog/brands/')
+        const { data } = await api.get('/catalog/brands/', { params: { page_size: 200 } })
         return unwrapList<Brand>(data)
     },
 

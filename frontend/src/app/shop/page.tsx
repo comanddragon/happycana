@@ -3,41 +3,16 @@ import { Suspense } from 'react'
 import Link from 'next/link'
 import { ArrowRight, Truck, RotateCcw, ShieldCheck, FlaskConical } from 'lucide-react'
 import { ProductCard } from '@/components/shop/ProductCard'
-import { CategoryGrid } from '@/components/shop/CategoryGrid'
-import { BrandStrip } from '@/components/shop/BrandStrip'
+import { CategoryGrid, CategoryGridSkeleton } from '@/components/shop/CategoryGrid'
+import { BrandStrip, BrandStripSkeleton } from '@/components/shop/BrandStrip'
 import { Reveal } from '@/components/home/Reveal'
 import { CtaBand } from '@/components/home/CtaBand'
+import { getProducts, getEffects, getCategories, getBrands } from '@/lib/catalog.server'
 import { Product, Effect } from "@/types"
 import type { Metadata } from "next"
 
-async function getProducts(query: string): Promise<{ results: Product[] }> {
-    try {
-        const res = await fetch(`${process.env.API_URL}/catalog/products/?${query}`, {
-            next: { revalidate: 3600 }
-        })
-        if (!res.ok) return { results: [] }
-        const data = await res.json()
-        return Array.isArray(data?.results) ? data : { results: [] }
-    } catch {
-        return { results: [] }
-    }
-}
-
-const getNewArrivals  = () => getProducts('ordering=-created_at&page_size=4')
-const getBestSellers  = () => getProducts('ordering=-units_sold_hint&page_size=4')
-
-async function getEffects(): Promise<Effect[]> {
-    try {
-        const res = await fetch(`${process.env.API_URL}/catalog/effects/`, {
-            next: { revalidate: 3600 }
-        })
-        if (!res.ok) return []
-        const data = await res.json()
-        return Array.isArray(data) ? data : (data?.results ?? [])
-    } catch {
-        return []
-    }
-}
+const getNewArrivals = () => getProducts({ ordering: '-created_at', page_size: 4 })
+const getBestSellers = () => getProducts({ ordering: '-units_sold_hint', page_size: 4 })
 
 export const metadata: Metadata = {
     title: 'Shop the Menu | HappyCana',
@@ -90,6 +65,30 @@ async function EffectsSection() {
                     </Link>
                 ))}
             </div>
+        </Reveal>
+    )
+}
+
+async function CategoryGridSection() {
+    const categories = await getCategories()
+    if (categories.length === 0) return null
+
+    return (
+        <Reveal>
+            <SectionHeading eyebrow="Categories" title="Select a Category" />
+            <CategoryGrid categories={categories} />
+        </Reveal>
+    )
+}
+
+async function BrandStripSection() {
+    const brands = await getBrands()
+    if (brands.length === 0) return null
+
+    return (
+        <Reveal>
+            <SectionHeading eyebrow="Brands" title="Shop by Brand" />
+            <BrandStrip brands={brands} />
         </Reveal>
     )
 }
@@ -179,10 +178,14 @@ export default function ShopPage() {
             <div className="mx-auto max-w-[1180px] px-7 py-16 space-y-16">
 
                 {/* Category grid */}
-                <Reveal>
-                    <SectionHeading eyebrow="Categories" title="Select a Category" />
-                    <CategoryGrid />
-                </Reveal>
+                <Suspense fallback={
+                    <>
+                        <SectionHeading eyebrow="Categories" title="Select a Category" />
+                        <CategoryGridSkeleton />
+                    </>
+                }>
+                    <CategoryGridSection />
+                </Suspense>
 
                 {/* Shop by effect */}
                 <Suspense fallback={null}>
@@ -190,10 +193,14 @@ export default function ShopPage() {
                 </Suspense>
 
                 {/* Shop by brand */}
-                <Reveal>
-                    <SectionHeading eyebrow="Brands" title="Shop by Brand" />
-                    <BrandStrip />
-                </Reveal>
+                <Suspense fallback={
+                    <>
+                        <SectionHeading eyebrow="Brands" title="Shop by Brand" />
+                        <BrandStripSkeleton />
+                    </>
+                }>
+                    <BrandStripSection />
+                </Suspense>
 
                 {/* Bestsellers */}
                 <Suspense fallback={<ProductGridSkeleton />}>

@@ -114,7 +114,7 @@ export function ProductDetails({ product }: { product: Product }) {
 
                     {mediaList.length > 1 && (
                         <ScrollArea className="w-full">
-                            <div className="flex gap-2 pb-2">
+                            <div className="flex gap-2 p-2">
                                 {mediaList.map((item, i) => {
                                     const isActive = activeMedia
                                         ? activeMedia.data.id === item.data.id

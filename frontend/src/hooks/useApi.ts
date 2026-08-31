@@ -11,28 +11,16 @@ import { useCartStore } from '@/store/cart'
 import { useAuthStore } from '@/store/auth'
 import { extractErrorMessage } from '@/lib/api'
 import { ensureGuestSession } from '@/lib/guestSession'
+import { qk } from '@/lib/queryKeys'
 import type {
     ProductFilterParams,
 } from '@/types'
 
 // ─── Query Keys ───────────────────────────────────────────────────────────────
-
-export const qk = {
-    products:      (params?: object) => ['products', params],
-    product:       (slug: string)    => ['product', slug],
-    categories:    ()                => ['categories'],
-    category:      (slug: string)    => ['category', slug],
-    brands:        ()                => ['brands'],
-    brand:         (slug: string)    => ['brand', slug],
-    effects:       ()                => ['effects'],
-    cart:          ()                => ['cart'],
-    orders:        (params?: object) => ['orders', params],
-    order:         (id: string)      => ['order', id],
-    notifications: ()                => ['notifications'],
-    me:            ()                => ['me'],
-    addresses:     ()                => ['addresses'],
-    shipping:      ()                => ['shipping-methods'],
-} as const
+// Re-exported from lib/queryKeys so existing imports of `qk` from this file
+// keep working; the canonical definition lives there so it can also be
+// imported from Server Components for prefetch/hydration.
+export { qk }
 
 // ─── Catalog ──────────────────────────────────────────────────────────────────
 

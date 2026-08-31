@@ -1,8 +1,5 @@
-'use client'
-
 import Link from 'next/link'
 import Image from 'next/image'
-import { useCategories } from '@/hooks/useApi'
 import { mediaUrl } from '@/lib/utils'
 import type { Category } from '@/types'
 
@@ -34,25 +31,23 @@ function CategoryTile({ cat }: { cat: Category }) {
     )
 }
 
-export function CategoryGrid() {
-    const { data: categories, isLoading } = useCategories()
+export function CategoryGridSkeleton() {
+    return (
+        <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-4">
+            {Array.from({ length: 8 }).map((_, i) => (
+                <div key={i} className="aspect-square animate-pulse rounded-2xl bg-hc-paper-2" />
+            ))}
+        </div>
+    )
+}
 
-    if (isLoading) {
-        return (
-            <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-4">
-                {Array.from({ length: 8 }).map((_, i) => (
-                    <div key={i} className="aspect-square animate-pulse rounded-2xl bg-hc-paper-2" />
-                ))}
-            </div>
-        )
-    }
-
-    const rest = categories?.slice(8, 11) ?? []
+export function CategoryGrid({ categories }: { categories: Category[] }) {
+    const rest = categories.slice(8, 11)
 
     return (
         <>
             <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-4">
-                {categories?.slice(0, 8).map(cat => (
+                {categories.slice(0, 8).map(cat => (
                     <CategoryTile key={cat.id} cat={cat} />
                 ))}
             </div>

@@ -13,6 +13,8 @@ export function cn(...inputs: ClassValue[]) {
  */
 export function mediaUrl(url: string | null | undefined): string | null {
     if (!url) return null
+    url = url.trim()
+    if (!url) return null
     if (process.env.NODE_ENV === 'development') {
         try {
             const parsed = new URL(url)
