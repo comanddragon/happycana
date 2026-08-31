@@ -5,6 +5,7 @@
 
 # Error tracking
 sentry-sdk
+gunicorn
 
 # Structured JSON logging
 python-json-logger

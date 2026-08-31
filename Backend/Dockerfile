@@ -17,5 +17,8 @@ COPY . .
 
 EXPOSE 10000
 CMD python manage.py collectstatic --noinput && \
-    python manage.py migrate --noinput && \
-    gunicorn config.asgi:application -k uvicorn.workers.UvicornWorker -w 1 -b 0.0.0.0:10000
+    gunicorn config.asgi:application -k uvicorn.workers.UvicornWorker -w 2 -b 0.0.0.0:10000
+
+#CMD python manage.py collectstatic --noinput && \
+#    python manage.py migrate --noinput && \
+#    daphne -b 0.0.0.0 -p 10000 config.asgi:application
