@@ -14,9 +14,10 @@ const nextConfig: NextConfig = BuilderDevTools()({
   reactCompiler: true,
   skipTrailingSlashRedirect: true,
   async rewrites() {
+    const backend = process.env.BACKEND_ORIGIN || "http://127.0.0.1:8000"
     return [
-      { source: "/api/:path*/", destination: "http://127.0.0.1:8000/api/:path*/" },
-      { source: "/api/:path*", destination: "http://127.0.0.1:8000/api/:path*" },
+      { source: "/api/:path*/", destination: `${backend}/api/:path*/` },
+      { source: "/api/:path*", destination: `${backend}/api/:path*` },
     ]
   },
 });
