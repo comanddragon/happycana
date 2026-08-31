@@ -112,7 +112,7 @@ export function ProductsGrid({ initialCategory = '', initialOrdering = '-created
 
     return (
         <>
-            {/* Toolbar */}
+            {/* Toolbar and elements */}
             <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
                 <div className="flex items-center gap-2 flex-wrap">
                     <div className="relative">
