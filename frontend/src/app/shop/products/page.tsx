@@ -2,7 +2,7 @@ import { Suspense } from 'react'
 import type { Metadata } from 'next'
 import { QueryClient, dehydrate, HydrationBoundary } from '@tanstack/react-query'
 import { ProductsGrid } from '@/components/shop/ProductsGrid'
-import { getProducts, getCategories, getBrands, getEffects } from '@/lib/catalog.server'
+import { getProducts } from '@/lib/catalog.server'
 import { qk } from '@/lib/queryKeys'
 import type { ProductFilterParams } from '@/types'
 
@@ -69,18 +69,19 @@ export default async function ProductsPage({ searchParams }: PageProps) {
     // components/providers/providers.tsx).
     const queryClient = new QueryClient()
 
-    await Promise.all([
-        // Filter combinations are effectively unbounded, so cache the
-        // fetch briefly rather than for the full hour the homepage uses
-        // for its handful of fixed queries.
-        queryClient.prefetchQuery({
+    // Only prefetch products for the first page. Every later "Next" click
+    // still re-renders this Server Component (searchParams changed), but
+    // if we awaited getProducts here every time, that render — and the
+    // whole click — would block on a live backend request. Skipping it
+    // past page 1 lets the shell render immediately and leaves the fetch
+    // to useProducts() client-side, which is what ProductsGrid already
+    // does after hydration.
+    if (filters.page === 1) {
+        await queryClient.prefetchQuery({
             queryKey: qk.products(filters),
             queryFn:  () => getProducts(filters, { revalidate: 60 }),
-        }),
-        queryClient.prefetchQuery({ queryKey: qk.categories(), queryFn: getCategories }),
-        queryClient.prefetchQuery({ queryKey: qk.brands(),     queryFn: getBrands }),
-        queryClient.prefetchQuery({ queryKey: qk.effects(),    queryFn: getEffects }),
-    ])
+        })
+    }
 
     return (
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10">
