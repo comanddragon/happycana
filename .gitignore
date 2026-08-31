@@ -5,6 +5,7 @@ __pycache__/
 *.sqlite3
 /Backend/staticfiles/
 /Backend/.output/
+/Backend/clean_data/
 /Backend/.clean_data/
 /Backend/.scripts/
 node_modules/
