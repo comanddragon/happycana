@@ -2,23 +2,31 @@ FROM python:3.13-slim
 
 WORKDIR /app
 
-# System deps needed for Pillow / psycopg2-binary at build time
+# System deps
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libjpeg62-turbo \
     zlib1g \
     && rm -rf /var/lib/apt/lists/*
 
-# Install deps first so this layer is cached unless requirements change
+# Install dependencies first so this layer is cached
+# unless requirements change.
 COPY requirements/ requirements/
 RUN pip install --no-cache-dir -r requirements/production.txt
 
-# Now copy the rest of the code
+# Copy application source
 COPY . .
 
-EXPOSE 10000
-CMD python manage.py collectstatic --noinput && \
-    gunicorn config.asgi:application -k uvicorn.workers.UvicornWorker -w 2 -b 0.0.0.0:10000
+# Collect static files during the image build.
+# The resulting /app/staticfiles directory becomes part
+# of the Docker image and does not need to be generated
+# when the container starts.
+RUN python manage.py collectstatic --noinput
 
-#CMD python manage.py collectstatic --noinput && \
-#    python manage.py migrate --noinput && \
-#    daphne -b 0.0.0.0 -p 10000 config.asgi:application
+EXPOSE 10000
+
+# Static files are already collected in the image.
+# Render provides $PORT at runtime.
+CMD gunicorn config.asgi:application \
+    -k uvicorn.workers.UvicornWorker \
+    -w 2 \
+    -b 0.0.0.0:$PORT
