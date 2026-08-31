@@ -12,10 +12,13 @@ RUN pip install --no-cache-dir -r requirements/production.txt
 
 COPY . .
 
-# Tell Django which settings to use during the image build
 ENV DJANGO_SETTINGS_MODULE=config.settings.production
 
-# Build static files into the Docker image
+# Temporary key used only during Docker build.
+# The real key is provided by the hosting platform at runtime.
+ARG DJANGO_SECRET_KEY=build-only-not-used-in-production
+ENV DJANGO_SECRET_KEY=$DJANGO_SECRET_KEY
+
 RUN python manage.py collectstatic --noinput
 
 EXPOSE 10000
