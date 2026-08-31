@@ -10,9 +10,6 @@
     "lint": "eslint"
   },
   "dependencies": {
-    "@builder.io/dev-tools": "^1.79.4",
-    "@builder.io/react": "^9.4.2",
-    "@builder.io/sdk": "^6.3.1",
     "@hookform/resolvers": "^5.2.2",
     "@tanstack/react-query": "^5.90.21",
     "@tanstack/react-query-devtools": "^5.91.3",
