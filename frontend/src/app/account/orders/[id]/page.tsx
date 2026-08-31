@@ -103,7 +103,7 @@ export default function OrderDetailPage() {
                             <div key={item.id} className="flex items-center gap-4 py-4 first:pt-0 last:pb-0">
                                 <div className="h-16 w-16 rounded-xl overflow-hidden bg-muted shrink-0">
                                     {item.variant.primary_image?.image_url ? (
-                                        <Image src={mediaUrl(item.variant.primary_image.image_url)!} alt="" width={64} height={64} unoptimized className="h-full w-full object-cover" />
+                                        <Image src={mediaUrl(item.variant.primary_image.image_url)!} alt="" width={64} height={64} quality={50} className="h-full w-full object-cover" />
                                     ) : (
                                         <div className="h-full w-full flex items-center justify-center">
                                             <ShoppingBag className="h-6 w-6 text-muted-foreground/40" />

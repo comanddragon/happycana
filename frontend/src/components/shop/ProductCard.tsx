@@ -1,6 +1,6 @@
 'use client'
 
-import { memo } from 'react'
+import { memo, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
@@ -14,6 +14,7 @@ interface Props { product: Product; className?: string; priority?: boolean }
 export const ProductCard = memo(function ProductCard({ product, className, priority = false }: Props) {
     const router        = useRouter()
     const addToCart      = useAddToCart()
+    const [imageLoaded, setImageLoaded] = useState(false)
     const firstVariant   = product.variants?.[0]
     const category       = product.category
     // Prefer product-level primary image, fall back to first image, then variant image
@@ -51,14 +52,20 @@ export const ProductCard = memo(function ProductCard({ product, className, prior
             <span className="absolute -top-[9px] left-1/2 h-[18px] w-12 -translate-x-1/2 rounded-full bg-gradient-to-b from-hc-amber-light to-hc-amber" />
 
             <Link href={`/shop/products/${product.slug}`} className="block">
-                <div className="relative aspect-square overflow-hidden rounded-2xl bg-hc-paper-2">
+                <div className="relative aspect-square overflow-hidden rounded-2xl bg-white">
                     {displayImage ? (
                         <Image src={displayImage} alt={product.primary_image?.alt_text || product.name}
                                fill
-                               unoptimized
+                               quality={65}
+                               decoding="async"
                                sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
                                priority={priority}
-                               className="object-cover bg-white transition-transform duration-300 group-hover:scale-105" />
+                               loading={priority ? undefined : 'lazy'}
+                               onLoad={() => setImageLoaded(true)}
+                               className={cn(
+                                   'object-cover bg-white transition-all duration-300 group-hover:scale-105',
+                                   imageLoaded ? 'opacity-100' : 'opacity-0',
+                               )} />
                     ) : (
                         <div className="h-full w-full flex items-center justify-center">
                             <ShoppingBag className="h-10 w-10 text-hc-ink-soft/40" />

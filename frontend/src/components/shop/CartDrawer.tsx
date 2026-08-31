@@ -42,7 +42,7 @@ const CartLineItem = memo(function CartLineItem({
             <div className="h-20 w-20 shrink-0 rounded-xl overflow-hidden bg-hc-paper-2">
                 {img ? (
                     <Image src={mediaUrl(img)!} alt={item.variant.product?.name ?? ''}
-                           width={80} height={80} unoptimized className="h-full w-full object-cover" />
+                           width={80} height={80} quality={55} className="h-full w-full object-cover" />
                 ) : (
                     <div className="h-full w-full flex items-center justify-center">
                         <ShoppingBag className="h-6 w-6 text-hc-ink-soft" />

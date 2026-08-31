@@ -53,7 +53,7 @@ export function ProductsGrid({ initialCategory = '', initialOrdering = '-created
     const [searchDraft, setSearchDraft] = useState(search)
     const [filtersOpen, setFiltersOpen] = useState(false)
 
-    const { data, isLoading } = useProducts({
+    const { data, isLoading, isFetching } = useProducts({
         ...(category && { category }),
         ...(brand && { brand }),
         ...(cannabisType && { cannabis_type: cannabisType }),
@@ -264,7 +264,9 @@ export function ProductsGrid({ initialCategory = '', initialOrdering = '-created
                     <Button size="sm" onClick={clearFilters} className="mt-4">Clear filters</Button>
                 </div>
             ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-5">
+                <div
+                    className={`grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-5 transition-opacity duration-150 ${isFetching ? 'opacity-60' : 'opacity-100'}`}
+                >
                     {data?.results.map((product, i) => (
                         <ProductCard key={product.id} product={product} priority={i < 4} />
                     ))}

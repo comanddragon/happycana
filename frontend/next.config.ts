@@ -3,11 +3,14 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   turbopack: {},
   images: {
+    loader: "custom",
+    loaderFile: "./src/lib/imgix-loader.ts",
     remotePatterns: [
       { protocol: "https", hostname: "**" },
       { protocol: "http", hostname: "localhost", port: "8000" },
       { protocol: "http", hostname: "192.168.1.182", port: "8000" }
     ],
+    qualities: [40, 65, 75, 85],
   },
   allowedDevOrigins: ["192.168.1.182"],
   reactCompiler: true,
@@ -19,6 +22,7 @@ const nextConfig: NextConfig = {
     return [
       { source: "/api/:path*/", destination: `${backend}/api/:path*/` },
       { source: "/api/:path*", destination: `${backend}/api/:path*` },
+      { source: "/media/:path*", destination: `${backend}/media/:path*` },
     ];
   },
 };

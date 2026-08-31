@@ -102,7 +102,7 @@ export function ProductDetails({ product }: { product: Product }) {
                                 fill
                                 sizes="(max-width: 1024px) 100vw, 50vw"
                                 priority
-                                unoptimized
+                                quality={85}
                                 className="object-cover"
                             />
                         ) : (
@@ -145,7 +145,7 @@ export function ProductDetails({ product }: { product: Product }) {
                                             )}
                                         >
                                             {thumbSrc ? (
-                                                <Image src={mediaUrl(thumbSrc)!} alt="" width={64} height={64} unoptimized className="h-full w-full object-cover" />
+                                                <Image src={mediaUrl(thumbSrc)!} alt="" width={64} height={64} quality={40} className="h-full w-full object-cover" />
                                             ) : (
                                                 <div className="h-full w-full bg-muted flex items-center justify-center">
                                                     {item.kind === 'video'

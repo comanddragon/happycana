@@ -19,7 +19,7 @@ export function HcNav() {
         <header className="sticky top-0 z-[100] border-b border-hc-paper/[0.08] bg-hc-canopy/[0.86] backdrop-blur-md">
             <div className="mx-auto max-w-[1180px] px-7">
                 <nav className="flex items-center justify-between py-4">
-                    <Logo height={22} href="#top" />
+                    <Logo height={22} href="#top" priority />
 
                     <ul className="hidden md:flex items-center gap-8">
                         {LINKS.map(link => (

@@ -1,6 +1,6 @@
 // hooks/useApi.ts
 import {
-    useQuery, useMutation, useQueryClient,
+    useQuery, useMutation, useQueryClient, keepPreviousData,
 } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import {
@@ -29,6 +29,7 @@ export function useProducts(params?: ProductFilterParams) {
         queryKey: qk.products(params),
         queryFn:  () => catalogService.listProducts(params),
         staleTime: 60_000,
+        placeholderData: keepPreviousData,
     })
 }
 

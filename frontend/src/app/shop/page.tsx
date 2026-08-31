@@ -114,8 +114,8 @@ async function BestSellersSection() {
                 </Link>
             </div>
             <div className="grid grid-cols-2 gap-x-5 gap-y-8 sm:grid-cols-4">
-                {bestSellers.results.map((product: Product) => (
-                    <ProductCard key={product.id} product={product} />
+                {bestSellers.results.map((product: Product, i: number) => (
+                    <ProductCard key={product.id} product={product} priority={i < 4} />
                 ))}
             </div>
         </Reveal>
