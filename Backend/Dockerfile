@@ -18,4 +18,4 @@ COPY . .
 EXPOSE 10000
 CMD python manage.py collectstatic --noinput && \
     python manage.py migrate --noinput && \
-    daphne -b 0.0.0.0 -p 10000 config.asgi:application
+    daphne -b 127.0.0.1 -p 10000 config.asgi:application
