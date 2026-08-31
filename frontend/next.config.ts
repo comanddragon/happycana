@@ -1,8 +1,7 @@
-import BuilderDevTools from "@builder.io/dev-tools/next";
 import type { NextConfig } from "next";
 
-const nextConfig: NextConfig = BuilderDevTools()({
-    turbopack: {},
+const nextConfig: NextConfig = {
+  turbopack: {},
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "**" },
@@ -14,12 +13,14 @@ const nextConfig: NextConfig = BuilderDevTools()({
   reactCompiler: true,
   skipTrailingSlashRedirect: true,
   async rewrites() {
-    const backend = process.env.BACKEND_ORIGIN || "http://127.0.0.1:8000"
+    const backend =
+      process.env.BACKEND_ORIGIN || "http://127.0.0.1:8000";
+
     return [
       { source: "/api/:path*/", destination: `${backend}/api/:path*/` },
       { source: "/api/:path*", destination: `${backend}/api/:path*` },
-    ]
+    ];
   },
-});
+};
 
 export default nextConfig;
