@@ -63,5 +63,10 @@ LOGGING = {
             "level":    "INFO",
             "propagate": False,
         },
+        "core.cache": {
+            "handlers": ["console"],
+            "level":    "INFO",
+            "propagate": False,
+        },
     },
 }

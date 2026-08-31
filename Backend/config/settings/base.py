@@ -32,6 +32,7 @@ INSTALLED_APPS = [
     "drf_spectacular",          # OpenAPI schema generation
 
     # Local apps
+    "core",
     "apps.users",
     "apps.catalog",
     "apps.inventory",
