@@ -11,10 +11,17 @@
     "directory": ".open-next/assets",
     "binding": "ASSETS"
   },
+  "vars": {
+    "API_URL": "https://happycana.onrender.com/api",
+    "BACKEND_ORIGIN": "https://happycana.onrender.com",
+    "NEXT_PUBLIC_API_URL": "/api",
+    "NEXT_PUBLIC_FRONTEND_NAME": "HAPPY CANA",
+    "NEXT_PUBLIC_FRONTEND_URL": "https://happycana.zico15880.workers.dev",
+    "NEXT_PUBLIC_SMARTSUPP_KEY": "cd7a00945ddf5d6953df09f7c3ff39c9f8b61853"
+  },
   "observability": {
     "enabled": false,
     "head_sampling_rate": 1,
-    "redact_query_string": false,
     "logs": {
       "enabled": true,
       "head_sampling_rate": 1,
