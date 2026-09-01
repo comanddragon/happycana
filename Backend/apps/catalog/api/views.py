@@ -199,3 +199,22 @@ class BrandDetailView(generics.RetrieveAPIView):
   queryset = Brand.objects.filter(is_active=True)
   serializer_class = BrandSerializer
   lookup_field = "slug"
+
+
+class LabResultListView(generics.ListAPIView):
+    """Public, read-only list of every variant with a real, on-file
+    certificate of analysis — backs the /learn/lab-results index page so
+    the site's lab-testing claims are independently checkable rather than
+    just a badge graphic on the homepage."""
+    serializer_class    = LabResultSerializer
+    permission_classes  = [IsAdminOrReadOnly]
+    filter_backends     = [filters.OrderingFilter]
+    ordering_fields      = ["product__name", "sku"]
+    ordering            = ["product__name"]
+
+    def get_queryset(self):
+        return (
+            ProductVariant.objects.with_coa()
+            .select_related("product", "product__brand", "lab")
+            .prefetch_related("product__images")
+        )

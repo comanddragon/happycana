@@ -5,7 +5,7 @@
 // etc.). Used from Server Components and route handlers only.
 
 import type {
-    Product, Effect, Category, Brand, PaginatedResponse, ProductFilterParams,
+    Product, Effect, Category, Brand, PaginatedResponse, ProductFilterParams, LabResult,
 } from '@/types'
 
 const EMPTY_PRODUCTS: PaginatedResponse<Product> = {
@@ -82,5 +82,24 @@ export async function getBrands(): Promise<Brand[]> {
         return Array.isArray(data) ? data : (data?.results ?? [])
     } catch {
         return []
+    }
+}
+
+const EMPTY_LAB_RESULTS: PaginatedResponse<LabResult> = {
+    count: 0, next: null, previous: null, results: [],
+}
+
+/** Every variant with a real, on-file COA — backs the /learn/lab-results index page. */
+export async function getLabResults(page?: number): Promise<PaginatedResponse<LabResult>> {
+    try {
+        const qs = page ? `?page=${page}` : ''
+        const res = await fetch(`${process.env.API_URL}/catalog/labs/${qs}`, {
+            next: { revalidate: 3600 },
+        })
+        if (!res.ok) return EMPTY_LAB_RESULTS
+        const data = await res.json()
+        return Array.isArray(data?.results) ? data : EMPTY_LAB_RESULTS
+    } catch {
+        return EMPTY_LAB_RESULTS
     }
 }

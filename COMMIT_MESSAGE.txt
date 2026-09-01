@@ -1,1 +1,1 @@
-SEO/AEO: replace hardcoded homepage batch data with real products, add Twitter Card + default OG image, fix empty alt text, link PDPs to relevant /learn guides
+SEO/AEO: add dedicated GET /api/catalog/labs/ endpoint and /learn/lab-results index page aggregating every product's real COA

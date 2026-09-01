@@ -75,8 +75,11 @@ export default function Page() {
             <section>
                 <h2>Where to see ours</h2>
                 <p>
-                    Every batch we sell is tested at an independent lab before it reaches the menu. If you can&apos;t
-                    find the COA for a specific product you&apos;ve purchased,{' '}
+                    Every batch we sell is tested at an independent lab before it reaches the menu. See the{' '}
+                    <Link href="/learn/lab-results" className="text-hc-amber-dim underline underline-offset-2">
+                        full list of products with a certificate on file
+                    </Link>{' '}
+                    , or, if you can&apos;t find the COA for a specific product you&apos;ve purchased,{' '}
                     <Link href="/help/faq" className="text-hc-amber-dim underline underline-offset-2">
                         reach out
                     </Link>{' '}

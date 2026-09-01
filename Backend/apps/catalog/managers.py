@@ -102,9 +102,17 @@ class ProductVariantQuerySet(db_models.QuerySet):
             stock_levels__quantity__gt=db_models.F("stock_levels__reserved")
         ).distinct()
 
+    def with_coa(self):
+        """Variants that carry a real, on-file Lab record with a
+        certificate of analysis link — i.e. a verifiable lab-testing
+        claim, not just a badge graphic. Backs the public Lab Results
+        index page."""
+        return self.filter(product__is_active=True, lab__isnull=False).exclude(lab__coa_url="")
+
 
 class ProductVariantManager(db_models.Manager):
     def get_queryset(self):     return ProductVariantQuerySet(self.model, using=self._db)
     def active(self):           return self.get_queryset().active()
     def available(self):        return self.get_queryset().active().available()
+    def with_coa(self):         return self.get_queryset().active().with_coa()
 

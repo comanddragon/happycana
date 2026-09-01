@@ -140,6 +140,28 @@ export interface Lab {
     coa_url: string
 }
 
+// Backs GET /catalog/labs/ — one row per variant with a real, on-file
+// COA. Leaner than the full Product/ProductVariant shapes since the Lab
+// Results index only needs enough to display and link back.
+export interface LabResultProduct {
+    id: string
+    name: string
+    slug: string
+    cannabis_type: CannabisType | ''
+    compliance_category: ComplianceCategory | ''
+    brand: BrandMinimal | null
+    primary_image: ProductImage | null
+}
+
+export interface LabResult {
+    id: string
+    sku: string
+    weight_value: string | null
+    weight_unit: string
+    product: LabResultProduct
+    lab: Lab
+}
+
 export interface Attribute {
     id: string
     name: string

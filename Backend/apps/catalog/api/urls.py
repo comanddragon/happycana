@@ -20,5 +20,6 @@ urlpatterns = [
     path("catalog/products/<uuid:product_pk>/variants/<uuid:pk>/",      views.ProductVariantDetailView.as_view(),  name="variant-detail"),
     path("catalog/brands/", views.BrandListView.as_view(), name="brand-list"),
     path("catalog/brands/<slug:slug>/", views.BrandDetailView.as_view(), name="brand-detail"),
+    path("catalog/labs/", views.LabResultListView.as_view(), name="lab-result-list"),
 
 ]

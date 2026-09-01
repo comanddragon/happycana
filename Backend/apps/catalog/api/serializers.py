@@ -287,3 +287,27 @@ class ProductWriteSerializer(serializers.ModelSerializer):
         model  = Product
         fields = ["category", "name", "description", "base_price", "is_active"]
 
+
+class LabResultProductSerializer(serializers.ModelSerializer):
+    """Just what the public Lab Results index needs to display and link
+    back to the product — leaner than ProductSerializer/ProductListSerializer."""
+    brand         = BrandMinimalSerializer(read_only=True)
+    primary_image = ProductImageSerializer(read_only=True)
+
+    class Meta:
+        model  = Product
+        fields = ["id", "name", "slug", "cannabis_type", "compliance_category", "brand", "primary_image"]
+
+
+class LabResultSerializer(serializers.ModelSerializer):
+    """One row per variant that carries a real, on-file Lab record with a
+    certificate of analysis — powers the public /catalog/labs/ endpoint
+    (a verifiable-trust page: every row here links to an actual COA)."""
+    product = LabResultProductSerializer(read_only=True)
+    lab     = LabSerializer(read_only=True)
+
+    class Meta:
+        model  = ProductVariant
+        fields = ["id", "sku", "weight_value", "weight_unit", "product", "lab"]
+        read_only_fields = ["id"]
+

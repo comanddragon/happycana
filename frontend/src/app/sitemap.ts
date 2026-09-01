@@ -10,6 +10,7 @@ export default async function sitemap() {
         { url: `${process.env.NEXT_PUBLIC_FRONTEND_URL}/shop`, priority: 0.9 },
         { url: `${process.env.NEXT_PUBLIC_FRONTEND_URL}/shop/products`, priority: 0.9 },
         { url: `${process.env.NEXT_PUBLIC_FRONTEND_URL}/learn`, priority: 0.7 },
+        { url: `${process.env.NEXT_PUBLIC_FRONTEND_URL}/learn/lab-results`, priority: 0.6 },
         { url: `${process.env.NEXT_PUBLIC_FRONTEND_URL}/help/faq`, priority: 0.5 },
     ]
 
