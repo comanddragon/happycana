@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { Logo } from './Logo'
+import { GUIDES } from '@/lib/guides'
 
 const COLUMNS: Record<string, { label: string; href: string }[]> = {
     Shop: [
@@ -7,6 +8,10 @@ const COLUMNS: Record<string, { label: string; href: string }[]> = {
         { label: 'Edibles', href: '/shop/products?category=edibles' },
         { label: 'Vapes', href: '/shop/products?category=vaporizers' },
         { label: 'New arrivals', href: '/shop/products?ordering=-created_at' },
+    ],
+    Learn: [
+        ...GUIDES.slice(0, 3).map(g => ({ label: g.title.split(':')[0], href: `/learn/${g.slug}` })),
+        { label: 'All guides', href: '/learn' },
     ],
     Account: [
         { label: 'Profile', href: '/account/profile' },
@@ -24,7 +29,7 @@ export function Footer() {
     return (
         <footer className="bg-hc-canopy-2 px-7 pb-8 pt-16 text-hc-sage">
             <div className="mx-auto max-w-[1180px]">
-                <div className="grid grid-cols-2 gap-8 border-b border-hc-paper/10 pb-11 md:grid-cols-[1.4fr_1fr_1fr_1fr]">
+                <div className="grid grid-cols-2 gap-8 border-b border-hc-paper/10 pb-11 md:grid-cols-[1.2fr_1fr_1fr_1fr_1fr]">
                     {/* Brand */}
                     <div>
                         <Logo height={22} href="/shop" />

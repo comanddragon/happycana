@@ -46,37 +46,43 @@ function buildFilters(params: SearchParams): ProductFilterParams {
     }
 }
 
-// Title-case a slug/category param for display: "flower" -> "Flower",
-// "pre-rolls" -> "Pre Rolls". Best-effort formatting for a raw URL param,
-// not a lookup against the real Category name.
-function formatCategoryLabel(value: string): string {
-    return value
-        .replace(/[-_]+/g, ' ')
-        .split(' ')
+// The category segment of the URL is a slug (e.g. "flower"), not a display
+// name, so this looks the real name up against the category list. Falls
+// back to a humanized version of the slug (hyphens -> spaces, title case)
+// if the slug doesn't match anything, so metadata never renders a raw,
+// lowercase slug like "flower Products".
+function humanize(slug: string): string {
+    return slug
+        .split('-')
         .filter(Boolean)
-        .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+        .map(w => w[0].toUpperCase() + w.slice(1))
         .join(' ')
 }
 
 export async function generateMetadata({ searchParams }: PageProps): Promise<Metadata> {
-    const params   = await searchParams
-    const category = params.category ?? ''
-    const label    = category ? formatCategoryLabel(category) : ''
+    const params       = await searchParams
+    const categorySlug = params.category ?? ''
 
-    // Faceted/sorted/paginated variants of this URL are all the same
-    // underlying listing for search-engine purposes — point every variant's
-    // canonical at the unfiltered base URL (or the category-only URL, so a
-    // real category landing page isn't diluted by ordering/page params).
-    const canonicalPath = category
-        ? `/shop/products?category=${encodeURIComponent(category)}`
+    let categoryName = ''
+    if (categorySlug) {
+        const categories = await getCategories()
+        categoryName = categories.find(c => c.slug === categorySlug)?.name ?? humanize(categorySlug)
+    }
+
+    // Faceted navigation (sort/search/page/brand/effect/etc.) produces many
+    // crawlable URL variants of substantially the same content. Canonicalize
+    // everything back to the base listing — bare /shop/products, or
+    // /shop/products?category=X when a category is set — so ranking signals
+    // consolidate onto one URL per category instead of splitting across
+    // every filter/sort combination.
+    const canonical = categorySlug
+        ? `/shop/products?category=${encodeURIComponent(categorySlug)}`
         : '/shop/products'
 
     return {
-        title:       label ? `${label} Products` : 'All Products',
-        description: `Browse ${label || 'all'} products. Filter by price, category, and availability.`,
-        alternates: {
-            canonical: canonicalPath,
-        },
+        title:       categoryName ? `${categoryName} Products` : 'All Products',
+        description: `Browse ${categoryName || 'all'} products. Filter by price, category, and availability.`,
+        alternates: { canonical },
     }
 }
 
@@ -86,21 +92,25 @@ export default async function ProductsPage({ searchParams }: PageProps) {
 
     const queryClient = new QueryClient()
 
-    await Promise.all([
+    const [, categories] = await Promise.all([
         queryClient.prefetchQuery({
             queryKey: qk.products(filters),
             queryFn:  () => getProducts(filters, { revalidate: 60 }),
         }),
-        queryClient.prefetchQuery({ queryKey: qk.categories(), queryFn: getCategories }),
-        queryClient.prefetchQuery({ queryKey: qk.brands(),     queryFn: getBrands }),
-        queryClient.prefetchQuery({ queryKey: qk.effects(),    queryFn: getEffects }),
+        queryClient.fetchQuery({ queryKey: qk.categories(), queryFn: getCategories }),
+        queryClient.prefetchQuery({ queryKey: qk.brands(),  queryFn: getBrands }),
+        queryClient.prefetchQuery({ queryKey: qk.effects(), queryFn: getEffects }),
     ])
+
+    const categoryName = params.category
+        ? categories.find(c => c.slug === params.category)?.name ?? humanize(params.category)
+        : ''
 
     return (
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10">
             <div className="mb-8">
                 <h1 className="font-hc-display text-3xl font-medium text-hc-ink">
-                    {params.category ? `${formatCategoryLabel(params.category)} Products` : 'All Products'}
+                    {categoryName ? `${categoryName} Products` : 'All Products'}
                 </h1>
             </div>
             <HydrationBoundary state={dehydrate(queryClient)}>

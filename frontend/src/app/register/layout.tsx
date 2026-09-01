@@ -1,9 +1,10 @@
 // app/register/layout.tsx
+// Same reasoning as app/login/layout.tsx: page.tsx is a client component,
+// so metadata is attached via this server-component layout instead.
 import type { Metadata } from 'next'
 
-// Auth pages have no unique content to rank and shouldn't be indexed —
-// the page itself is a client component so metadata can't live there.
 export const metadata: Metadata = {
+    title: 'Create Account',
     robots: { index: false, follow: false },
 }
 

@@ -9,6 +9,7 @@ import {CartDrawer} from "@/components/shop/CartDrawer";
 import React from "react";
 import {SiteShell} from "@/components/layout/SiteShell";
 import Script from 'next/script'
+import { Analytics } from '@/components/providers/Analytics'
 
 const fraunces = Fraunces({
     subsets: ['latin'],
@@ -48,6 +49,17 @@ export const metadata: Metadata = {
         icon: '/favicon.ico',
         apple: '/apple-touch-icon.png',
     },
+    // Search Console (and other engine) ownership verification. Values are
+    // read from env so nothing is committed here; unset keys are simply
+    // omitted from the rendered <meta> tags by Next.
+    verification: {
+        google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION,
+        other: {
+            ...(process.env.NEXT_PUBLIC_BING_SITE_VERIFICATION && {
+                'msvalidate.01': process.env.NEXT_PUBLIC_BING_SITE_VERIFICATION,
+            }),
+        },
+    },
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -58,6 +70,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             className={`${fraunces.variable} ${spaceGrotesk.variable} ${ibmPlexMono.variable}`}
         >
         <body className="font-hc-body bg-hc-paper">
+        <Analytics />
         <Providers>
             <AgeGate />
             <CartDrawer />
