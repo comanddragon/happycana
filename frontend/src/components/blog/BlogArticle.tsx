@@ -1,40 +1,24 @@
 // components/blog/BlogArticle.tsx
-// Shared shell for /blog/[slug] pages. Handles everything that's the same
-// across every post \u2014 breadcrumb, tag pills, meta row, optional TL;DR
-// callout and table of contents, Article JSON-LD, author bio, and a
-// "keep reading" footer \u2014 so each post file only supplies its own body.
+// Shared shell for /blog/[slug] pages. Handles the parts that are the same
+// across every post — breadcrumb, tag pills, meta row, Article JSON-LD, and
+// the post body itself — sourced from the backend BlogPost API rather than
+// hand-authored JSX, so a new post just needs a row in the database.
 import Link from 'next/link'
-import { BLOG_POSTS, AUTHORS, formatPostDate, type BlogPost } from '@/lib/blog'
-
-interface TocItem {
-    id: string
-    label: string
-}
+import type { BlogPostDetail } from '@/types'
+import { formatPostDate } from '@/lib/blog.server'
 
 interface Props {
-    post: BlogPost
-    children: React.ReactNode
-    /** TL;DR shown in the amber callout right under the intro. Omit to skip it. */
-    tldr?: string
-    /** Table of contents entries; each must match a heading's `id` in the body. */
-    toc?: TocItem[]
-    /** Slugs to surface as "keep reading" at the bottom. Defaults to the other posts. */
-    relatedSlugs?: string[]
+    post: BlogPostDetail
 }
 
-export function BlogArticle({ post, children, tldr, toc, relatedSlugs }: Props) {
-    const author = AUTHORS[post.author]
-    const related = (relatedSlugs
-        ? relatedSlugs.map(slug => BLOG_POSTS.find(p => p.slug === slug)).filter(Boolean)
-        : BLOG_POSTS.filter(p => p.slug !== post.slug).slice(0, 2)) as BlogPost[]
-
+export function BlogArticle({ post }: Props) {
     const jsonLd = {
         '@context': 'https://schema.org',
         '@type': 'Article',
         headline: post.title,
         description: post.description,
-        datePublished: post.publishedAt,
-        author: { '@type': 'Person', name: author.name },
+        datePublished: post.published_at,
+        ...(post.author ? { author: { '@type': 'Person', name: post.author } } : {}),
     }
 
     return (
@@ -62,46 +46,30 @@ export function BlogArticle({ post, children, tldr, toc, relatedSlugs }: Props) 
             <h1 className="mt-4 font-hc-display text-4xl font-medium leading-tight text-hc-ink">{post.title}</h1>
 
             <div className="mt-4 flex flex-wrap items-center gap-x-2 gap-y-1 font-hc-mono text-xs tracking-wide text-hc-ink-soft">
-                <span>By {author.name}</span>
-                <span aria-hidden>&middot;</span>
-                <span>{formatPostDate(post.publishedAt)}</span>
-                <span aria-hidden>&middot;</span>
-                <span>{post.readTime} read</span>
+                {post.author && (
+                    <>
+                        <span>By {post.author}</span>
+                        <span aria-hidden>&middot;</span>
+                    </>
+                )}
+                {post.published_at && (
+                    <>
+                        <span>{formatPostDate(post.published_at)}</span>
+                        <span aria-hidden>&middot;</span>
+                    </>
+                )}
+                <span>{post.read_time} read</span>
             </div>
-
-            {toc && toc.length > 0 && (
-                <nav className="mt-8 rounded-2xl border border-hc-ink/[0.08] bg-hc-paper-2 p-5">
-                    <p className="mb-3 font-hc-mono text-[11px] uppercase tracking-[0.1em] text-hc-sage-dim">
-                        Table of contents
-                    </p>
-                    <ol className="space-y-1.5">
-                        {toc.map((item, i) => (
-                            <li key={item.id}>
-                                <a
-                                    href={`#${item.id}`}
-                                    className="text-sm text-hc-ink-soft hover:text-hc-amber-dim transition-colors"
-                                >
-                                    {i + 1}. {item.label}
-                                </a>
-                            </li>
-                        ))}
-                    </ol>
-                </nav>
-            )}
-
-            {tldr && (
-                <div className="mt-8 rounded-2xl border border-hc-amber/30 bg-hc-amber-light/15 p-5">
-                    <p className="font-hc-mono text-[11px] uppercase tracking-[0.1em] text-hc-amber-dim">TL;DR</p>
-                    <p className="mt-2 leading-relaxed text-hc-ink">{tldr}</p>
-                </div>
-            )}
 
             <div
                 className="
                     mt-10 space-y-8 text-hc-ink-soft
+                    [&_h1]:font-hc-display [&_h1]:text-2xl [&_h1]:font-medium [&_h1]:text-hc-ink [&_h1]:mb-2 [&_h1]:scroll-mt-24
                     [&_h2]:font-hc-display [&_h2]:text-xl [&_h2]:font-medium [&_h2]:text-hc-ink [&_h2]:mb-2 [&_h2]:scroll-mt-24
                     [&_h3]:font-hc-display [&_h3]:text-base [&_h3]:font-medium [&_h3]:text-hc-ink [&_h3]:mb-1
                     [&_p]:leading-relaxed
+                    [&_a]:text-hc-amber-dim [&_a]:underline [&_a]:underline-offset-2
+                    [&_img]:rounded-xl [&_img]:max-w-full [&_img]:h-auto
                     [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:space-y-1
                     [&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:space-y-1
                     [&_li]:leading-relaxed
@@ -110,39 +78,8 @@ export function BlogArticle({ post, children, tldr, toc, relatedSlugs }: Props) 
                     [&_th]:bg-hc-paper-2 [&_th]:px-4 [&_th]:py-2.5 [&_th]:text-left [&_th]:font-hc-mono [&_th]:text-[11px] [&_th]:uppercase [&_th]:tracking-wide [&_th]:text-hc-sage-dim
                     [&_td]:border-t [&_td]:border-hc-ink/[0.08] [&_td]:px-4 [&_td]:py-2.5 [&_td]:text-sm
                 "
-            >
-                {children}
-            </div>
-
-            <div className="mt-14 flex items-start gap-4 rounded-2xl border border-hc-ink/[0.08] bg-hc-paper-2 p-6">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-hc-canopy font-hc-display text-sm text-hc-amber-light">
-                    {author.name.split(' ').map(n => n[0]).join('')}
-                </div>
-                <div>
-                    <p className="font-hc-display text-sm font-medium text-hc-ink">{author.name}</p>
-                    <p className="font-hc-mono text-[10.5px] uppercase tracking-wide text-hc-sage-dim">{author.role}</p>
-                    <p className="mt-2 text-sm leading-relaxed text-hc-ink-soft">{author.bio}</p>
-                </div>
-            </div>
-
-            {related.length > 0 && (
-                <div className="mt-16 border-t border-hc-ink/[0.08] pt-8">
-                    <p className="mb-4 font-hc-mono text-[11px] uppercase tracking-[0.1em] text-hc-sage-dim">
-                        Keep reading
-                    </p>
-                    <div className="grid gap-3 sm:grid-cols-2">
-                        {related.map(p => (
-                            <Link
-                                key={p.slug}
-                                href={`/blog/${p.slug}`}
-                                className="rounded-xl border border-hc-ink/[0.08] bg-white p-4 text-sm font-medium text-hc-ink transition-colors hover:border-hc-amber"
-                            >
-                                {p.title}
-                            </Link>
-                        ))}
-                    </div>
-                </div>
-            )}
+                dangerouslySetInnerHTML={{ __html: post.content_html }}
+            />
         </article>
     )
 }

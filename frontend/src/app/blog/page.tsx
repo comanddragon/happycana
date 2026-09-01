@@ -1,7 +1,7 @@
 // app/blog/page.tsx
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { BLOG_POSTS, AUTHORS, formatPostDate } from '@/lib/blog'
+import { getBlogPosts, formatPostDate } from '@/lib/blog.server'
 
 export const metadata: Metadata = {
     title: 'Blog',
@@ -9,7 +9,9 @@ export const metadata: Metadata = {
     alternates: { canonical: '/blog' },
 }
 
-export default function BlogIndexPage() {
+export default async function BlogIndexPage() {
+    const { results: posts } = await getBlogPosts()
+
     return (
         <div className="mx-auto max-w-4xl px-4 py-16 sm:px-6">
             <p className="font-hc-mono text-xs tracking-wide text-hc-ink-soft">BLOG</p>
@@ -19,10 +21,11 @@ export default function BlogIndexPage() {
                 written by the people who stock the shelves, not the people trying to fill them.
             </p>
 
-            <div className="mt-12 grid gap-4 sm:grid-cols-2">
-                {BLOG_POSTS.map(post => {
-                    const author = AUTHORS[post.author]
-                    return (
+            {posts.length === 0 ? (
+                <p className="mt-12 text-hc-ink-soft">No posts yet — check back soon.</p>
+            ) : (
+                <div className="mt-12 grid gap-4 sm:grid-cols-2">
+                    {posts.map(post => (
                         <Link
                             key={post.slug}
                             href={`/blog/${post.slug}`}
@@ -44,26 +47,16 @@ export default function BlogIndexPage() {
                             <p className="mt-2 flex-1 text-sm leading-relaxed text-hc-ink-soft">{post.description}</p>
                             <div className="mt-4 flex items-center justify-between">
                                 <span className="font-hc-mono text-[11px] tracking-wide text-hc-ink-soft">
-                                    {author.name} &middot; {formatPostDate(post.publishedAt)}
+                                    {post.author ? `${post.author} \u00b7 ` : ''}{formatPostDate(post.published_at)}
                                 </span>
                                 <span className="text-xs font-medium text-hc-amber-dim group-hover:underline">
                                     Read &rarr;
                                 </span>
                             </div>
                         </Link>
-                    )
-                })}
-            </div>
-
-            <div className="mt-14 rounded-2xl border border-hc-ink/[0.08] bg-hc-paper-2 p-6">
-                <p className="text-sm text-hc-ink-soft">
-                    Looking for dosing, terpenes, or lab-testing basics instead?{' '}
-                    <Link href="/learn" className="text-hc-amber-dim underline underline-offset-2">
-                        Check the Learn section
-                    </Link>
-                    .
-                </p>
-            </div>
+                    ))}
+                </div>
+            )}
         </div>
     )
 }
