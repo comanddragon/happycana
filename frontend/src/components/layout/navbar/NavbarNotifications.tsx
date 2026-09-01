@@ -21,7 +21,7 @@ export function NavbarNotifications({ notifications, unread, onMarkRead }: Navba
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="relative text-hc-sage hover:bg-hc-paper/10 hover:text-hc-paper">
+                <Button variant="ghost" size="icon" className="relative text-hc-sage hover:bg-hc-paper/10 hover:text-hc-paper" aria-label="Notifications">
                     <Bell className="h-4 w-4" />
                     {unread > 0 && (
                         <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-hc-amber-light ring-2 ring-hc-canopy" />

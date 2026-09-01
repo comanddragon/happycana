@@ -71,6 +71,11 @@ AWS_S3_REGION_NAME    = os.environ.get("AWS_S3_REGION_NAME", "us-east-1")
 AWS_S3_CUSTOM_DOMAIN  = os.environ.get("AWS_CLOUDFRONT_DOMAIN", "")
 AWS_DEFAULT_ACL       = "private"
 AWS_S3_FILE_OVERWRITE = False
+# The "static" bucket is a Neon Object Storage bucket with public_read
+# access, so reads don't need auth. Without this, django-storages defaults
+# to signing every .url() call (AWS_QUERYSTRING_AUTH defaults to True),
+# which is where the categories endpoint's ~1s/request overhead comes from.
+AWS_QUERYSTRING_AUTH  = False
 
 # ---------------------------------------------------------------------------
 # Sentry — error tracking

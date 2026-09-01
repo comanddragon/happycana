@@ -26,7 +26,7 @@ export const metadata: Metadata = {
 function SectionHeading({ eyebrow, title }: { eyebrow: string; title: string }) {
     return (
         <>
-            <div className="mb-7 inline-flex items-center gap-2 font-hc-mono text-xs uppercase tracking-[0.12em] text-hc-sage-dim before:h-px before:w-3.5 before:bg-current before:opacity-50">
+            <div className="mb-7 inline-flex items-center gap-2 font-hc-mono text-xs uppercase tracking-[0.12em] text-hc-canopy-3 before:h-px before:w-3.5 before:bg-current before:opacity-50">
                 {eyebrow}
             </div>
             <h2 className="font-hc-display text-2xl font-medium text-hc-ink mb-6">{title}</h2>
@@ -50,7 +50,7 @@ async function EffectsSection() {
 
     return (
         <Reveal>
-            <div className="mb-7 inline-flex items-center gap-2 font-hc-mono text-xs uppercase tracking-[0.12em] text-hc-sage-dim before:h-px before:w-3.5 before:bg-current before:opacity-50">
+            <div className="mb-7 inline-flex items-center gap-2 font-hc-mono text-xs uppercase tracking-[0.12em] text-hc-canopy-3 before:h-px before:w-3.5 before:bg-current before:opacity-50">
                 Mood &amp; effect
             </div>
             <h2 className="font-hc-display text-2xl font-medium text-hc-ink mb-6">Shop by Effect</h2>
@@ -101,7 +101,7 @@ async function BestSellersSection() {
         <Reveal>
             <div className="flex items-end justify-between mb-7">
                 <div>
-                    <div className="mb-2 inline-flex items-center gap-2 font-hc-mono text-xs uppercase tracking-[0.12em] text-hc-sage-dim before:h-px before:w-3.5 before:bg-current before:opacity-50">
+                    <div className="mb-2 inline-flex items-center gap-2 font-hc-mono text-xs uppercase tracking-[0.12em] text-hc-canopy-3 before:h-px before:w-3.5 before:bg-current before:opacity-50">
                         Crowd favorites
                     </div>
                     <h2 className="font-hc-display text-2xl font-medium text-hc-ink">Best Sellers</h2>
@@ -130,7 +130,7 @@ async function NewArrivalsSection() {
         <Reveal>
             <div className="flex items-end justify-between mb-7">
                 <div>
-                    <div className="mb-2 inline-flex items-center gap-2 font-hc-mono text-xs uppercase tracking-[0.12em] text-hc-sage-dim before:h-px before:w-3.5 before:bg-current before:opacity-50">
+                    <div className="mb-2 inline-flex items-center gap-2 font-hc-mono text-xs uppercase tracking-[0.12em] text-hc-canopy-3 before:h-px before:w-3.5 before:bg-current before:opacity-50">
                         Fresh batch
                     </div>
                     <h2 className="font-hc-display text-2xl font-medium text-hc-ink">New Arrivals</h2>

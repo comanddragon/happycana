@@ -256,7 +256,7 @@ export function ProductsGrid({ initialCategory = '', initialOrdering = '-created
                     <div className="h-14 w-14 rounded-2xl bg-hc-paper-2 flex items-center justify-center mb-4">
                         <SearchX className="h-6 w-6 text-hc-ink-soft/50" />
                     </div>
-                    <h3 className="font-hc-display text-xl font-medium text-hc-ink">No products found</h3>
+                    <h2 className="font-hc-display text-xl font-medium text-hc-ink">No products found</h2>
                     <p className="text-hc-ink-soft mt-1 text-sm">Try adjusting your filters</p>
                     <Button size="sm" onClick={clearFilters} className="mt-4">Clear filters</Button>
                 </div>

@@ -14,7 +14,7 @@ interface Props { product: Product; className?: string; priority?: boolean }
 export const ProductCard = memo(function ProductCard({ product, className, priority = false }: Props) {
     const router        = useRouter()
     const addToCart      = useAddToCart()
-    const [imageLoaded, setImageLoaded] = useState(false)
+    const [imageLoaded, setImageLoaded] = useState(priority)
     const firstVariant   = product.variants?.[0]
     const category       = product.category
     // Prefer product-level primary image, fall back to first image, then variant image
@@ -78,7 +78,7 @@ export const ProductCard = memo(function ProductCard({ product, className, prior
                                 e.stopPropagation();
                                 router.push(`/shop/products?category=${category.slug}`);
                             }}
-                            className="absolute left-2.5 top-2.5 rounded-full z-10 bg-hc-canopy/90 px-2.5 py-1 font-hc-mono text-[10px] tracking-wide text-hc-sage backdrop-blur-sm"
+                            className="absolute left-2.5 top-2.5 flex min-h-6 items-center rounded-full z-10 bg-hc-canopy/90 px-2.5 py-1.5 font-hc-mono text-[10px] tracking-wide text-hc-sage backdrop-blur-sm"
                         >
                             {category.name}
                         </button>
@@ -88,13 +88,13 @@ export const ProductCard = memo(function ProductCard({ product, className, prior
                 <div className="mt-3.5 flex items-start justify-between gap-2">
                     <div className="min-w-0">
                         {product.brand && (
-                            <p className="font-hc-mono text-[10.5px] tracking-wide text-hc-ink-soft/80 uppercase truncate">
+                            <p className="font-hc-mono text-[10.5px] tracking-wide text-hc-ink-soft uppercase truncate">
                                 {product.brand.name}
                             </p>
                         )}
-                        <h3 className="font-hc-display text-[17px] font-medium leading-snug line-clamp-2 group-hover:text-hc-amber-dim transition-colors">
+                        <h2 className="font-hc-display text-[17px] font-medium leading-snug line-clamp-2 group-hover:text-hc-amber-dim transition-colors">
                             {product.name}
-                        </h3>
+                        </h2>
                     </div>
                 </div>
 

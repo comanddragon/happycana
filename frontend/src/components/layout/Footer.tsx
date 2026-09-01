@@ -28,14 +28,14 @@ export function Footer() {
                     {/* Brand */}
                     <div>
                         <Logo height={22} href="/shop" />
-                        <p className="mt-4 max-w-[260px] text-[13.5px] leading-relaxed text-hc-sage-dim">
+                        <p className="mt-4 max-w-[260px] text-[13.5px] leading-relaxed text-hc-sage">
                             A licensed cannabis retailer offering same-day pickup and delivery, with every batch independently lab-tested.
                         </p>
                     </div>
 
                     {Object.entries(COLUMNS).map(([title, links]) => (
                         <div key={title}>
-                            <h4 className="mb-4 font-hc-mono text-[11.5px] uppercase tracking-[0.08em] text-hc-paper">{title}</h4>
+                            <h3 className="mb-4 font-hc-mono text-[11.5px] uppercase tracking-[0.08em] text-hc-paper">{title}</h3>
                             <ul className="space-y-0">
                                 {links.map(({ label, href }) => (
                                     <li key={label}>
@@ -53,17 +53,17 @@ export function Footer() {
                 </div>
 
                 <div className="mt-8 flex flex-wrap items-start justify-between gap-6">
-                    <p className="max-w-[640px] text-xs leading-relaxed text-hc-sage-dim">
+                    <p className="max-w-[640px] text-xs leading-relaxed text-hc-sage">
                         You must be 21 years of age or older to purchase. Keep out of reach of children and pets. For use only
                         by adults 21+, in states where cannabis is legal. This product has not been evaluated by the FDA and is
                         not intended to diagnose, treat, cure, or prevent any disease. Please consume responsibly and do not
                         operate a vehicle or machinery after use.
                     </p>
                     <div className="flex flex-col items-start gap-2 sm:items-end">
-                        <p className="font-hc-mono text-[11.5px] text-hc-sage-dim">
+                        <p className="font-hc-mono text-[11.5px] text-hc-sage">
                             STATE LICENSE #AD-2291-HC · © {new Date().getFullYear()} HAPPYCANA
                         </p>
-                        <div className="flex items-center gap-4 text-xs text-hc-sage-dim">
+                        <div className="flex items-center gap-4 text-xs text-hc-sage">
                             <Link href="/privacy" className="hover:text-hc-paper transition-colors">Privacy Policy</Link>
                             <Link href="/terms" className="hover:text-hc-paper transition-colors">Terms of Service</Link>
                         </div>
