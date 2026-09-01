@@ -26,13 +26,32 @@ class CategoryListView(generics.ListCreateAPIView):
     def get_serializer_class(self):
         return CategorySerializer
 
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        page = self.paginate_queryset(queryset)
+        objs = page if page is not None else list(queryset)
+        # See CategoryManager.attach_full_tree: without this, the
+        # recursive serializer issues one query per category at every
+        # depth below root->children.
+        Category.objects.attach_full_tree(objs)
+        serializer = self.get_serializer(objs, many=True)
+        if page is not None:
+            return self.get_paginated_response(serializer.data)
+        return Response(serializer.data)
+
 
 class CategoryDetailView(generics.RetrieveUpdateDestroyAPIView):
-    queryset           = Category.objects.with_children()
+    queryset           = Category.objects.all()
     serializer_class   = CategorySerializer
     permission_classes = [IsAdminOrReadOnly]
     parser_classes     = [MultiPartParser, FormParser]
     lookup_field = "slug"
+
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        Category.objects.attach_full_tree([instance])
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data)
 
 class ProductListView(generics.ListCreateAPIView):
     permission_classes = [IsAdminOrReadOnly]

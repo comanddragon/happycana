@@ -14,6 +14,33 @@ class CategoryManager(db_models.Manager):
     def active(self):           return self.get_queryset().active()
     def root_categories(self):  return self.get_queryset().active().root().with_children()
 
+    def attach_full_tree(self, objs):
+        """
+        CategorySerializer.get_children() recurses through the category
+        tree, and `with_children()` only prefetches one level deep — so
+        every level below that was issuing one query per node (N+1,
+        scaling with tree size, not just depth).
+
+        This loads every active category in a single query, links each
+        node to its children in memory, and stamps that onto `objs` (and
+        all of their descendants) as `_prefetched_children`, so the
+        recursive serializer never touches the DB again.
+        """
+        objs = list(objs)
+        by_parent = {}
+        for cat in self.get_queryset().active().order_by("name", "id"):
+            by_parent.setdefault(cat.parent_id, []).append(cat)
+
+        def link(cat):
+            children = by_parent.get(cat.id, [])
+            cat._prefetched_children = children
+            for child in children:
+                link(child)
+
+        for obj in objs:
+            link(obj)
+        return objs
+
 
 class ProductQuerySet(db_models.QuerySet):
     def active(self):               return self.filter(is_active=True)

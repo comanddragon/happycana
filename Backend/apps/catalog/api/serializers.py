@@ -17,8 +17,15 @@ class CategorySerializer(serializers.ModelSerializer):
 
 
     def get_children(self, obj):
-        qs = [c for c in obj.children.all() if c.is_active]
-        return CategorySerializer(qs, many=True, context=self.context).data
+        # attach_full_tree() (called from the view) stamps this in memory
+        # so no query is issued here. Fall back to a live query only if a
+        # caller serializes a Category without going through that path.
+        children = getattr(obj, "_prefetched_children", None)
+        if children is None:
+            children = [c for c in obj.children.all() if c.is_active]
+        else:
+            children = [c for c in children if c.is_active]
+        return CategorySerializer(children, many=True, context=self.context).data
 
     def get_image_url(self, obj):
         request = self.context.get("request")
