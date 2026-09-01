@@ -1,1 +1,21 @@
-SEO/AEO: add dedicated GET /api/catalog/labs/ endpoint and /learn/lab-results index page aggregating every product's real COA
+Perf: cache the category tree response and drop a redundant query
+
+The /api/catalog/categories/ endpoint was consistently logging
+RequestTimingMiddleware WARNINGs (~1.1-1.2s) despite only 4 fast
+queries (~90ms in DB) — the cost was in re-walking and re-serializing
+the whole active category tree on every single request, work that's
+wasted since the tree only changes on an admin write.
+
+- CategoryListView.list() now caches the fully-assembled response
+  (per path+querystring) using core.cache, so repeat requests for the
+  same page/filters skip the tree walk and serialization entirely.
+- apps/catalog/signals.py invalidates the cache by bumping a version
+  counter on any Category post_save/post_delete, wired up via
+  CatalogConfig.ready(). Old cached entries fall off via CATEGORY_TTL
+  instead of being actively deleted (avoids needing a key index).
+- CategoryManager.root_categories() no longer calls with_children():
+  attach_full_tree() already fetches and stamps the whole tree in one
+  query and ignores that prefetch, so it was buying a wasted 2nd query
+  on every (uncached) request.
+- CategorySerializer.get_children() short-circuits to [] when a node
+  has no children, skipping a pointless serializer instantiation.

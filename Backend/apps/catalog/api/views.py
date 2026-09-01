@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from django_filters.rest_framework import DjangoFilterBackend
 from core.permissions import IsAdminOrReadOnly
+from core.cache import cache_category_tree_response, get_cached_category_tree_response
 from .serializers import *
 from .filters import ProductFilter, ProductVariantFilter, CategoryFilter
 
@@ -27,6 +28,15 @@ class CategoryListView(generics.ListCreateAPIView):
         return CategorySerializer
 
     def list(self, request, *args, **kwargs):
+        # The tree only changes when a category is written (see
+        # apps.catalog.signals), which is rare — cache the assembled
+        # response per path+querystring instead of walking/serializing
+        # the whole active tree on every storefront request.
+        cache_key = request.get_full_path()
+        cached = get_cached_category_tree_response(cache_key)
+        if cached is not None:
+            return Response(cached)
+
         queryset = self.filter_queryset(self.get_queryset())
         page = self.paginate_queryset(queryset)
         objs = page if page is not None else list(queryset)
@@ -35,9 +45,9 @@ class CategoryListView(generics.ListCreateAPIView):
         # depth below root->children.
         Category.objects.attach_full_tree(objs)
         serializer = self.get_serializer(objs, many=True)
-        if page is not None:
-            return self.get_paginated_response(serializer.data)
-        return Response(serializer.data)
+        response_data = self.get_paginated_response(serializer.data).data if page is not None else serializer.data
+        cache_category_tree_response(cache_key, response_data)
+        return Response(response_data)
 
 
 class CategoryDetailView(generics.RetrieveUpdateDestroyAPIView):

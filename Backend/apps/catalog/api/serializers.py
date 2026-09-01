@@ -28,6 +28,8 @@ class CategorySerializer(serializers.ModelSerializer):
             children = [c for c in obj.children.all() if c.is_active]
         else:
             children = [c for c in children if c.is_active]
+        if not children:
+            return []
         return CategorySerializer(children, many=True, context=self.context).data
 
     def get_image_url(self, obj):

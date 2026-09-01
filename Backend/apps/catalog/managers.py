@@ -12,7 +12,12 @@ class CategoryManager(db_models.Manager):
     def get_queryset(self):     return CategoryQuerySet(self.model, using=self._db)
     def with_children(self):    return self.prefetch_related("children")
     def active(self):           return self.get_queryset().active()
-    def root_categories(self):  return self.get_queryset().active().root().with_children()
+    def root_categories(self):
+        # No .with_children() here: CategoryListView always follows this
+        # with attach_full_tree(), which fetches (and stamps) the whole
+        # active tree in one query and ignores any prefetch on `objs`.
+        # Keeping with_children() here just bought a second, wasted query.
+        return self.get_queryset().active().root()
 
     def attach_full_tree(self, objs):
         """
