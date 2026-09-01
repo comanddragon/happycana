@@ -112,11 +112,10 @@ export function ProductsGrid({ initialCategory = '', initialOrdering = '-created
 
     return (
         <>
-            {/* Toolbar and elements */}
             <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
                 <div className="flex items-center gap-2 flex-wrap">
                     <div className="relative">
-                        <Search className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-surface-400" />
+                        <Search className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-hc-ink-soft/50" />
                         <Input
                             type="text"
                             placeholder="Search products…"
@@ -164,7 +163,7 @@ export function ProductsGrid({ initialCategory = '', initialOrdering = '-created
                     ) : null}
                 </div>
                 <div className="flex items-center gap-2">
-                    <span className="text-sm text-surface-500 hidden sm:block">Sort:</span>
+                    <span className="text-sm text-hc-ink-soft hidden sm:block">Sort:</span>
                     <Select value={ordering} onValueChange={val => setParam('ordering', val)}>
                         <SelectTrigger className="w-auto min-w-[9rem]">
                             <SelectValue />
@@ -178,7 +177,6 @@ export function ProductsGrid({ initialCategory = '', initialOrdering = '-created
                 </div>
             </div>
 
-            {/* Active filter chips */}
             {(brand || cannabisType || effect || minThc || inStock) && (
                 <div className="flex flex-wrap items-center gap-1.5 mb-6 -mt-2">
                     {brand && (
@@ -232,7 +230,7 @@ export function ProductsGrid({ initialCategory = '', initialOrdering = '-created
                             Previous
                         </Button>
                     ) : null}
-                    <span className="text-sm text-surface-500">
+                    <span className="text-sm text-hc-ink-soft">
             Page {page} of {Math.ceil(data.count / 20)}
           </span>
                     {data.next ? (
@@ -243,7 +241,6 @@ export function ProductsGrid({ initialCategory = '', initialOrdering = '-created
                 </div>
             ) : null}
 
-            {/* Grid */}
             {isLoading ? (
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-5">
                     {Array.from({ length: 12 }).map((_, i) => (
@@ -256,11 +253,11 @@ export function ProductsGrid({ initialCategory = '', initialOrdering = '-created
                 </div>
             ) : data?.results.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-24 text-center">
-                    <div className="h-14 w-14 rounded-2xl bg-surface-100 flex items-center justify-center mb-4">
-                        <SearchX className="h-6 w-6 text-surface-400" />
+                    <div className="h-14 w-14 rounded-2xl bg-hc-paper-2 flex items-center justify-center mb-4">
+                        <SearchX className="h-6 w-6 text-hc-ink-soft/50" />
                     </div>
-                    <h3 className="font-display text-xl font-medium text-surface-900">No products found</h3>
-                    <p className="text-surface-500 mt-1 text-sm">Try adjusting your filters</p>
+                    <h3 className="font-hc-display text-xl font-medium text-hc-ink">No products found</h3>
+                    <p className="text-hc-ink-soft mt-1 text-sm">Try adjusting your filters</p>
                     <Button size="sm" onClick={clearFilters} className="mt-4">Clear filters</Button>
                 </div>
             ) : (
@@ -281,7 +278,7 @@ export function ProductsGrid({ initialCategory = '', initialOrdering = '-created
                             Previous
                         </Button>
                     ) : null}
-                    <span className="text-sm text-surface-500">
+                    <span className="text-sm text-hc-ink-soft">
             Page {page} of {Math.ceil(data.count / 20)}
           </span>
                     {data.next ? (
@@ -292,7 +289,6 @@ export function ProductsGrid({ initialCategory = '', initialOrdering = '-created
                 </div>
             ) : null}
 
-            {/* Advanced filters */}
             <Sheet open={filtersOpen} onOpenChange={setFiltersOpen}>
                 <SheetContent side="right" className="w-full sm:max-w-sm overflow-y-auto">
                     <SheetHeader>

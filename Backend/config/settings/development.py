@@ -6,7 +6,7 @@ ALLOWED_HOSTS = ["*"]
 
 STORE_LOGO_URL = os.environ.get("STORE_LOGO_URL", "")
 
-# SQLite for quick local dev — swap to Postgres if you need relational features
+# Postgres for local dev too — connection details come from env vars below
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
@@ -39,7 +39,7 @@ LOGGING = {
     "handlers": {
         "console": {
             "class":     "logging.StreamHandler",
-            "formatter": "",
+            "formatter": "verbose",
         },
     },
     "loggers": {
@@ -64,6 +64,11 @@ LOGGING = {
             "propagate": False,
         },
         "core.cache": {
+            "handlers": ["console"],
+            "level":    "INFO",
+            "propagate": False,
+        },
+        "core.timing": {
             "handlers": ["console"],
             "level":    "INFO",
             "propagate": False,

@@ -6,8 +6,9 @@ import Link from 'next/link'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Eye, EyeOff, Loader2, ShoppingBag } from 'lucide-react'
+import { Eye, EyeOff, Loader2 } from 'lucide-react'
 import { authService, userService } from '@/lib/services'
+import { Logo } from '@/components/layout/Logo'
 import { useAuthStore } from '@/store/auth'
 import { extractErrorMessage } from '@/lib/api'
 import { toast } from 'sonner'
@@ -48,20 +49,15 @@ export default function LoginPage() {
     }
 
     return (
-        <div className="min-h-screen bg-muted/30 flex items-center justify-center p-4">
+        <div className="min-h-screen bg-hc-paper font-hc-body flex items-center justify-center p-4">
             <div className="w-full max-w-md space-y-6">
                 <div className="text-center">
-                    <Link href="/" className="inline-flex items-center gap-2 justify-center">
-                        <div className="h-10 w-10 rounded-2xl bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center">
-                            <ShoppingBag className="h-5 w-5 text-white" />
-                        </div>
-                        <span className="font-display text-2xl font-semibold">ShopForge</span>
-                    </Link>
+                    <Logo variant="light-bg" height={40} priority />
                 </div>
 
-                <Card>
+                <Card className="border-hc-ink/[0.08]">
                     <CardHeader className="text-center">
-                        <CardTitle className="font-display text-2xl">Welcome back</CardTitle>
+                        <CardTitle className="font-hc-display text-2xl font-medium text-hc-ink">Welcome back</CardTitle>
                         <CardDescription>Sign in to your account</CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -94,7 +90,7 @@ export default function LoginPage() {
                     <CardFooter className="justify-center">
                         <p className="text-sm text-muted-foreground">
                             Don&apos;t have an account?{' '}
-                            <Link href="/register" className="text-brand-600 font-medium hover:underline">Create one</Link>
+                            <Link href="/register" className="text-hc-amber-dim font-medium hover:underline">Create one</Link>
                         </p>
                     </CardFooter>
                 </Card>

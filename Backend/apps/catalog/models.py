@@ -3,8 +3,6 @@ from django.db import models
 from .managers import CategoryManager, ProductManager, ProductVariantManager
 
 
-# ─── Mixins ───────────────────────────────────────────────────────────────────
-
 class UUIDModel(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
@@ -21,7 +19,6 @@ class TimestampedModel(UUIDModel):
 
 
 class MediaMixin(models.Model):
-    """Shared fields and logic for image/video attachments."""
     is_primary = models.BooleanField(default=False)
     order      = models.PositiveIntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -30,7 +27,6 @@ class MediaMixin(models.Model):
         abstract = True
 
     def _enforce_single_primary(self, qs):
-        """Unset is_primary on all siblings before saving this one as primary."""
         if self.is_primary:
             qs.exclude(pk=self.pk).update(is_primary=False)
 
@@ -56,39 +52,6 @@ class VideoMixin(models.Model):
             return self.file.url
         return self.external_url
 
-class Brand(models.Model):
-    id          = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    name        = models.CharField(max_length=255, unique=True)
-    slug        = models.SlugField(max_length=255, unique=True)
-    description = models.TextField(blank=True)
-    logo_url    = models.URLField(blank=True, help_text="Passed through as-is from the source — not downloaded/re-hosted.")
-    website     = models.URLField(blank=True)
-    is_active   = models.BooleanField(default=True)
-
-    class Meta:
-        ordering = ["name", "id"]
-        db_table = "brands"
-
-    def __str__(self):
-        return self.name
-
-class Effect(models.Model):
-    """
-    NEW MODEL. e.g. "relaxed", "energized", "creative". Backed by a real
-    table (not free-text) so it's cheaply filterable/facetable.
-    """
-    id   = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    name = models.CharField(max_length=50, unique=True)
-    slug = models.SlugField(max_length=50, unique=True)
-
-    class Meta:
-        ordering = ["name", "id"]
-        db_table = "effects"
-
-    def __str__(self):
-        return self.name
-
-# ─── Catalog ──────────────────────────────────────────────────────────────────
 
 class Category(UUIDModel):
     parent      = models.ForeignKey("self", null=True, blank=True, on_delete=models.SET_NULL, related_name="children")
@@ -118,6 +81,36 @@ class Category(UUIDModel):
         return self.name
 
 
+class Brand(models.Model):
+    id          = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    name        = models.CharField(max_length=255, unique=True)
+    slug        = models.SlugField(max_length=255, unique=True)
+    description = models.TextField(blank=True)
+    logo_url    = models.URLField(blank=True, help_text="Passed through as-is from the source — not downloaded/re-hosted.")
+    website     = models.URLField(blank=True)
+    is_active   = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ["name", "id"]
+        db_table = "brands"
+
+    def __str__(self):
+        return self.name
+
+
+class Effect(models.Model):
+    id   = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    name = models.CharField(max_length=50, unique=True)
+    slug = models.SlugField(max_length=50, unique=True)
+
+    class Meta:
+        ordering = ["name", "id"]
+        db_table = "effects"
+
+    def __str__(self):
+        return self.name
+
+
 class Product(TimestampedModel):
     category         = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, related_name="products")
     name             = models.CharField(max_length=255)
@@ -125,8 +118,9 @@ class Product(TimestampedModel):
     description      = models.TextField(blank=True)
     base_price       = models.DecimalField(max_digits=12, decimal_places=2)
     is_active        = models.BooleanField(default=True)
-    meta_title       = models.CharField(max_length=60, blank=True)   # fallback to name if empty
-    meta_description = models.CharField(max_length=160, blank=True)  # fallback to description[:160]
+    meta_title       = models.CharField(max_length=60, blank=True)
+    meta_description = models.CharField(max_length=160, blank=True)
+
     class ComplianceCategory(models.TextChoices):
         FLOWER        = "flower",        "Flower"
         VAPORIZERS    = "vaporizers",    "Vaporizers"
@@ -184,14 +178,13 @@ class Product(TimestampedModel):
 
     @property
     def primary_image(self):
-        return self.images.filter(is_primary=True).first()
+        return next((img for img in self.images.all() if img.is_primary), None)
 
     @property
     def primary_video(self):
-        return self.videos.filter(is_primary=True).first()
+        return next((vid for vid in self.videos.all() if vid.is_primary), None)
 
 
-# ─── Product media ────────────────────────────────────────────────────────────
 class ProductImage(UUIDModel, MediaMixin):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="images")
     image   = models.ImageField(upload_to="products/images/", blank=True, null=True)
@@ -205,8 +198,6 @@ class ProductImage(UUIDModel, MediaMixin):
         ordering = ["order", "created_at"]
 
     def save(self, *args, **kwargs):
-        if not self.alt_text and self.product_id:
-            self.alt_text = self.product.name   # sensible default, still editable in admin
         self._enforce_single_primary(
             ProductImage.objects.filter(product=self.product, is_primary=True)
         )
@@ -237,8 +228,6 @@ class ProductVideo(UUIDModel, MediaMixin, VideoMixin):
         return f"Video for {self.product.name} ({suffix})"
 
 
-# ─── Variants ─────────────────────────────────────────────────────────────────
-
 class ProductVariant(UUIDModel):
     product   = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="variants")
     sku       = models.CharField(max_length=100, unique=True)
@@ -262,8 +251,14 @@ class ProductVariant(UUIDModel):
     def __str__(self):
         return self.sku
 
+    @property
+    def primary_image(self):
+        return next((img for img in self.images.all() if img.is_primary), None)
 
-# ─── Variant media ────────────────────────────────────────────────────────────
+    @property
+    def primary_video(self):
+        return next((vid for vid in self.videos.all() if vid.is_primary), None)
+
 
 class VariantImage(UUIDModel, MediaMixin):
     variant  = models.ForeignKey(ProductVariant, on_delete=models.CASCADE, related_name="images")
@@ -305,10 +300,7 @@ class VariantVideo(UUIDModel, MediaMixin, VideoMixin):
         return f"Video for {self.variant.sku} ({suffix})"
 
 
-# ─── Attributes ───────────────────────────────────────────────────────────────
-
 class AttributeType(UUIDModel):
-    """Reusable attribute definition, e.g. 'Color', 'Size'."""
     name = models.CharField(max_length=100, unique=True)
 
     class Meta:
@@ -319,7 +311,6 @@ class AttributeType(UUIDModel):
 
 
 class Attribute(UUIDModel):
-    """A concrete attribute value attached to a variant, e.g. Color=Red."""
     variant        = models.ForeignKey(ProductVariant, on_delete=models.CASCADE, related_name="attributes", null=True, blank=True)
     attribute_type = models.ForeignKey(AttributeType, on_delete=models.PROTECT, related_name="values", null=True, blank=True)
     value          = models.CharField(max_length=100)
@@ -332,14 +323,7 @@ class Attribute(UUIDModel):
         return f"{self.attribute_type.name}: {self.value}"
 
 
-# ─── Lab results / COA ────────────────────────────────────────────────────────
-
 class Lab(models.Model):
-    """
-    NEW MODEL, one-to-one with ProductVariant. Kept off the hot Product/
-    Variant list-query path deliberately — 20+ nullable decimal columns
-    don't belong on every catalog list response, only product-detail.
-    """
     id      = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     variant = models.OneToOneField(
         "ProductVariant", on_delete=models.CASCADE, related_name="lab"
@@ -359,9 +343,6 @@ class Lab(models.Model):
     cbn_percent  = models.DecimalField(max_digits=6, decimal_places=3, null=True, blank=True)
     cbg_percent  = models.DecimalField(max_digits=6, decimal_places=3, null=True, blank=True)
 
-    # Terpene profile — stored as JSON {name: mg_value} rather than one
-    # column per terpene (12+ distinct terpenes appear across the catalog,
-    # rarely more than 6-9 on any single product).
     terpenes = models.JSONField(default=dict, blank=True)
 
     coa_url  = models.URLField(blank=True, help_text="Link to third-party Certificate of Analysis, if hosted externally.")
@@ -374,15 +355,7 @@ class Lab(models.Model):
         return f"Lab results for {self.variant.sku}"
 
 
-# ─── ProductDiscount (phase 2 — not required by the seed script) ─────────────
-
 class ProductDiscount(models.Model):
-    """
-    NEW MODEL. Distinct from apps.promotions.Coupon: this is an automatic,
-    schedule-aware, per-product discount (no code entry). 469/1689 scraped
-    products carry one of these. Seed script currently skips populating
-    this — base prices are seeded as-is — flagged here as a phase 2 item.
-    """
     id      = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     product = models.ForeignKey("Product", on_delete=models.CASCADE, related_name="discounts")
 

@@ -36,7 +36,7 @@ export default function imgixLoader({
     }
 
     // Imgix-hosted images.
-    if (url.hostname.endsWith('imgix.dispenseapp.com')) {
+    if (url.hostname.endsWith('imgix.dispenseapp.com') || url.hostname.endsWith('d1qjybsjlbmhj3.cloudfront.net')) {
         url.searchParams.set('w', String(width))
         url.searchParams.set('q', String(quality ?? 65))
         url.searchParams.set('auto', 'format,compress')

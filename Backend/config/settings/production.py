@@ -1,6 +1,3 @@
-# =============================================================================
-# config/settings/production.py
-# =============================================================================
 from urllib.parse import urlparse, parse_qsl
 
 from .base import *  # noqa
@@ -76,10 +73,6 @@ AWS_DEFAULT_ACL       = "private"
 AWS_S3_FILE_OVERWRITE = False
 
 # ---------------------------------------------------------------------------
-# Email — sent via Resend (services/email.py); RESEND_API_KEY must be set.
-# ---------------------------------------------------------------------------
-
-# ---------------------------------------------------------------------------
 # Sentry — error tracking
 # ---------------------------------------------------------------------------
 import sentry_sdk
@@ -118,6 +111,11 @@ LOGGING = {
         "django": {
             "handlers":  ["console"],
             "level":     "WARNING",
+            "propagate": False,
+        },
+        "core.timing": {
+            "handlers":  ["console"],
+            "level":     "INFO",
             "propagate": False,
         },
     },

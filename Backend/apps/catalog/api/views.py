@@ -1,6 +1,3 @@
-# =============================================================================
-# apps/catalog/api/views.py
-# =============================================================================
 from rest_framework import generics, filters, permissions
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.response import Response
@@ -42,12 +39,21 @@ class ProductListView(generics.ListCreateAPIView):
     filter_backends    = [DjangoFilterBackend, filters.OrderingFilter]
     filterset_class    = ProductFilter
 
-
     def get_queryset(self):
-        return Product.objects.active().full()
+        if self.request.method == "POST":
+            return Product.objects.active().full()
+        # List only needs what ProductListSerializer renders — .full() was
+        # additionally pulling variant attributes/images/videos/stock for
+        # every product on every page, none of which the grid displays.
+        return (
+            Product.objects.active()
+            .with_category().with_images()
+            .select_related("brand")
+            .prefetch_related("effects", "variants__lab")
+        )
 
     def get_serializer_class(self):
-        return ProductWriteSerializer if self.request.method == "POST" else ProductSerializer
+        return ProductWriteSerializer if self.request.method == "POST" else ProductListSerializer
 
 
 class ProductDetailView(generics.RetrieveUpdateDestroyAPIView):

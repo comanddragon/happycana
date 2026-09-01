@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from apps.catalog.models import (
     Category, Product, ProductVariant, Brand, Effect, Lab,
-    Attribute, AttributeType,           # ← add AttributeType
+    Attribute, AttributeType,
     ProductImage, ProductVideo, VariantImage, VariantVideo,
 )
 
@@ -68,7 +68,7 @@ class ProductImageSerializer(serializers.ModelSerializer):
         request = self.context.get("request")
         if obj.image:
             return request.build_absolute_uri(obj.image.url) if request else obj.image.url
-        return obj.source_url or None  # <- the actual fix: fall back to the passed-through URL
+        return obj.source_url or None
 
 class BrandSerializer(serializers.ModelSerializer):
     class Meta:
@@ -151,7 +151,7 @@ class VariantVideoSerializer(serializers.ModelSerializer):
 class ProductMinimalSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
-        fields = ["id", "name", "slug"]  # only the fields you want
+        fields = ["id", "name", "slug"]
 
 class ProductVariantSerializer(serializers.ModelSerializer):
     attributes    = AttributeSerializer(many=True, read_only=True)
@@ -192,6 +192,44 @@ class ProductVariantWriteSerializer(serializers.ModelSerializer):
         return variant
 
 
+class LabSummarySerializer(serializers.ModelSerializer):
+    class Meta:
+        model  = Lab
+        fields = ["potency", "thc_percent"]
+
+
+class ProductVariantSummarySerializer(serializers.ModelSerializer):
+    """Just what the product grid needs (price, weight, THC, and an id to
+    add to cart) — no attributes/images/videos, unlike ProductVariantSerializer."""
+    lab = LabSummarySerializer(read_only=True)
+
+    class Meta:
+        model  = ProductVariant
+        fields = ["id", "price", "weight_value", "weight_unit", "lab"]
+        read_only_fields = ["id"]
+
+
+class ProductListSerializer(serializers.ModelSerializer):
+    """Lean serializer for the product grid: no nested images/videos on
+    variants, since the grid only renders name/price/primary image/brand/category/THC."""
+    category      = CategoryMinimalSerializer(read_only=True)
+    brand         = BrandMinimalSerializer(read_only=True)
+    primary_image = ProductImageSerializer(read_only=True)
+    effects       = EffectSerializer(many=True, read_only=True)
+    variants      = ProductVariantSummarySerializer(many=True, read_only=True)
+
+    class Meta:
+        model  = Product
+        fields = [
+            "id", "category", "name", "slug",
+            "base_price", "is_active", "created_at",
+            "primary_image", "brand", "compliance_category",
+            "cannabis_type", "sub_type", "is_featured", "is_new",
+            "effects", "variants",
+        ]
+        read_only_fields = ["id", "slug", "created_at"]
+
+
 class ProductSerializer(serializers.ModelSerializer):
     category      = CategoryMinimalSerializer(read_only=True)
     variants      = ProductVariantSerializer(many=True, read_only=True)
@@ -206,7 +244,7 @@ class ProductSerializer(serializers.ModelSerializer):
         model  = Product
         fields = [
             "id", "category", "name", "slug", "description",
-            "meta_title", "meta_description",  # ← add these
+            "meta_title", "meta_description",
             "base_price", "is_active", "created_at",
             "primary_image", "primary_video",
             "images", "videos", "variants",

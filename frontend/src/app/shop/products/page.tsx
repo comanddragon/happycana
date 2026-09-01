@@ -85,12 +85,12 @@ export default async function ProductsPage({ searchParams }: PageProps) {
     return (
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10">
             <div className="mb-8">
-                <h1 className="section-heading">
+                <h1 className="font-hc-display text-3xl font-medium text-hc-ink">
                     {params.category ? `${params.category} Products` : 'All Products'}
                 </h1>
             </div>
             <HydrationBoundary state={dehydrate(queryClient)}>
-                <Suspense fallback={<div className="h-96 animate-pulse rounded-2xl bg-surface-100" />}>
+                <Suspense fallback={<div className="h-96 animate-pulse rounded-2xl bg-hc-paper-2" />}>
                     <ProductsGrid
                         initialCategory={params.category ?? ''}
                         initialOrdering={params.ordering ?? '-created_at'}

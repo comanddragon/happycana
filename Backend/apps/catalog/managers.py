@@ -19,7 +19,8 @@ class ProductQuerySet(db_models.QuerySet):
     def active(self):               return self.filter(is_active=True)
     def inactive(self):             return self.filter(is_active=False)
     def by_category(self, cid):     return self.filter(category_id=cid)
-    def with_variants(self):        return self.prefetch_related("variants__attributes")
+    def with_variants(self):
+        return self.prefetch_related("variants__attributes", "variants__images", "variants__videos")
     def with_category(self):        return self.select_related("category")
     def with_stock(self):           return self.prefetch_related("variants__stock_levels__warehouse")
     def with_images(self):          return self.prefetch_related("images")
@@ -79,10 +80,4 @@ class ProductVariantManager(db_models.Manager):
     def get_queryset(self):     return ProductVariantQuerySet(self.model, using=self._db)
     def active(self):           return self.get_queryset().active()
     def available(self):        return self.get_queryset().active().available()
-
-
-# Integrate into apps/catalog/models.py:
-#   Category.objects      = CategoryManager()
-#   Product.objects       = ProductManager()
-#   ProductVariant.objects= ProductVariantManager()
 
