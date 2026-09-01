@@ -1,6 +1,7 @@
 // app/sitemap.ts
 import {Product} from "@/types";
 import {GUIDES} from "@/lib/guides";
+import {BLOG_POSTS} from "@/lib/blog";
 
 export const dynamic = 'force-dynamic'
 
@@ -9,8 +10,11 @@ export default async function sitemap() {
         { url: `${process.env.NEXT_PUBLIC_FRONTEND_URL}`, priority: 1 },
         { url: `${process.env.NEXT_PUBLIC_FRONTEND_URL}/shop`, priority: 0.9 },
         { url: `${process.env.NEXT_PUBLIC_FRONTEND_URL}/shop/products`, priority: 0.9 },
+        { url: `${process.env.NEXT_PUBLIC_FRONTEND_URL}/shop/new-arrivals`, priority: 0.8 },
+        { url: `${process.env.NEXT_PUBLIC_FRONTEND_URL}/shop/best-sellers`, priority: 0.8 },
         { url: `${process.env.NEXT_PUBLIC_FRONTEND_URL}/learn`, priority: 0.7 },
         { url: `${process.env.NEXT_PUBLIC_FRONTEND_URL}/learn/lab-results`, priority: 0.6 },
+        { url: `${process.env.NEXT_PUBLIC_FRONTEND_URL}/blog`, priority: 0.7 },
         { url: `${process.env.NEXT_PUBLIC_FRONTEND_URL}/help/faq`, priority: 0.5 },
     ]
 
@@ -19,6 +23,13 @@ export default async function sitemap() {
     // it isn't linked from the dynamic product catalog below.
     const guideEntries = GUIDES.map(g => ({
         url: `${process.env.NEXT_PUBLIC_FRONTEND_URL}/learn/${g.slug}`,
+        changeFrequency: 'monthly',
+        priority: 0.6,
+    }))
+
+    const blogEntries = BLOG_POSTS.map(p => ({
+        url: `${process.env.NEXT_PUBLIC_FRONTEND_URL}/blog/${p.slug}`,
+        lastModified: p.publishedAt,
         changeFrequency: 'monthly',
         priority: 0.6,
     }))
@@ -37,8 +48,8 @@ export default async function sitemap() {
             priority: 0.8,
         }))
 
-        return [...staticEntries, ...guideEntries, ...products]
+        return [...staticEntries, ...guideEntries, ...blogEntries, ...products]
     } catch (e) {
-        return [...staticEntries, ...guideEntries]
+        return [...staticEntries, ...guideEntries, ...blogEntries]
     }
 }

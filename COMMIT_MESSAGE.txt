@@ -1,21 +1,19 @@
-Perf: cache the category tree response and drop a redundant query
+commit 138b3d10156b5cb9dc27ca5323e96dc5e70fd771
+Add blog, New Arrivals, and Best Sellers pages
 
-The /api/catalog/categories/ endpoint was consistently logging
-RequestTimingMiddleware WARNINGs (~1.1-1.2s) despite only 4 fast
-queries (~90ms in DB) — the cost was in re-walking and re-serializing
-the whole active category tree on every single request, work that's
-wasted since the tree only changes on an admin write.
+- New /blog section: lib/blog.ts post registry, shared BlogArticle
+  shell (tags, meta, TOC, TL;DR, typography, author bio, related
+  posts, Article JSON-LD), ProductPicks component to embed live
+  products in a post, blog index, and 3 posts (cannabis accessories
+  essentials, carbon vs paper filters, beginner joint rolling),
+  cross-linked to each other and to /learn.
+- New /shop/new-arrivals and /shop/best-sellers landing pages: hero
+  band, prefetched product grid locked to the relevant ordering,
+  page-specific FAQ, CTA band.
+- ProductsGrid: added a basePath prop (default /shop/products,
+  backward compatible) so filter/sort navigation on the new landing
+  pages stays on their own route instead of redirecting to
+  /shop/products.
+- Wired the new pages into NAV_LINKS, Footer, sitemap.ts, and the
+  'See all' links on /shop.
 
-- CategoryListView.list() now caches the fully-assembled response
-  (per path+querystring) using core.cache, so repeat requests for the
-  same page/filters skip the tree walk and serialization entirely.
-- apps/catalog/signals.py invalidates the cache by bumping a version
-  counter on any Category post_save/post_delete, wired up via
-  CatalogConfig.ready(). Old cached entries fall off via CATEGORY_TTL
-  instead of being actively deleted (avoids needing a key index).
-- CategoryManager.root_categories() no longer calls with_children():
-  attach_full_tree() already fetches and stamps the whole tree in one
-  query and ignores that prefetch, so it was buying a wasted 2nd query
-  on every (uncached) request.
-- CategorySerializer.get_children() short-circuits to [] when a node
-  has no children, skipping a pointless serializer instantiation.

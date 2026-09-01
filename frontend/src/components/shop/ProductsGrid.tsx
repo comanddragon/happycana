@@ -34,9 +34,19 @@ interface Props {
     initialOrdering?: string
     initialSearch?: string
     initialPage?: number
+    /** Route filter/sort/pagination changes push to. Lets landing pages like
+     *  /shop/new-arrivals or /shop/best-sellers reuse this grid without
+     *  navigating the user away to /shop/products on the first interaction. */
+    basePath?: string
 }
 
-export function ProductsGrid({ initialCategory = '', initialOrdering = '-created_at', initialSearch = '', initialPage = 1 }: Props) {
+export function ProductsGrid({
+    initialCategory = '',
+    initialOrdering = '-created_at',
+    initialSearch = '',
+    initialPage = 1,
+    basePath = '/shop/products',
+}: Props) {
     const router       = useRouter()
     const searchParams = useSearchParams()
 
@@ -80,8 +90,8 @@ export function ProductsGrid({ initialCategory = '', initialOrdering = '-created
         if (key !== "page") {
             p.delete("page");
         }
-        router.push(`/shop/products?${p.toString()}`);
-    }, [searchParams, router]);
+        router.push(`${basePath}?${p.toString()}`);
+    }, [searchParams, router, basePath]);
 
     const setParams = useCallback((updates: Record<string, string>) => {
         const p = new URLSearchParams(searchParams.toString())
@@ -90,12 +100,12 @@ export function ProductsGrid({ initialCategory = '', initialOrdering = '-created
             else p.delete(key)
         }
         p.delete('page')
-        router.push(`/shop/products?${p.toString()}`)
-    }, [searchParams, router])
+        router.push(`${basePath}?${p.toString()}`)
+    }, [searchParams, router, basePath])
 
     const clearFilters = () => {
         setSearchDraft('')
-        router.push('/shop/products')
+        router.push(basePath)
     }
 
     const clearAdvancedFilters = () => {

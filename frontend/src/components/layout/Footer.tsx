@@ -6,11 +6,12 @@ const COLUMNS: Record<string, { label: string; href: string }[]> = {
     Shop: [
         { label: 'Flower', href: '/shop/products?category=flower' },
         { label: 'Edibles', href: '/shop/products?category=edibles' },
-        { label: 'Vapes', href: '/shop/products?category=vaporizers' },
-        { label: 'New arrivals', href: '/shop/products?ordering=-created_at' },
+        { label: 'New arrivals', href: '/shop/new-arrivals' },
+        { label: 'Best sellers', href: '/shop/best-sellers' },
     ],
     Learn: [
-        ...GUIDES.slice(0, 3).map(g => ({ label: g.title.split(':')[0], href: `/learn/${g.slug}` })),
+        { label: 'Blog', href: '/blog' },
+        ...GUIDES.slice(0, 2).map(g => ({ label: g.title.split(':')[0], href: `/learn/${g.slug}` })),
         { label: 'All guides', href: '/learn' },
     ],
     Account: [

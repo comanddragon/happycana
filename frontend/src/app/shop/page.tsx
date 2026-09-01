@@ -107,7 +107,7 @@ async function BestSellersSection() {
                     <h2 className="font-hc-display text-2xl font-medium text-hc-ink">Best Sellers</h2>
                 </div>
                 <Link
-                    href="/shop/products?ordering=-units_sold_hint"
+                    href="/shop/best-sellers"
                     className="inline-flex items-center gap-1.5 font-hc-mono text-xs uppercase tracking-wide text-hc-amber-dim hover:text-hc-amber transition-colors"
                 >
                     See all <ArrowRight className="h-3.5 w-3.5" />
@@ -136,7 +136,7 @@ async function NewArrivalsSection() {
                     <h2 className="font-hc-display text-2xl font-medium text-hc-ink">New Arrivals</h2>
                 </div>
                 <Link
-                    href="/shop/products?ordering=-created_at"
+                    href="/shop/new-arrivals"
                     className="inline-flex items-center gap-1.5 font-hc-mono text-xs uppercase tracking-wide text-hc-amber-dim hover:text-hc-amber transition-colors"
                 >
                     See all <ArrowRight className="h-3.5 w-3.5" />
