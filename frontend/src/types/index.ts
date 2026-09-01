@@ -63,6 +63,8 @@ export interface Category {
     image_url: string
     is_active: boolean
     children?: Category[]
+    meta_title?: string
+    meta_description?: string
 }
 
 // Matches apps.catalog.models.ComplianceCategory choices
@@ -96,6 +98,8 @@ export interface Brand {
     description: string
     logo_url: string
     website: string
+    meta_title?: string
+    meta_description?: string
 }
 
 // Slim version returned nested on Product (BrandMinimalSerializer)
@@ -201,7 +205,10 @@ export interface ProductVariant {
     weight_unit: string
     is_active: boolean
     attributes: Attribute[]
-    stock_quantity?: number
+    // True if any warehouse has (quantity - reserved) > 0 for this variant.
+    // Prefetched on the backend (ProductVariantSerializer.get_in_stock) —
+    // no separate stock lookup needed on the frontend.
+    in_stock: boolean
     // Variant-level media (from VariantImage / VariantVideo models)
     images: VariantImage[]
     videos: VariantVideo[]

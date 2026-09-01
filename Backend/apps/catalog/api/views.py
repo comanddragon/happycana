@@ -62,13 +62,15 @@ class ProductListView(generics.ListCreateAPIView):
         if self.request.method == "POST":
             return Product.objects.active().full()
         # List only needs what ProductListSerializer renders — .full() was
-        # additionally pulling variant attributes/images/videos/stock for
-        # every product on every page, none of which the grid displays.
+        # additionally pulling variant attributes/images/videos for every
+        # product on every page, none of which the grid displays. Stock is
+        # prefetched on its own (cheap, one extra query) so the grid can
+        # show accurate in_stock without an N+1.
         return (
             Product.objects.active()
             .with_category().with_images()
             .select_related("brand")
-            .prefetch_related("effects", "variants__lab")
+            .prefetch_related("effects", "variants__lab", "variants__stock_levels")
         )
 
     def get_serializer_class(self):

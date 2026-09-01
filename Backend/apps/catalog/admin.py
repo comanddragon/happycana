@@ -1,6 +1,6 @@
 from django.contrib import admin
 from apps.catalog.models import Category, Product, ProductVariant, Attribute, ProductImage, ProductVideo, VariantImage, \
-    VariantVideo, Effect
+    VariantVideo, Effect, Brand, Lab
 
 
 class AttributeInline(admin.TabularInline):
@@ -42,12 +42,39 @@ class ProductVariantInline(admin.TabularInline):
     show_change_link = True
 
 
+class LabInline(admin.StackedInline):
+    model = Lab
+    extra = 0
+    fields = [
+        "potency", "thc_percent", "thca_percent", "cbd_percent",
+        "cbda_percent", "cbn_percent", "cbg_percent", "terpenes",
+        "coa_url", "coa_file",
+    ]
+
+
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
     list_display  = ["name", "parent", "is_active"]
     list_filter   = ["is_active"]
     search_fields = ["name", "slug"]
     prepopulated_fields = ({"slug": ("name",)})
+    fieldsets = (
+        (None, {"fields": ("parent", "name", "slug", "description", "image", "is_active")}),
+        ("SEO", {"fields": ("meta_title", "meta_description")}),
+    )
+
+
+@admin.register(Brand)
+class BrandAdmin(admin.ModelAdmin):
+    list_display  = ["name", "is_active", "website"]
+    list_filter   = ["is_active"]
+    search_fields = ["name", "slug"]
+    prepopulated_fields = {"slug": ("name",)}
+    fieldsets = (
+        (None, {"fields": ("name", "slug", "description", "logo_url", "website", "is_active")}),
+        ("SEO", {"fields": ("meta_title", "meta_description")}),
+    )
+
 
 @admin.register(Effect)
 class EffectAdmin(admin.ModelAdmin):
@@ -70,7 +97,7 @@ class ProductAdmin(admin.ModelAdmin):
 
 @admin.register(ProductVariant)
 class ProductVariantAdmin(admin.ModelAdmin):
-    inlines       = [VariantImageInline, VariantVideoInline, AttributeInline]
+    inlines       = [LabInline, VariantImageInline, VariantVideoInline, AttributeInline]
     list_display  = ["sku", "product", "price", "is_active"]
     list_filter   = ["is_active"]
     search_fields = ["sku", "product__name"]

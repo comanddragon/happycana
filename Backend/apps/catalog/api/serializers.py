@@ -11,7 +11,10 @@ class CategorySerializer(serializers.ModelSerializer):
 
     class Meta:
         model  = Category
-        fields = ["id", "parent", "name", "slug", "description", "image", "image_url", "is_active", "children"]
+        fields = [
+            "id", "parent", "name", "slug", "description", "image", "image_url",
+            "is_active", "children", "meta_title", "meta_description",
+        ]
         read_only_fields = ["id"]
         extra_kwargs = {"image": {"write_only": True}}
 
@@ -80,7 +83,10 @@ class ProductImageSerializer(serializers.ModelSerializer):
 class BrandSerializer(serializers.ModelSerializer):
     class Meta:
         model  = Brand
-        fields = ["id", "name", "slug", "description", "logo_url", "website"]
+        fields = [
+            "id", "name", "slug", "description", "logo_url", "website",
+            "meta_title", "meta_description",
+        ]
         read_only_fields = ["id"]
 
 
@@ -168,6 +174,7 @@ class ProductVariantSerializer(serializers.ModelSerializer):
     primary_video = VariantVideoSerializer(read_only=True)
     product = ProductMinimalSerializer(read_only=True)
     lab = LabSerializer(read_only=True)
+    in_stock = serializers.SerializerMethodField()
 
     class Meta:
         model  = ProductVariant
@@ -176,9 +183,15 @@ class ProductVariantSerializer(serializers.ModelSerializer):
             "product", "attributes",
             "primary_image", "primary_video",
             "images", "videos", "weight_value",
-            "weight_unit", "lab"
+            "weight_unit", "lab", "in_stock",
         ]
         read_only_fields = ["id"]
+
+    def get_in_stock(self, obj):
+        # Relies on the queryset prefetching stock_levels (see
+        # ProductQuerySet.with_stock / .full()) — falls back to a live
+        # query if a caller serializes a variant without that prefetch.
+        return any((sl.quantity - sl.reserved) > 0 for sl in obj.stock_levels.all())
 
 
 class ProductVariantWriteSerializer(serializers.ModelSerializer):
@@ -209,11 +222,16 @@ class ProductVariantSummarySerializer(serializers.ModelSerializer):
     """Just what the product grid needs (price, weight, THC, and an id to
     add to cart) — no attributes/images/videos, unlike ProductVariantSerializer."""
     lab = LabSummarySerializer(read_only=True)
+    in_stock = serializers.SerializerMethodField()
 
     class Meta:
         model  = ProductVariant
-        fields = ["id", "price", "weight_value", "weight_unit", "lab"]
+        fields = ["id", "price", "weight_value", "weight_unit", "lab", "in_stock"]
         read_only_fields = ["id"]
+
+    def get_in_stock(self, obj):
+        # See ProductVariantSerializer.get_in_stock — same prefetch dependency.
+        return any((sl.quantity - sl.reserved) > 0 for sl in obj.stock_levels.all())
 
 
 class ProductListSerializer(serializers.ModelSerializer):

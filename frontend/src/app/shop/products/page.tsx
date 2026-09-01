@@ -46,13 +46,37 @@ function buildFilters(params: SearchParams): ProductFilterParams {
     }
 }
 
+// Title-case a slug/category param for display: "flower" -> "Flower",
+// "pre-rolls" -> "Pre Rolls". Best-effort formatting for a raw URL param,
+// not a lookup against the real Category name.
+function formatCategoryLabel(value: string): string {
+    return value
+        .replace(/[-_]+/g, ' ')
+        .split(' ')
+        .filter(Boolean)
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+        .join(' ')
+}
+
 export async function generateMetadata({ searchParams }: PageProps): Promise<Metadata> {
     const params   = await searchParams
     const category = params.category ?? ''
+    const label    = category ? formatCategoryLabel(category) : ''
+
+    // Faceted/sorted/paginated variants of this URL are all the same
+    // underlying listing for search-engine purposes — point every variant's
+    // canonical at the unfiltered base URL (or the category-only URL, so a
+    // real category landing page isn't diluted by ordering/page params).
+    const canonicalPath = category
+        ? `/shop/products?category=${encodeURIComponent(category)}`
+        : '/shop/products'
 
     return {
-        title:       category ? `${category} Products` : 'All Products',
-        description: `Browse ${category || 'all'} products. Filter by price, category, and availability.`,
+        title:       label ? `${label} Products` : 'All Products',
+        description: `Browse ${label || 'all'} products. Filter by price, category, and availability.`,
+        alternates: {
+            canonical: canonicalPath,
+        },
     }
 }
 
@@ -76,7 +100,7 @@ export default async function ProductsPage({ searchParams }: PageProps) {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10">
             <div className="mb-8">
                 <h1 className="font-hc-display text-3xl font-medium text-hc-ink">
-                    {params.category ? `${params.category} Products` : 'All Products'}
+                    {params.category ? `${formatCategoryLabel(params.category)} Products` : 'All Products'}
                 </h1>
             </div>
             <HydrationBoundary state={dehydrate(queryClient)}>

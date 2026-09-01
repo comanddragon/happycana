@@ -69,6 +69,8 @@ class Category(UUIDModel):
     description = models.TextField(blank=True)
     image       = models.ImageField(upload_to="categories/images/", blank=True, null=True)
     is_active   = models.BooleanField(default=True)
+    meta_title       = models.CharField(max_length=60, blank=True)
+    meta_description = models.CharField(max_length=160, blank=True)
 
     objects = CategoryManager()
 
@@ -118,6 +120,8 @@ class Brand(models.Model):
     logo_url    = models.URLField(blank=True, help_text="Passed through as-is from the source — not downloaded/re-hosted.")
     website     = models.URLField(blank=True)
     is_active   = models.BooleanField(default=True)
+    meta_title       = models.CharField(max_length=60, blank=True)
+    meta_description = models.CharField(max_length=160, blank=True)
 
     class Meta:
         ordering = ["name", "id"]

@@ -2,6 +2,7 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { ProductDetails } from '@/components/shop/ProductDetails' // client component
+import type { Product, ProductVariant } from '@/types'
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -11,7 +12,7 @@ interface PageProps {
 
 // ── Data fetching ──────────────────────────────────────────────────────────
 
-async function getProduct(slug: string) {
+async function getProduct(slug: string): Promise<Product> {
     const res = await fetch(`${process.env.API_URL}/catalog/products/${slug}/`, {
         next: { revalidate: 60 },
     })
@@ -25,17 +26,70 @@ async function getProduct(slug: string) {
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
     const { slug } = await params
     const product  = await getProduct(slug)
+    const canonicalPath = `/shop/products/${product.slug}`
+    const description = product.meta_description || product.description?.slice(0, 160)
+    const ogImageUrl = product.primary_image?.image_url ?? undefined
 
     return {
         title:       product.meta_title || product.name,
-        description: product.meta_description || product.description?.slice(0, 160),
-        openGraph: {
-            title:       product.name,
-            description: product.description?.slice(0, 160),
-            images: product.primary_image
-                ? [{ url: product.primary_image.image_url, alt: product.primary_image.alt_text }]
-                : [],
+        description,
+        alternates: {
+            canonical: canonicalPath,
         },
+        openGraph: {
+            type:        'website',
+            title:       product.name,
+            description,
+            url:         canonicalPath,
+            images: ogImageUrl
+                ? [{ url: ogImageUrl, alt: product.primary_image?.alt_text || product.name }]
+                : undefined,
+        },
+        twitter: {
+            card:        ogImageUrl ? 'summary_large_image' : 'summary',
+            title:       product.meta_title || product.name,
+            description,
+            images: ogImageUrl ? [ogImageUrl] : undefined,
+        },
+    }
+}
+
+// ── Schema helpers ────────────────────────────────────────────────────────
+
+function buildOffers(product: Product, siteUrl: string) {
+    const variants: ProductVariant[] = product.variants ?? []
+    const prices = variants
+        .map(v => parseFloat(v.price))
+        .filter(p => !Number.isNaN(p))
+    const anyInStock = variants.length > 0
+        ? variants.some(v => v.in_stock)
+        : true // no variants modeled yet — don't assert OutOfStock without data
+    const availability = anyInStock
+        ? 'https://schema.org/InStock'
+        : 'https://schema.org/OutOfStock'
+
+    if (prices.length > 1) {
+        const low  = Math.min(...prices)
+        const high = Math.max(...prices)
+        return {
+            '@type':      'AggregateOffer',
+            priceCurrency: 'USD',
+            lowPrice:      low,
+            highPrice:     high,
+            offerCount:    variants.length,
+            availability,
+            url:           `${siteUrl}/shop/products/${product.slug}`,
+        }
+    }
+
+    const price = prices[0] ?? parseFloat(product.base_price)
+    return {
+        '@type':        'Offer',
+        price,
+        priceCurrency: 'USD',
+        availability,
+        url:            `${siteUrl}/shop/products/${product.slug}`,
+        ...(variants[0]?.sku && { sku: variants[0].sku }),
     }
 }
 
@@ -44,6 +98,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 export default async function ProductPage({ params }: PageProps) {
     const { slug } = await params
     const product  = await getProduct(slug)
+    const siteUrl  = process.env.NEXT_PUBLIC_FRONTEND_URL ?? ''
+    const productUrl = `${siteUrl}/shop/products/${product.slug}`
 
     const jsonLd = {
         '@context': 'https://schema.org',
@@ -51,13 +107,32 @@ export default async function ProductPage({ params }: PageProps) {
         name:        product.name,
         description: product.description,
         image:       product.primary_image?.image_url,
+        url:         productUrl,
+        ...(product.variants?.[0]?.sku && { sku: product.variants[0].sku }),
         ...(product.brand && { brand: { '@type': 'Brand', name: product.brand.name } }),
-        offers: {
-            '@type':        'Offer',
-            price:           product.base_price,
-            priceCurrency:  'USD',
-            availability:   'https://schema.org/InStock',
-        },
+        offers: buildOffers(product, siteUrl),
+    }
+
+    const breadcrumbLd = {
+        '@context': 'https://schema.org',
+        '@type':    'BreadcrumbList',
+        itemListElement: [
+            { '@type': 'ListItem', position: 1, name: 'Shop',    item: `${siteUrl}/shop` },
+            ...(product.category
+                ? [{
+                    '@type': 'ListItem',
+                    position: 2,
+                    name: product.category.name,
+                    item: `${siteUrl}/shop/products?category=${product.category.slug}`,
+                }]
+                : []),
+            {
+                '@type':  'ListItem',
+                position: product.category ? 3 : 2,
+                name:     product.name,
+                item:     productUrl,
+            },
+        ],
     }
 
     return (
@@ -65,6 +140,10 @@ export default async function ProductPage({ params }: PageProps) {
             <script
                 type="application/ld+json"
                 dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+            />
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }}
             />
             {/* All interactive UI lives in the client component */}
             <ProductDetails product={product} />
