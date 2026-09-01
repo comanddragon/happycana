@@ -22,10 +22,6 @@ interface PageProps {
     searchParams: Promise<SearchParams>
 }
 
-// Mirrors ProductsGrid's own filter derivation exactly (see the useProducts()
-// call there). The query key prefetched here has to structurally match the
-// one useProducts() builds client-side, or hydration misses silently and
-// the client just refetches from scratch.
 function buildFilters(params: SearchParams): ProductFilterParams {
     const category     = params.category ?? ''
     const ordering     = params.ordering ?? '-created_at'
@@ -64,15 +60,9 @@ export default async function ProductsPage({ searchParams }: PageProps) {
     const params  = await searchParams
     const filters = buildFilters(params)
 
-    // A throwaway QueryClient just for this request's prefetch — not the
-    // app's shared client, which only exists in the browser (see
-    // components/providers/providers.tsx).
     const queryClient = new QueryClient()
 
     await Promise.all([
-        // Filter combinations are effectively unbounded, so cache the
-        // fetch briefly rather than for the full hour the homepage uses
-        // for its handful of fixed queries.
         queryClient.prefetchQuery({
             queryKey: qk.products(filters),
             queryFn:  () => getProducts(filters, { revalidate: 60 }),
