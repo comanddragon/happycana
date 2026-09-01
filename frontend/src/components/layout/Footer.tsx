@@ -1,6 +1,5 @@
 import Link from 'next/link'
 import { Logo } from './Logo'
-import { GUIDES } from '@/lib/guides'
 
 const COLUMNS: Record<string, { label: string; href: string }[]> = {
     Shop: [
@@ -11,8 +10,7 @@ const COLUMNS: Record<string, { label: string; href: string }[]> = {
     ],
     Learn: [
         { label: 'Blog', href: '/blog' },
-        ...GUIDES.slice(0, 2).map(g => ({ label: g.title.split(':')[0], href: `/learn/${g.slug}` })),
-        { label: 'All guides', href: '/learn' },
+        { label: 'Lab results', href: '/lab-results' },
     ],
     Account: [
         { label: 'Profile', href: '/account/profile' },

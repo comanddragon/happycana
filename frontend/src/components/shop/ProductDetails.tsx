@@ -15,7 +15,6 @@ import { Separator } from '@/components/ui/separator'
 import { VideoPlayer }  from '@/components/shop/VideoPlayer'
 import { useAddToCart } from '@/hooks/useApi'
 import { cn, formatPrice, mediaUrl, getVariantLabel, formatWeight, titleCase, CANNABIS_TYPE_LABEL, COMPLIANCE_CATEGORY_LABEL, POTENCY_LABEL } from '@/lib/utils'
-import { getGuideForProduct } from '@/lib/guides'
 import {
     Product,
     ProductVariant,
@@ -278,7 +277,7 @@ export function ProductDetails({ product }: { product: Product }) {
                         <ProductSpecs product={product} variant={variant} />
                     )}
 
-                    <RelatedGuideLink product={product} />
+                    <BlogLink />
 
                     <div className="grid grid-cols-3 gap-3">
                         {[
@@ -298,21 +297,20 @@ export function ProductDetails({ product }: { product: Product }) {
     )
 }
 
-// ── Related /learn guide link ─────────────────────────────────────────────
+// ── Blog link ──────────────────────────────────────────────────────────────
 //
-// Points to the single most relevant answer-content page for this product
-// (edibles onset, indica/sativa/hybrid, COA reading, or dosing basics),
-// picked from the product's own compliance_category/cannabis_type/lab data.
+// Generic pointer to the blog from the product page — no longer tries to
+// match a specific product to a specific /learn guide, since guide content
+// has been retired in favor of the backend-driven blog.
 
-function RelatedGuideLink({ product }: { product: Product }) {
-    const guide = getGuideForProduct(product)
+function BlogLink() {
     return (
         <Link
-            href={`/learn/${guide.slug}`}
+            href="/blog"
             className="flex items-center gap-2 rounded-xl bg-muted px-4 py-3 text-sm font-medium text-hc-ink hover:bg-muted/70 transition-colors"
         >
             <BookOpen className="h-4 w-4 shrink-0 text-hc-amber-dim" />
-            <span className="truncate">{guide.title}</span>
+            <span className="truncate">Cannabis basics & guides on our blog</span>
             <ChevronRight className="h-4 w-4 shrink-0 ml-auto text-muted-foreground" />
         </Link>
     )

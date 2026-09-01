@@ -1,7 +1,6 @@
 // app/sitemap.ts
-import {Product} from "@/types";
-import {GUIDES} from "@/lib/guides";
-import {BLOG_POSTS} from "@/lib/blog";
+import { Product } from "@/types";
+import { getBlogPosts } from "@/lib/blog.server";
 
 export const dynamic = 'force-dynamic'
 
@@ -12,24 +11,18 @@ export default async function sitemap() {
         { url: `${process.env.NEXT_PUBLIC_FRONTEND_URL}/shop/products`, priority: 0.9 },
         { url: `${process.env.NEXT_PUBLIC_FRONTEND_URL}/shop/new-arrivals`, priority: 0.8 },
         { url: `${process.env.NEXT_PUBLIC_FRONTEND_URL}/shop/best-sellers`, priority: 0.8 },
-        { url: `${process.env.NEXT_PUBLIC_FRONTEND_URL}/learn`, priority: 0.7 },
-        { url: `${process.env.NEXT_PUBLIC_FRONTEND_URL}/learn/lab-results`, priority: 0.6 },
         { url: `${process.env.NEXT_PUBLIC_FRONTEND_URL}/blog`, priority: 0.7 },
+        { url: `${process.env.NEXT_PUBLIC_FRONTEND_URL}/lab-results`, priority: 0.6 },
         { url: `${process.env.NEXT_PUBLIC_FRONTEND_URL}/help/faq`, priority: 0.5 },
     ]
 
     // Answer/informational content — the highest-priority gap called out in
     // the SEO/AEO audit — needs to be discoverable by crawlers even though
     // it isn't linked from the dynamic product catalog below.
-    const guideEntries = GUIDES.map(g => ({
-        url: `${process.env.NEXT_PUBLIC_FRONTEND_URL}/learn/${g.slug}`,
-        changeFrequency: 'monthly',
-        priority: 0.6,
-    }))
-
-    const blogEntries = BLOG_POSTS.map(p => ({
+    const { results: posts } = await getBlogPosts()
+    const blogEntries = posts.map(p => ({
         url: `${process.env.NEXT_PUBLIC_FRONTEND_URL}/blog/${p.slug}`,
-        lastModified: p.publishedAt,
+        lastModified: p.published_at ?? undefined,
         changeFrequency: 'monthly',
         priority: 0.6,
     }))
@@ -48,8 +41,8 @@ export default async function sitemap() {
             priority: 0.8,
         }))
 
-        return [...staticEntries, ...guideEntries, ...blogEntries, ...products]
+        return [...staticEntries, ...blogEntries, ...products]
     } catch (e) {
-        return [...staticEntries, ...guideEntries, ...blogEntries]
+        return [...staticEntries, ...blogEntries]
     }
 }

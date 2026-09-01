@@ -21,7 +21,7 @@ export function LabTrust() {
                     <p className="mt-4.5 max-w-[460px] text-[15px] leading-relaxed text-hc-ink-soft">
                         Every batch is sent to an independent lab for potency and contaminant screening — pesticides, heavy metals, microbials, and residual solvents. The lot number on your jar links straight to that batch&rsquo;s certificate.
                     </p>
-                    <Link href="/learn/lab-results" className="mt-3 inline-block text-sm font-medium text-hc-amber-dim hover:underline">
+                    <Link href="/lab-results" className="mt-3 inline-block text-sm font-medium text-hc-amber-dim hover:underline">
                         See every certificate on file &rarr;
                     </Link>
                     <div className="mt-9 flex">

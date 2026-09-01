@@ -89,7 +89,7 @@ const EMPTY_LAB_RESULTS: PaginatedResponse<LabResult> = {
     count: 0, next: null, previous: null, results: [],
 }
 
-/** Every variant with a real, on-file COA — backs the /learn/lab-results index page. */
+/** Every variant with a real, on-file COA — backs the /lab-results index page. */
 export async function getLabResults(page?: number): Promise<PaginatedResponse<LabResult>> {
     try {
         const qs = page ? `?page=${page}` : ''

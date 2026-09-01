@@ -67,10 +67,10 @@ export function EffectsStrip() {
                 {!isLoading && effects && effects.length > 0 && (
                     <Reveal className="mt-6 text-center">
                         <Link
-                            href="/learn"
+                            href="/blog"
                             className="text-xs font-medium text-hc-sage-dim underline decoration-hc-sage-dim/40 underline-offset-4 hover:text-hc-amber-dim"
                         >
-                            New to cannabis? Read our guides on effects, dosing, and lab testing &rarr;
+                            New to cannabis? Read our blog on effects, dosing, and lab testing &rarr;
                         </Link>
                     </Reveal>
                 )}

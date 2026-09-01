@@ -536,3 +536,21 @@ export interface WSReadPayload {
 export interface WSHistoryPayload {
     messages: WSChatMessage[]
 }
+
+// ─── Blog ─────────────────────────────────────────────────────────────────────
+
+export interface BlogPostSummary {
+    slug: string
+    title: string
+    description: string
+    tags: string[]
+    author: string
+    image: string
+    published_at: string | null
+    read_time: string
+}
+
+export interface BlogPostDetail extends BlogPostSummary {
+    content_html: string
+    source_url: string
+}

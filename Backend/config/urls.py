@@ -39,6 +39,7 @@ urlpatterns = [
     path(API, include("apps.notifications.api.urls")),
     path(API, include("apps.chat.api.urls")),
     path(API, include("apps.analytics.api.urls")),
+    path(API, include("apps.blog.api.urls")),
 
     # OpenAPI docs
     path("api/schema/",          SpectacularAPIView.as_view(),        name="schema"),
