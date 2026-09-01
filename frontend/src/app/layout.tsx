@@ -12,7 +12,7 @@ import Script from 'next/script'
 
 const fraunces = Fraunces({
     subsets: ['latin'],
-    weight: ['300', '400', '500', '600', '700'],
+    weight: ['400', '500', '600'],
     style: ['normal', 'italic'],
     variable: '--font-fraunces',
     display: 'swap',

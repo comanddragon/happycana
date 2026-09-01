@@ -31,6 +31,7 @@ whitenoise
 
 # Utilities
 Pillow                 # Image processing
+pillow-avif-plugin     # AVIF read/write support for Pillow
 python-decouple        # Read .env.example variables cleanly
 python-slugify
 phonenumbers           # Phone number parsing & validation

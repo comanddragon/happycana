@@ -1,6 +1,15 @@
+import io
+import os
 import uuid
+
+import pillow_avif  # noqa: F401  registers AVIF read/write support with Pillow
+from PIL import Image as PILImage
+from django.core.files.base import ContentFile
 from django.db import models
+
 from .managers import CategoryManager, ProductManager, ProductVariantManager
+
+CATEGORY_IMAGE_MAX_DIM = 800
 
 
 class UUIDModel(models.Model):
@@ -75,7 +84,27 @@ class Category(UUIDModel):
                 "Download the image and assign it via ContentFile, e.g. "
                 "category.image.save(filename, ContentFile(response.content))."
             )
+        if self.image and not self.image.name.lower().endswith(".avif"):
+            self._convert_image_to_avif()
         super().save(*args, **kwargs)
+
+    def _convert_image_to_avif(self):
+        # No CDN/on-the-fly resizing in front of category images right now, so
+        # they're served as whatever gets uploaded — do the resize/format work
+        # once here instead of shipping the original 100-150kb file forever.
+        self.image.open()
+        img = PILImage.open(self.image)
+        if img.mode in ("RGBA", "LA") or (img.mode == "P" and "transparency" in img.info):
+            img = img.convert("RGBA")
+        else:
+            img = img.convert("RGB")
+        img.thumbnail((CATEGORY_IMAGE_MAX_DIM, CATEGORY_IMAGE_MAX_DIM))
+
+        buf = io.BytesIO()
+        img.save(buf, format="AVIF", quality=65)
+
+        name = os.path.splitext(os.path.basename(self.image.name))[0] + ".avif"
+        self.image.save(name, ContentFile(buf.getvalue()), save=False)
 
     def __str__(self):
         return self.name
