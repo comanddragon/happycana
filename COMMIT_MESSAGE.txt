@@ -1,13 +1,1 @@
-SEO/AEO: analytics + Search Console verification, noindex auth/account pages, FAQPage JSON-LD, canonical shop URLs, and 5 new /learn answer-content pages
-
-Implements steps 1-5 from SEO & AEO audit.md:
-- Add gated GA4 loader + Search Console/Bing verification metadata
-- Noindex /login, /register, /account/* via sibling server layouts
-- Add FAQPage JSON-LD to /help/faq generated from existing DEFAULT_FAQS
-- Add alternates.canonical to /shop/products and fix category title casing
-- Add 5 answer-style guides under /learn (indica/sativa/hybrid, edibles
-  onset time, COA explainer, terpenes 101, beginner dosing) with Article
-  JSON-LD, wired into the sitemap, nav, footer, and EffectsStrip
-
-Updates SEO & AEO audit.md to mark steps 1-5 as shipped.
-
+SEO/AEO: replace hardcoded homepage batch data with real products, add Twitter Card + default OG image, fix empty alt text, link PDPs to relevant /learn guides

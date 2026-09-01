@@ -48,7 +48,7 @@ export function OrderSummary({
                     <div key={item.id} className="flex items-center gap-3">
                         <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-lg bg-hc-paper-2">
                             {item.variant.images?.[0]?.image_url && (
-                                <Image src={item.variant.images?.[0]?.image_url} alt="" fill quality={50} sizes="40px" className="object-cover" />
+                                <Image src={item.variant.images?.[0]?.image_url} alt={item.variant.product?.name ?? ''} fill quality={50} sizes="40px" className="object-cover" />
                             )}
                         </div>
                         <div className="min-w-0 flex-1">

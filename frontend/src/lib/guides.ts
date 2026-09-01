@@ -49,3 +49,30 @@ export const GUIDES: Guide[] = [
 export function getGuide(slug: string): Guide | undefined {
     return GUIDES.find(g => g.slug === slug)
 }
+
+// Maps a product's own attributes (compliance_category, cannabis_type,
+// whether it has real lab data) to the single most relevant /learn guide,
+// so product detail pages can link to real educational content instead of
+// only the generic FAQ. Falls back to the beginner's dosing guide when
+// nothing more specific applies.
+export function getGuideForProduct(product: {
+    compliance_category?: string
+    cannabis_type?: string
+    variants?: { lab?: unknown }[]
+}): Guide {
+    if (product.compliance_category === 'edibles') {
+        return getGuide('how-long-do-edibles-take-to-kick-in')!
+    }
+
+    const cannabisType = product.cannabis_type
+    if (cannabisType && cannabisType !== 'na') {
+        return getGuide('indica-vs-sativa-vs-hybrid')!
+    }
+
+    const hasLab = product.variants?.some(v => v.lab)
+    if (hasLab) {
+        return getGuide('what-is-a-cannabis-coa')!
+    }
+
+    return getGuide('beginners-guide-to-cannabis-dosing')!
+}

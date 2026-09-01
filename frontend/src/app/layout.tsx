@@ -43,6 +43,13 @@ export const metadata: Metadata = {
     openGraph: {
         type: 'website',
         siteName: 'HappyCana',
+        images: [{ url: '/og-default.png', width: 1200, height: 630, alt: 'HappyCana — Modern Dispensary' }],
+    },
+    twitter: {
+        card: 'summary_large_image',
+        title: 'HappyCana — Modern Dispensary',
+        description: 'Flower, edibles, and concentrates from small-batch growers, third-party tested and delivered same-day.',
+        images: ['/og-default.png'],
     },
     robots: { index: true, follow: true },
     icons: {

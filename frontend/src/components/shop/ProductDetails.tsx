@@ -5,7 +5,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import {
     ChevronRight, ShoppingBag, Play, ImageIcon,
-    Minus, Plus, Truck, RotateCcw, ShieldCheck, FileText,
+    Minus, Plus, Truck, RotateCcw, ShieldCheck, FileText, BookOpen,
 } from 'lucide-react'
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area'
 import { Badge }     from '@/components/ui/badge'
@@ -15,6 +15,7 @@ import { Separator } from '@/components/ui/separator'
 import { VideoPlayer }  from '@/components/shop/VideoPlayer'
 import { useAddToCart } from '@/hooks/useApi'
 import { cn, formatPrice, mediaUrl, getVariantLabel, formatWeight, titleCase, CANNABIS_TYPE_LABEL, COMPLIANCE_CATEGORY_LABEL, POTENCY_LABEL } from '@/lib/utils'
+import { getGuideForProduct } from '@/lib/guides'
 import {
     Product,
     ProductVariant,
@@ -138,7 +139,7 @@ export function ProductDetails({ product }: { product: Product }) {
                                             )}
                                         >
                                             {thumbSrc ? (
-                                                <Image src={mediaUrl(thumbSrc)!} alt="" width={64} height={64} quality={40} className="h-full w-full object-cover" />
+                                                <Image src={mediaUrl(thumbSrc)!} alt={('alt_text' in item.data ? item.data.alt_text : '') || product.name} width={64} height={64} quality={40} className="h-full w-full object-cover" />
                                             ) : (
                                                 <div className="h-full w-full bg-muted flex items-center justify-center">
                                                     {item.kind === 'video'
@@ -277,6 +278,8 @@ export function ProductDetails({ product }: { product: Product }) {
                         <ProductSpecs product={product} variant={variant} />
                     )}
 
+                    <RelatedGuideLink product={product} />
+
                     <div className="grid grid-cols-3 gap-3">
                         {[
                             { icon: Truck,       text: 'Free shipping $100+' },
@@ -292,6 +295,26 @@ export function ProductDetails({ product }: { product: Product }) {
                 </div>
             </div>
         </div>
+    )
+}
+
+// ── Related /learn guide link ─────────────────────────────────────────────
+//
+// Points to the single most relevant answer-content page for this product
+// (edibles onset, indica/sativa/hybrid, COA reading, or dosing basics),
+// picked from the product's own compliance_category/cannabis_type/lab data.
+
+function RelatedGuideLink({ product }: { product: Product }) {
+    const guide = getGuideForProduct(product)
+    return (
+        <Link
+            href={`/learn/${guide.slug}`}
+            className="flex items-center gap-2 rounded-xl bg-muted px-4 py-3 text-sm font-medium text-hc-ink hover:bg-muted/70 transition-colors"
+        >
+            <BookOpen className="h-4 w-4 shrink-0 text-hc-amber-dim" />
+            <span className="truncate">{guide.title}</span>
+            <ChevronRight className="h-4 w-4 shrink-0 ml-auto text-muted-foreground" />
+        </Link>
     )
 }
 

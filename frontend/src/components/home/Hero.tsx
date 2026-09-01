@@ -1,4 +1,6 @@
 import { JarCard } from '@/components/home/JarCard'
+import { getProducts } from '@/lib/catalog.server'
+import { toJarProduct } from '@/lib/jarProduct'
 
 const STATS = [
     { value: '48hr',    label: 'LAB TURNAROUND' },
@@ -6,7 +8,10 @@ const STATS = [
     { value: '20min',   label: 'AVG. PICKUP TIME' },
 ]
 
-export function Hero() {
+export async function Hero() {
+    const { results } = await getProducts({ ordering: '-created_at', page_size: 1 })
+    const heroJar = results[0] ? toJarProduct(results[0]) : null
+
     return (
         <section
             id="top"
@@ -56,24 +61,19 @@ export function Hero() {
                     </div>
                 </div>
 
-                <div className="relative mx-auto max-w-[340px] md:max-w-none">
-                    <JarCard
-                        className="rotate-[-3deg] animate-[hc-float_6s_ease-in-out_infinite] motion-reduce:animate-none"
-                        product={{
-                            name: 'Amber Daylight',
-                            kind: 'SATIVA',
-                            thc: '19.8%',
-                            terpene: 'Limonene',
-                            effect: 'Uplift',
-                            lot: 'HC-0429',
-                            testedOn: '04.29',
-                        }}
-                    />
-                    <div className="absolute -bottom-6.5 -left-6.5 flex items-center gap-2.5 rounded-[22px] border border-hc-paper/[0.14] bg-hc-canopy-2 px-4.5 py-3.5 font-hc-mono text-[11.5px] text-hc-paper shadow-[0_20px_40px_-12px_rgba(0,0,0,0.5)]">
-                        <span className="h-2 w-2 rounded-full bg-hc-amber-light shadow-[0_0_10px_var(--color-hc-amber-light)]" />
-                        Batch cleared · third-party lab
+                {heroJar && (
+                    <div className="relative mx-auto max-w-[340px] md:max-w-none">
+                        <JarCard
+                            className="rotate-[-3deg] animate-[hc-float_6s_ease-in-out_infinite] motion-reduce:animate-none"
+                            interactive
+                            product={heroJar}
+                        />
+                        <div className="absolute -bottom-6.5 -left-6.5 flex items-center gap-2.5 rounded-[22px] border border-hc-paper/[0.14] bg-hc-canopy-2 px-4.5 py-3.5 font-hc-mono text-[11.5px] text-hc-paper shadow-[0_20px_40px_-12px_rgba(0,0,0,0.5)]">
+                            <span className="h-2 w-2 rounded-full bg-hc-amber-light shadow-[0_0_10px_var(--color-hc-amber-light)]" />
+                            Batch cleared · third-party lab
+                        </div>
                     </div>
-                </div>
+                )}
             </div>
         </section>
     )
