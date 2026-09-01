@@ -1,8 +1,8 @@
-
 # =============================================================================
 # config/urls.py  — Root URL config
 # =============================================================================
 from django.contrib import admin
+from django.db import connection
 from django.http import JsonResponse
 from django.urls import path, include
 from django.conf import settings
@@ -15,6 +15,13 @@ admin.site.site_title  = settings.STORE_NAME
 API = "api/"
 
 def health(request):
+    # Runs a trivial query (not just an app-level ping) so external cron
+    # hits to this endpoint also count as DB activity for Neon — otherwise
+    # the web service stays warm while the Neon compute still auto-suspends
+    # after ~5 min of no queries, and the next real API call pays the
+    # multi-second wake-up cost.
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT 1")
     return JsonResponse({"status": "ok"})
 
 urlpatterns = [
