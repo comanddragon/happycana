@@ -19,7 +19,7 @@ HEADERS = {
 }
 
 LIMIT = 100
-OUTPUT_DIR = Path("output")
+OUTPUT_DIR = Path("output/categories")
 OUTPUT_DIR.mkdir(exist_ok=True)
 
 
