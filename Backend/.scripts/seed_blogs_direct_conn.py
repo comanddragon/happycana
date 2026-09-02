@@ -1,19 +1,6 @@
-"""
-Seed blog_posts rows into Postgres from a scraped blogs.json export —
-straight psycopg2, no Django ORM/settings involved.
-
-Usage:
-    python Backend/.scripts/seed_blogs.py [--file PATH] [--dsn DSN] [--dry-run]
-
-Connects with --dsn if given, otherwise the DATABASE_URL env var (loaded
-from .env if present). Whatever that resolves to is what gets written to —
-point it at Neon's connection string to seed Neon directly.
-
-Assumes the blog_posts table already exists (run the Django migration
-for apps.blog once, the usual way, before running this).
-"""
 import argparse
 import json
+import logging
 import os
 import sys
 import uuid
@@ -29,15 +16,12 @@ BACKEND_DIR = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(BACKEND_DIR))
 
 # Reuses the exact same HTML-cleaning/read-time logic the Django app uses
-# in BlogPost.save() (apps/blog/models.py) — apps/blog/utils.py has no
-# Django-settings dependency, so it's safe to import here even though this
-# script deliberately avoids booting Django/the ORM otherwise. Keeps rows
-# written by this script consistent with rows written through the admin/
-# ORM, instead of drifting apart (this script previously had its own,
-# thinner <script>/<style>-only strip regex).
+# in BlogPost.save() (apps/blog/models.py).
 from apps.blog.utils import clean_content_html, compute_read_time
 
 DEFAULT_PATH = BACKEND_DIR / ".output" / "blogs" / "blogs.json"
+
+logger = logging.getLogger("seed_blogs")
 
 UPSERT_SQL = """
     INSERT INTO blog_posts (
@@ -66,12 +50,27 @@ UPSERT_SQL = """
 """
 
 
+def configure_logging(verbose: bool = False) -> None:
+    """Configure console logging."""
+    level = logging.DEBUG if verbose else logging.INFO
+
+    logging.basicConfig(
+        level=level,
+        format="%(asctime)s | %(levelname)-7s | %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+    )
+
+    logger.debug("Verbose logging enabled.")
+
+
 def _slug_from_url(url: str, title: str) -> str:
     if url:
         path = urlparse(url).path.rstrip("/")
         last_segment = path.rsplit("/", 1)[-1]
+
         if last_segment:
             return slugify(last_segment)
+
     return slugify(title)
 
 
@@ -80,75 +79,243 @@ def _clean_html(html: str) -> str:
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Seed blog_posts from blogs.json, raw SQL.")
-    parser.add_argument("--file", default=str(DEFAULT_PATH), help=f"Path to blogs.json (default: {DEFAULT_PATH})")
-    parser.add_argument("--dsn", default=None, help="Postgres DSN. Defaults to the DATABASE_URL env var.")
-    parser.add_argument("--dry-run", action="store_true", help="Parse and report without writing to the database.")
+    parser = argparse.ArgumentParser(
+        description="Seed blog_posts from blogs.json, raw SQL."
+    )
+    parser.add_argument(
+        "--file",
+        default=str(DEFAULT_PATH),
+        help=f"Path to blogs.json (default: {DEFAULT_PATH})",
+    )
+    parser.add_argument(
+        "--dsn",
+        default=None,
+        help="Postgres DSN. Defaults to the DATABASE_URL env var.",
+    )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Parse and report without writing to the database.",
+    )
+    parser.add_argument(
+        "--verbose",
+        action="store_true",
+        help="Enable detailed debug logging.",
+    )
+
     args = parser.parse_args()
+    configure_logging(args.verbose)
+
+    logger.info("Starting blog seed.")
+    logger.info("Input file: %s", args.file)
+
+    if args.dry_run:
+        logger.info("Dry-run mode enabled. No database writes will occur.")
+
+    # ------------------------------------------------------------------
+    # Load JSON
+    # ------------------------------------------------------------------
+    logger.info("Loading blogs JSON...")
 
     try:
         with open(args.file, encoding="utf-8") as f:
             entries = json.load(f)
     except FileNotFoundError:
-        sys.exit(f"No such file: {args.file}")
+        logger.error("No such file: %s", args.file)
+        sys.exit(1)
     except json.JSONDecodeError as exc:
-        sys.exit(f"Invalid JSON in {args.file}: {exc}")
+        logger.error("Invalid JSON in %s: %s", args.file, exc)
+        sys.exit(1)
 
     if not isinstance(entries, list):
-        sys.exit("Expected blogs.json to contain a JSON array of blog posts.")
+        logger.error("Expected blogs.json to contain a JSON array of blog posts.")
+        sys.exit(1)
 
+    logger.info("Loaded %d entries from JSON.", len(entries))
+
+    # ------------------------------------------------------------------
+    # Prepare rows
+    # ------------------------------------------------------------------
     rows = []
     skipped = 0
-    for entry in entries:
+
+    logger.info("Preparing database rows...")
+
+    for index, entry in enumerate(entries, start=1):
         title = (entry.get("title") or "").strip()
         url = (entry.get("url") or "").strip()
 
+        logger.debug(
+            "Processing entry %d/%d: title=%r url=%r",
+            index,
+            len(entries),
+            title,
+            url,
+        )
+
         if not title:
             skipped += 1
-            print("Skipping entry with no title.", file=sys.stderr)
+            logger.warning(
+                "Skipping entry %d/%d because it has no title.",
+                index,
+                len(entries),
+            )
             continue
 
-        rows.append({
+        slug = _slug_from_url(url, title)
+        content_text = (entry.get("content_text") or "").strip()
+        read_time = compute_read_time(content_text)
+
+        row = {
             "id": str(uuid.uuid4()),
-            "slug": _slug_from_url(url, title),
+            "slug": slug,
             "title": title,
             "description": (entry.get("description") or "").strip(),
             "content_html": _clean_html(entry.get("content_html")),
-            "content_text": (entry.get("content_text") or "").strip(),
+            "content_text": content_text,
             "author": (entry.get("author") or "").strip(),
             "image": (entry.get("image") or "").strip(),
             "tags": psycopg2.extras.Json(entry.get("tags") or []),
             "source_url": url,
             "published_at": (entry.get("published_at") or None),
             "is_published": True,
-            "read_time": compute_read_time(entry.get("content_text") or ""),
-        })
+            "read_time": read_time,
+        }
 
+        rows.append(row)
+
+        logger.debug(
+            "Prepared row: slug=%r read_time=%s author=%r tags=%s",
+            slug,
+            read_time,
+            row["author"],
+            entry.get("tags") or [],
+        )
+
+    logger.info(
+        "Prepared %d rows; %d entries skipped.",
+        len(rows),
+        skipped,
+    )
+
+    # ------------------------------------------------------------------
+    # Dry run
+    # ------------------------------------------------------------------
     if args.dry_run:
+        logger.info("Dry-run results:")
+
         for row in rows:
-            print(f"[dry-run] {row['slug']}: {row['title']}")
-        print(f"{len(entries)} entries parsed (dry run, nothing written).")
+            logger.info(
+                "[dry-run] slug=%s | title=%s | read_time=%s",
+                row["slug"],
+                row["title"],
+                row["read_time"],
+            )
+
+        logger.info(
+            "Dry run complete. %d prepared, %d skipped, %d total. Nothing written.",
+            len(rows),
+            skipped,
+            len(entries),
+        )
         return
 
-    load_dotenv()
-    dsn = args.dsn or os.environ.get("DATABASE_URL")
-    if not dsn:
-        sys.exit("No DSN given and DATABASE_URL is not set.")
+    # ------------------------------------------------------------------
+    # Database configuration
+    # ------------------------------------------------------------------
+    logger.info("Loading environment variables...")
 
-    created, updated = 0, 0
-    conn = psycopg2.connect(dsn)
+    load_dotenv()
+
+    dsn = args.dsn or os.environ.get("DATABASE_URL")
+
+    if not dsn:
+        logger.error("No DSN given and DATABASE_URL is not set.")
+        sys.exit(1)
+
+    # Avoid logging the full DSN because it may contain credentials.
+    logger.info(
+        "Database connection configured from %s.",
+        "--dsn" if args.dsn else "DATABASE_URL",
+    )
+
+    # ------------------------------------------------------------------
+    # Database connection
+    # ------------------------------------------------------------------
+    logger.info("Connecting to PostgreSQL...")
+
+    try:
+        conn = psycopg2.connect(dsn)
+    except psycopg2.Error:
+        logger.exception("Failed to connect to PostgreSQL.")
+        sys.exit(1)
+
+    logger.info("Connected to PostgreSQL.")
+
+    created = 0
+    updated = 0
+
     try:
         with conn:
+            logger.info("Beginning database transaction.")
+
             with conn.cursor() as cur:
-                for row in rows:
-                    cur.execute(UPSERT_SQL, row)
-                    (inserted,) = cur.fetchone()
-                    created += inserted
-                    updated += not inserted
+                for index, row in enumerate(rows, start=1):
+                    logger.debug(
+                        "Upserting %d/%d: slug=%s title=%r",
+                        index,
+                        len(rows),
+                        row["slug"],
+                        row["title"],
+                    )
+
+                    try:
+                        cur.execute(UPSERT_SQL, row)
+                        (inserted,) = cur.fetchone()
+
+                    except psycopg2.Error:
+                        logger.exception(
+                            "Database error while upserting slug=%s",
+                            row["slug"],
+                        )
+                        raise
+
+                    if inserted:
+                        created += 1
+                        logger.info(
+                            "[CREATED] %s — %s",
+                            row["slug"],
+                            row["title"],
+                        )
+                    else:
+                        updated += 1
+                        logger.info(
+                            "[UPDATED] %s — %s",
+                            row["slug"],
+                            row["title"],
+                        )
+
+            logger.info("Transaction completed successfully.")
+
+    except Exception:
+        logger.exception(
+            "Seed failed. Transaction will be rolled back."
+        )
+        raise
+
     finally:
         conn.close()
+        logger.info("Database connection closed.")
 
-    print(f"Done. {created} created, {updated} updated, {skipped} skipped.")
+    # ------------------------------------------------------------------
+    # Summary
+    # ------------------------------------------------------------------
+    logger.info(
+        "Done. %d created, %d updated, %d skipped.",
+        created,
+        updated,
+        skipped,
+    )
 
 
 if __name__ == "__main__":
