@@ -5,24 +5,34 @@ import { ArrowRight } from 'lucide-react'
 import { getBlogPosts } from '@/lib/blog.server'
 import type { BlogPostSummary } from '@/types'
 
-export const metadata: Metadata = {
-    title: 'Blog',
-    description: 'Practical guides on cannabis accessories, rolling, and gear \u2014 what\u2019s worth owning, what to skip, and how to keep it clean.',
-    alternates: { canonical: '/blog' },
-}
-
 const PAGE_SIZE = 20
 const PAGE_WINDOW = 1
+
+interface PageProps {
+    searchParams: Promise<{ page?: string }>
+}
+
+export async function generateMetadata({ searchParams }: PageProps): Promise<Metadata> {
+    const { page } = await searchParams
+    const pageNum = Number(page) > 1 ? Number(page) : 1
+
+    return {
+        title: pageNum > 1 ? `Blog — Page ${pageNum}` : 'Blog',
+        description: 'Practical guides on cannabis accessories, rolling, and gear \u2014 what\u2019s worth owning, what to skip, and how to keep it clean.',
+        // Each paginated page canonicalizes to itself, not back to page 1 —
+        // pointing every page at /blog would tell search engines that the
+        // (genuinely different) posts on pages 2+ are duplicates of page
+        // 1's, which suppresses crawling/indexing of everything beyond the
+        // first page.
+        alternates: { canonical: pageNum > 1 ? `/blog?page=${pageNum}` : '/blog' },
+    }
+}
 
 function formatShortDate(iso: string | null): string {
     if (!iso) return ''
     return new Date(iso)
         .toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })
         .toUpperCase()
-}
-
-interface PageProps {
-    searchParams: Promise<{ page?: string }>
 }
 
 export default async function BlogIndexPage({ searchParams }: PageProps) {

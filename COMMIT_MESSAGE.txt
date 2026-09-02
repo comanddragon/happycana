@@ -1,45 +1,33 @@
-Restyle blog post body: fix TOC, image sizing, and other Bloggle-theme markup
+Blog perf + SEO: cache/index/defer heavy queries, fix sitemap pagination + paginated canonical, per-post OG/Twitter + richer JSON-LD
 
-The previous fix (data-src -> src, stripping <script>/<link>) got images
-loading, but also removed the old Shopify theme's own stylesheet with
-nothing to replace it — so every theme-specific block (table of contents,
-two-column text+image sections, quote, TL;DR callout, author card, related
-posts, product carousel, FAQ) fell back to unstyled default HTML. That's
-what was showing up as a wall of run-together TOC links and images blown
-out to the full (now wider) article width instead of sitting in a
-two-column layout next to their text.
+Perf (why blog fetches were slow):
+- Add composite index on (is_published, -published_at) — every list query
+  filters/sorts on these with no index before now
+- Store read_time on BlogPost (computed once in save()) instead of
+  recomputing from full content_text on every list request
+- Clean content_html once at write time instead of on every detail
+  request; defer content_html/content_text on the list queryset entirely
+- Cache blog list/detail responses in Redis using the same versioned-key
+  pattern already used for categories (core/cache.py), invalidated via a
+  post_save/post_delete signal
+- Wire the raw-SQL scraper script (seed_blogs_direct_conn.py) to reuse the
+  same cleaning/read-time helpers (apps/blog/utils.py) so scraped rows
+  match ORM-written ones, and to populate the new read_time column
+- Add backfill_blog_metadata management command for pre-existing rows
 
-- frontend/src/components/blog/BlogContent.tsx: replaced the Tailwind
-  `[&_.foo]` arbitrary-variant className with a scoped plain <style> block.
-  Reason: Tailwind treats every underscore inside an arbitrary selector as
-  a literal space unless it's escaped, and most Bloggle class names contain
-  underscores (`bggle_faq`, `arrow__down--svg`, `bggle_text-with-image`).
-  `[&_.arrow__down--svg]` was silently compiling to the broken selector
-  `.arrow down--svg` — confirmed by building the class list through the
-  Tailwind CLI directly and inspecting the generated CSS — so the FAQ arrow
-  rotation never actually worked even in the last commit. Plain CSS avoids
-  the whole class of bug.
+SEO (blog wiring gaps):
+- Sitemap only listed page 1 of the blog (20 posts) — add getAllBlogPosts()
+  to walk every page instead
+- /blog paginated views (?page=N) all canonicalized back to /blog,
+  telling search engines pages 2+ are duplicates — switch to
+  generateMetadata so each page canonicalizes to itself
+- /blog/[slug] had no per-post Open Graph/Twitter Card metadata — add it
+  using the post's real image/description instead of the site default
+- Article JSON-LD was missing image/publisher/dateModified — add them
+  (exposing updated_at from the API for dateModified)
 
-  New rules cover:
-    - `.bggle_table-of-content` / `.fd--column`: turns the run of anchor
-      tags into a proper vertical list inside a boxed callout (parent links
-      full opacity, `.bggle--child-link` indented and slightly dimmer).
-    - `img`: `height: auto !important` overrides the scraped inline
-      `height: 540px`-style attribute that was stretching every image to a
-      fixed height at the new, wider container width.
-    - `.bggle_text-with-image` / `.bggle_text--container` /
-      `.bggle_image--container`: real two-column flex layout, with
-      `.imageLeft` / `.imageRight` (already present in the source markup)
-      mapped to `order` so images alternate sides correctly. Images inside
-      get `aspect-ratio: 4 / 3; object-fit: cover` for a consistent crop.
-    - `.bggle_quote`, `.bggle_summary` (TL;DR): boxed/centered callouts.
-    - `.bggle_button-link` ("VISIT OUR STORE" etc.): solid rounded button
-      instead of a plain underlined link.
-    - `.bggle_author`, `.bggle--slider-blog` (related posts): card layouts
-      with circular avatar / cropped thumbnails.
-    - `.bggle_product-slider`: hidden outright — every image src, name, and
-      price in the scraped markup is blank (the Shopify liquid template
-      never resolved), so it only ever rendered as empty "See Product"
-      buttons.
-    - FAQ accordion styling (box, question row, chevron rotation) moved
-      over from the old arbitrary-variant classes, now actually working.
+Removes SEO & AEO audit.md per request.
+
+
+---
+DELETE ON APPLY: "SEO & AEO audit.md" (repo root) was removed in this commit — delete it in your working copy too; it's not included in this zip since zips can't carry deletions.

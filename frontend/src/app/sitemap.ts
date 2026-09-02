@@ -1,6 +1,6 @@
 // app/sitemap.ts
 import { Product } from "@/types";
-import { getBlogPosts } from "@/lib/blog.server";
+import { getAllBlogPosts } from "@/lib/blog.server";
 
 export const dynamic = 'force-dynamic'
 
@@ -19,7 +19,13 @@ export default async function sitemap() {
     // Answer/informational content — the highest-priority gap called out in
     // the SEO/AEO audit — needs to be discoverable by crawlers even though
     // it isn't linked from the dynamic product catalog below.
-    const { results: posts } = await getBlogPosts()
+    //
+    // getAllBlogPosts() walks every page (the list endpoint caps a single
+    // page at 100 — see core/pagination.py) rather than just the first
+    // page/20 posts, since the blog can run into the hundreds of posts and
+    // the previous single-page fetch here silently left most of them out
+    // of the sitemap entirely.
+    const posts = await getAllBlogPosts()
     const blogEntries = posts.map(p => ({
         url: `${process.env.NEXT_PUBLIC_FRONTEND_URL}/blog/${p.slug}`,
         lastModified: p.published_at ?? undefined,

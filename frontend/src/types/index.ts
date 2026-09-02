@@ -547,6 +547,7 @@ export interface BlogPostSummary {
     author: string
     image: string
     published_at: string | null
+    updated_at: string | null
     read_time: string
 }
 

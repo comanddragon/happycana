@@ -15,7 +15,6 @@ for apps.blog once, the usual way, before running this).
 import argparse
 import json
 import os
-import re
 import sys
 import uuid
 from pathlib import Path
@@ -27,23 +26,29 @@ from dotenv import load_dotenv
 from slugify import slugify
 
 BACKEND_DIR = Path(__file__).resolve().parent.parent
-DEFAULT_PATH = BACKEND_DIR / ".output" / "blogs" / "blogs.json"
+sys.path.insert(0, str(BACKEND_DIR))
 
-# Strips <script>/<style> blocks out of scraped HTML before it's stored —
-# the source pages ship carousel/tracking scripts that have no business
-# running on our own domain. Images, links, tables, etc. are left as-is.
-_STRIP_TAGS_RE = re.compile(r"<(script|style)\b[^>]*>.*?</\1>", re.IGNORECASE | re.DOTALL)
+# Reuses the exact same HTML-cleaning/read-time logic the Django app uses
+# in BlogPost.save() (apps/blog/models.py) — apps/blog/utils.py has no
+# Django-settings dependency, so it's safe to import here even though this
+# script deliberately avoids booting Django/the ORM otherwise. Keeps rows
+# written by this script consistent with rows written through the admin/
+# ORM, instead of drifting apart (this script previously had its own,
+# thinner <script>/<style>-only strip regex).
+from apps.blog.utils import clean_content_html, compute_read_time
+
+DEFAULT_PATH = BACKEND_DIR / ".output" / "blogs" / "blogs.json"
 
 UPSERT_SQL = """
     INSERT INTO blog_posts (
         id, slug, title, description, content_html, content_text,
         author, image, tags, source_url, published_at, is_published,
-        created_at, updated_at
+        read_time, created_at, updated_at
     )
     VALUES (
         %(id)s, %(slug)s, %(title)s, %(description)s, %(content_html)s, %(content_text)s,
         %(author)s, %(image)s, %(tags)s, %(source_url)s, %(published_at)s, %(is_published)s,
-        now(), now()
+        %(read_time)s, now(), now()
     )
     ON CONFLICT (slug) DO UPDATE SET
         title         = EXCLUDED.title,
@@ -55,6 +60,7 @@ UPSERT_SQL = """
         tags          = EXCLUDED.tags,
         source_url    = EXCLUDED.source_url,
         published_at  = EXCLUDED.published_at,
+        read_time     = EXCLUDED.read_time,
         updated_at    = now()
     RETURNING (xmax = 0) AS inserted
 """
@@ -70,7 +76,7 @@ def _slug_from_url(url: str, title: str) -> str:
 
 
 def _clean_html(html: str) -> str:
-    return _STRIP_TAGS_RE.sub("", html or "")
+    return clean_content_html(html or "")
 
 
 def main():
@@ -115,6 +121,7 @@ def main():
             "source_url": url,
             "published_at": (entry.get("published_at") or None),
             "is_published": True,
+            "read_time": compute_read_time(entry.get("content_text") or ""),
         })
 
     if args.dry_run:

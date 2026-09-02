@@ -10,10 +10,12 @@ const EMPTY_POSTS: PaginatedResponse<BlogPostSummary> = {
 }
 
 export async function getBlogPosts(
-    { page = 1, revalidate = 3600 }: { page?: number; revalidate?: number | false } = {},
+    { page = 1, page_size, revalidate = 3600 }: { page?: number; page_size?: number; revalidate?: number | false } = {},
 ): Promise<PaginatedResponse<BlogPostSummary>> {
     try {
-        const res = await fetch(`${process.env.API_URL}/blog/posts/?page=${page}`, {
+        const params = new URLSearchParams({ page: String(page) })
+        if (page_size) params.set('page_size', String(page_size))
+        const res = await fetch(`${process.env.API_URL}/blog/posts/?${params.toString()}`, {
             ...(revalidate === false ? { cache: 'no-store' } : { next: { revalidate } }),
         })
         if (!res.ok) return EMPTY_POSTS
@@ -22,6 +24,25 @@ export async function getBlogPosts(
     } catch {
         return EMPTY_POSTS
     }
+}
+
+// Walks every page of the blog (the list endpoint caps at page_size=100 —
+// see core/pagination.py's max_page_size — so a catalog with more posts
+// than that needs more than one request). Used by the sitemap, which
+// needs every published post, not just the first page. Hard-capped at 50
+// pages (5,000 posts) as a sanity ceiling against an accidental infinite
+// loop if the backend ever returns malformed pagination.
+export async function getAllBlogPosts(
+    { revalidate = 3600 }: { revalidate?: number | false } = {},
+): Promise<BlogPostSummary[]> {
+    const posts: BlogPostSummary[] = []
+    let page = 1
+    for (; page <= 50; page++) {
+        const { results, next } = await getBlogPosts({ page, page_size: 100, revalidate })
+        posts.push(...results)
+        if (!next || results.length === 0) break
+    }
+    return posts
 }
 
 export async function getBlogPost(slug: string): Promise<BlogPostDetail | null> {

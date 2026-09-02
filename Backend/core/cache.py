@@ -80,3 +80,41 @@ def get_cached_category_tree_response(request_path):
     return cache.get(get_category_tree_cache_key(request_path))
 
 
+# -----------------------------------------------------------------------
+# Blog response cache (same versioned-key pattern as the category tree
+# above). List and detail responses are cached by full request path;
+# any BlogPost write bumps the version, making all previously cached
+# blog keys unreachable — they then just expire off BLOG_TTL rather than
+# being actively deleted. See apps/blog/signals.py for the write hook.
+# -----------------------------------------------------------------------
+BLOG_TTL = 60 * 15   # 15 minutes — posts don't need to appear instantly
+BLOG_VERSION_KEY = "blog:version"
+
+
+def get_blog_version():
+    version = cache.get(BLOG_VERSION_KEY)
+    if version is None:
+        version = 1
+        cache.set(BLOG_VERSION_KEY, version, timeout=None)
+    return version
+
+
+def bump_blog_version():
+    try:
+        cache.incr(BLOG_VERSION_KEY)
+    except ValueError:
+        cache.set(BLOG_VERSION_KEY, 1, timeout=None)
+
+
+def get_blog_cache_key(request_path):
+    return f"blog:v{get_blog_version()}:{request_path}"
+
+
+def cache_blog_response(request_path, data):
+    cache.set(get_blog_cache_key(request_path), data, timeout=BLOG_TTL)
+
+
+def get_cached_blog_response(request_path):
+    return cache.get(get_blog_cache_key(request_path))
+
+

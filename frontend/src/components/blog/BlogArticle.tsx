@@ -19,6 +19,17 @@ export function BlogArticle({ post }: Props) {
         headline: post.title,
         description: post.description,
         datePublished: post.published_at,
+        ...(post.updated_at && { dateModified: post.updated_at }),
+        // image/publisher are what Google's rich-result validator checks
+        // for Article eligibility — both were missing before.
+        ...(post.image && { image: [post.image] }),
+        publisher: {
+            '@type': 'Organization',
+            name: 'HappyCana',
+            ...(process.env.NEXT_PUBLIC_FRONTEND_URL && {
+                logo: { '@type': 'ImageObject', url: `${process.env.NEXT_PUBLIC_FRONTEND_URL}/favicon.ico` },
+            }),
+        },
         ...(post.author ? { author: { '@type': 'Person', name: post.author } } : {}),
     }
 
