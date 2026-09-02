@@ -354,10 +354,7 @@
     text-decoration: none;
 }
 
-.hc-post-body,
-.bggle_reco_blog_posts,
-.bggle_blog-post-url:hover,
-.bggle_blog-post-title {
+.hc-post-body .bggle_reco_blog_posts .bggle_blog-post-url:hover .bggle_blog-post-title {
     text-decoration: underline;
     text-underline-offset: 3px;
 }
