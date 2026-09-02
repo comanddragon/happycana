@@ -42,8 +42,8 @@ export default function Page() {
                         another, gives you time to gauge the effect before it fully sets in.
                     </li>
                     <li>
-                        <strong>Vapes and concentrates</strong> — generally higher potency per use than flower, so
-                        the "one small amount, then wait" approach matters even more here.
+                        <strong>Vapes and concentrates</strong>{`— generally higher potency per use than flower, so
+                        the "one small amount, then wait" approach matters even more here.`}
                     </li>
                     <li>
                         <strong>Tinctures</strong> — dosed by the drop or milliliter, making it easier to take a

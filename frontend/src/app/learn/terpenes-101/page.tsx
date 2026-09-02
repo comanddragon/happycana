@@ -47,8 +47,8 @@ export default function Page() {
                     <Link href="/learn/indica-vs-sativa-vs-hybrid" className="text-hc-amber-dim underline underline-offset-2">
                         the indica/sativa label alone
                     </Link>{' '}
-                    is a weaker predictor of effect than people assume. If a product's lab report lists a terpene
-                    breakdown, that's often more informative than the strain category.
+                    {`is a weaker predictor of effect than people assume. If a product's lab report lists a terpene
+                        breakdown, that's often more informative than the strain category.`}
                 </p>
             </section>
 

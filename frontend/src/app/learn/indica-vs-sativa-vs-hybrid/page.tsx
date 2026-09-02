@@ -17,11 +17,11 @@ export default function Page() {
             <section>
                 <h2>The short answer</h2>
                 <p>
-                    Indica, sativa, and hybrid started out as a botanical classification — plant height, leaf shape,
-                    flowering time — not a promise about how a product will make you feel. Modern cannabis has been
-                    cross-bred for so many generations that a truly "pure" indica or sativa is rare in a retail
-                    catalog; almost everything on a shelf today is some kind of hybrid. The labels stuck around as
-                    shorthand, but they&apos;re a much weaker predictor of effect than most people assume.
+                    {`Indica, sativa, and hybrid started out as a botanical classification — plant height, leaf shape,
+                        flowering time — not a promise about how a product will make you feel. Modern cannabis has been
+                        cross-bred for so many generations that a truly "pure" indica or sativa is rare in a retail
+                        catalog; almost everything on a shelf today is some kind of hybrid. The labels stuck around as
+                        shorthand, but they&apos;re a much weaker predictor of effect than most people assume.`}
                 </p>
             </section>
 
@@ -54,10 +54,10 @@ export default function Page() {
                     <li><strong>Your own tolerance, dose, and setting</strong> — the same product can land differently depending on how much you take and how experienced you are.</li>
                 </ul>
                 <p>
-                    This is why two "indica" strains from different growers can feel noticeably different, and why a
-                    "sativa" can sometimes feel calming. If you&apos;re shopping by desired effect rather than
-                    botanical lineage, it&apos;s usually more reliable to filter by effect (uplift, unwind, rest,
-                    focus, social) than by the indica/sativa/hybrid label alone.
+                    {`This is why two "indica" strains from different growers can feel noticeably different, and why a
+                        "sativa" can sometimes feel calming. If you&apos;re shopping by desired effect rather than
+                        botanical lineage, it&apos;s usually more reliable to filter by effect (uplift, unwind, rest,
+                        focus, social) than by the indica/sativa/hybrid label alone.`}
                 </p>
             </section>
 
