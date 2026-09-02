@@ -19,7 +19,7 @@ sys.path.insert(0, str(BACKEND_DIR))
 # in BlogPost.save() (apps/blog/models.py).
 from apps.blog.utils import clean_content_html, compute_read_time
 
-DEFAULT_PATH = BACKEND_DIR / ".output" / "blogs" / "blogs.json"
+DEFAULT_PATH = BACKEND_DIR / ".output" / "blogs" / "blogs_updated.json"
 
 logger = logging.getLogger("seed_blogs")
 

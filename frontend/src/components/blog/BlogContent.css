@@ -1,28 +1,13 @@
-/* ==========================================================================
-   BLOG CONTENT
-   ========================================================================== */
-
 .hc-post-body {
     margin-top: 2.5rem;
-    color: var(--color-hc-ink-soft, #4b4b4b);
+    color: var(--color-hc-ink-soft);
     line-height: 1.75;
     font-size: 1rem;
 }
 
-/* ==========================================================================
-   ARTICLE SPACING
-   ========================================================================== */
-
-/*
- * The scraped article uses #bloggy--article as the main content wrapper.
- * Styling its direct children gives us consistent spacing between sections.
- */
-
 .hc-post-body #bloggy--article > * + * {
     margin-top: 2.5rem;
 }
-
-/* Headings should sit closer to the text that follows them. */
 
 .hc-post-body #bloggy--article > h2 {
     margin-top: 3.5rem;
@@ -39,15 +24,11 @@
     margin-top: 1rem;
 }
 
-/* ==========================================================================
-   TYPOGRAPHY
-   ========================================================================== */
-
 .hc-post-body h1,
 .hc-post-body h2,
 .hc-post-body h3,
 .hc-post-body h4 {
-    color: var(--color-hc-ink, #242424);
+    color: var(--color-hc-ink);
     line-height: 1.25;
     font-weight: 600;
 }
@@ -73,7 +54,7 @@
 }
 
 .hc-post-body strong {
-    color: var(--color-hc-ink, #242424);
+    color: var(--color-hc-ink);
     font-weight: 600;
 }
 
@@ -87,10 +68,6 @@
     opacity: 0.75;
 }
 
-/* ==========================================================================
-   LISTS
-   ========================================================================== */
-
 .hc-post-body ul,
 .hc-post-body ol {
     padding-left: 1.5rem;
@@ -100,10 +77,6 @@
     margin-top: 0.5rem;
 }
 
-/* ==========================================================================
-   IMAGES
-   ========================================================================== */
-
 .hc-post-body img {
     display: block;
     max-width: 100%;
@@ -111,27 +84,12 @@
     border-radius: 1rem;
 }
 
-/*
- * Images inside text/image blocks.
- * The scraped HTML often contains inline height values such as:
- *
- * height: 560px;
- * width: 100%;
- * object-fit: cover;
- *
- * We override those so images remain responsive.
- */
-
 .hc-post-body .bggle_image--container img {
     width: 100%;
     height: auto !important;
     max-width: 100%;
     object-fit: cover;
 }
-
-/* ==========================================================================
-   TABLES
-   ========================================================================== */
 
 .hc-post-body table {
     width: 100%;
@@ -148,7 +106,7 @@
 }
 
 .hc-post-body th {
-    color: var(--color-hc-ink, #242424);
+    color: var(--color-hc-ink);
     font-weight: 600;
     background: #f7f7f7;
 }
@@ -157,27 +115,68 @@
     background: #fafafa;
 }
 
-/* ==========================================================================
-   TABLE OF CONTENTS
-   ========================================================================== */
-
 .hc-post-body .bggle_table-of-content {
-    padding: 1.5rem;
+    width: 100%;
+
+    padding: 1.5rem 1.75rem;
     border-radius: 1rem;
-    background: #f7f7f7;
+    background: #fef9e8;
 }
 
-.hc-post-body .bggle_table-of-content a {
+.hc-post-body .bggle_table-of-content > p {
+    margin: 0 0 1rem;
+    color: #d97706;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.hc-post-body .bggle_table-of-content .fd--column {
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+}
+
+.hc-post-body .bggle_table-of-content .bggle--anchor {
+    display: block;
+    width: 100%;
+    color: #d97706;
+    line-height: 1.5;
     text-decoration: none;
+    transition:
+            color 0.2s ease,
+            opacity 0.2s ease;
 }
 
-.hc-post-body .bggle_table-of-content a:hover {
+.hc-post-body .bggle_table-of-content .bggle--anchor:hover {
+    color: #b45309;
     text-decoration: underline;
+    text-underline-offset: 3px;
 }
 
-/* ==========================================================================
-   SUMMARY
-   ========================================================================== */
+.hc-post-body .bggle_table-of-content .toc-level-2 {
+    padding-left: 0;
+    font-weight: 500;
+}
+
+.hc-post-body .bggle_table-of-content .toc-level-3 {
+    padding-left: 1.5rem;
+    font-size: 0.95rem;
+}
+
+.hc-post-body .bggle_table-of-content .toc-level-4 {
+    padding-left: 3rem;
+    font-size: 0.93rem;
+}
+
+.hc-post-body .bggle_table-of-content .toc-level-5 {
+    padding-left: 4.5rem;
+    font-size: 0.92rem;
+}
+
+.hc-post-body .bggle_table-of-content .toc-level-6 {
+    padding-left: 6rem;
+    font-size: 0.91rem;
+}
 
 .hc-post-body .bggle_summary {
     padding: 1.5rem 1.75rem;
@@ -189,10 +188,6 @@
     margin: 0;
 }
 
-/* ==========================================================================
-   TEXT BLOCKS
-   ========================================================================== */
-
 .hc-post-body .bggle_text {
     width: 100%;
 }
@@ -200,10 +195,6 @@
 .hc-post-body .bggle--block {
     width: 100%;
 }
-
-/* ==========================================================================
-   TEXT + IMAGE BLOCKS
-   ========================================================================== */
 
 .hc-post-body .bggle_text-with-image {
     display: flex;
@@ -229,21 +220,13 @@
     object-fit: cover;
 }
 
-/* Image on the left */
-
 .hc-post-body .bggle_text-with-image.imageLeft {
     flex-direction: row;
 }
 
-/* Image on the right */
-
 .hc-post-body .bggle_text-with-image.imageRight {
     flex-direction: row-reverse;
 }
-
-/* ==========================================================================
-   QUOTE
-   ========================================================================== */
 
 .hc-post-body .bggle_quote {
     padding: 1.5rem 2rem;
@@ -253,10 +236,6 @@
     font-size: 1.1rem;
     font-style: italic;
 }
-
-/* ==========================================================================
-   BUTTONS
-   ========================================================================== */
 
 .hc-post-body .bggle_button-link {
     display: inline-flex;
@@ -281,20 +260,11 @@
     opacity: 0.7;
 }
 
-/*
- * Specifically make the main "VISIT OUR STORE" button larger.
- * This avoids making the smaller "Read more" author button unnecessarily huge.
- */
-
 .hc-post-body .bggle--motion-button-secondary.bggle_button-link {
     min-height: 3.5rem;
     padding: 1rem 2rem;
     font-size: 0.85rem;
 }
-
-/* ==========================================================================
-   AUTHOR
-   ========================================================================== */
 
 .hc-post-body .bggle_author {
     display: flex;
@@ -305,24 +275,10 @@
     border-radius: 1rem;
 }
 
-/*
- * Author image container.
- *
- * The original scraped image is very small because the source HTML has
- * its own dimensions/styles. We explicitly control it here.
- */
-
 .hc-post-body .bggle_author .bggle_image--container {
     flex: 0 0 144px;
     width: 144px;
 }
-
-/*
- * IMPORTANT:
- *
- * height/width use !important because the generic image rule above and
- * scraped inline attributes/styles can otherwise override these values.
- */
 
 .hc-post-body .bggle_author img.bggl-author-img-v2 {
     display: block;
@@ -347,41 +303,85 @@
     margin-top: 1rem;
 }
 
-/*
- * Keep the author "Read more" button smaller.
- */
-
 .hc-post-body .bggle_author .bggle_button-link {
     min-height: 2.75rem;
     padding: 0.65rem 1.25rem;
     font-size: 0.75rem;
 }
 
-/* ==========================================================================
-   RELATED POSTS
-   ========================================================================== */
+.hc-post-body .bggle_reco_blog_posts {
+    width: 100%;
+    margin-top: 4rem;
+    padding-top: 3rem;
+    border-top: 1px solid #e5e5e5;
+}
 
-.hc-post-body .bggle_related-posts {
+.hc-post-body .bggle_reco_blog_posts .bggle--slider-blog {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 2rem;
     width: 100%;
 }
 
-/* ==========================================================================
-   PRODUCT CAROUSEL
-   ========================================================================== */
+.hc-post-body .bggle_reco_blog_posts .bggle_blog-post-container {
+    min-width: 0;
+    width: 100%;
+}
 
-/*
- * The scraped product carousel doesn't contain useful product data in
- * your current source HTML, so hide it rather than rendering an empty block.
- */
+.hc-post-body .bggle_reco_blog_posts .bggle_blog-post-url {
+    display: block;
+    width: 100%;
+    color: inherit;
+    text-decoration: none;
+}
+
+.hc-post-body .bggle_reco_blog_posts .bggle_blog-post-image {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    height: 220px !important;
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
+    border-radius: 1rem;
+    margin: 0 0 0.75rem;
+}
+
+.hc-post-body .bggle_reco_blog_posts .bggle_blog-post-title {
+    margin: 0;
+    color: var(--color-hc-ink);
+    font-size: 1.05rem;
+    line-height: 1.45;
+    text-decoration: none;
+}
+
+.hc-post-body,
+.bggle_reco_blog_posts,
+.bggle_blog-post-url:hover,
+.bggle_blog-post-title {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+.hc-post-body .bloggle--goback-bottom {
+    margin-top: 3rem;
+    padding-top: 1rem;
+}
+
+.hc-post-body .bloggle--goback-bottom a {
+    display: inline-block;
+    color: var(--color-hc-ink-soft);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+.hc-post-body .bloggle--goback-bottom a:hover {
+    opacity: 0.7;
+}
 
 .hc-post-body .bggle_product-slider,
 .hc-post-body .bggle_product-carousel {
     display: none !important;
 }
-
-/* ==========================================================================
-   FAQ
-   ========================================================================== */
 
 .hc-post-body .bggle_faq {
     width: 100%;
@@ -435,10 +435,6 @@
     margin: 0;
 }
 
-/* ==========================================================================
-   RESPONSIVE
-   ========================================================================== */
-
 @media (max-width: 768px) {
     .hc-post-body {
         margin-top: 2rem;
@@ -457,8 +453,6 @@
         margin-top: 2rem;
     }
 
-    /* Text + image blocks */
-
     .hc-post-body .bggle_text-with-image,
     .hc-post-body .bggle_text-with-image.imageLeft,
     .hc-post-body .bggle_text-with-image.imageRight {
@@ -472,8 +466,6 @@
         width: 100%;
         max-width: 100%;
     }
-
-    /* Author */
 
     .hc-post-body .bggle_author {
         gap: 1.5rem;
@@ -490,8 +482,6 @@
         height: 120px !important;
     }
 
-    /* Tables */
-
     .hc-post-body table {
         display: block;
         overflow-x: auto;
@@ -500,6 +490,20 @@
 }
 
 @media (max-width: 640px) {
+    .hc-post-body .bggle_table-of-content {
+        padding: 1.25rem;
+    }
+
+    .hc-post-body .bggle_reco_blog_posts .bggle--slider-blog {
+        grid-template-columns: 1fr;
+        gap: 1.75rem;
+    }
+
+    .hc-post-body .bggle_reco_blog_posts .bggle_blog-post-image {
+        height: auto !important;
+        aspect-ratio: 16 / 9;
+    }
+
     .hc-post-body .bggle_author {
         align-items: flex-start;
         padding: 1.5rem;
