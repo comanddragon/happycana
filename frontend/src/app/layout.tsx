@@ -5,11 +5,13 @@ import './globals.css'
 import { Providers } from '@/components/providers/providers'
 import {AgeGate} from "@/components/home/AgeGate";
 import {CartDrawer} from "@/components/shop/CartDrawer";
-// import {FloatingChatButton} from '@/components/chat/FloatingChatButton'
 import React from "react";
 import {SiteShell} from "@/components/layout/SiteShell";
 import Script from 'next/script'
 import { Analytics } from '@/components/providers/Analytics'
+import '@/components/blog/BlogContent.css'
+// import {FloatingChatButton} from '@/components/chat/FloatingChatButton'
+
 
 const fraunces = Fraunces({
     subsets: ['latin'],

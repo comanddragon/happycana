@@ -10,10 +10,10 @@ const EMPTY_POSTS: PaginatedResponse<BlogPostSummary> = {
 }
 
 export async function getBlogPosts(
-    { revalidate = 3600 }: { revalidate?: number | false } = {},
+    { page = 1, revalidate = 3600 }: { page?: number; revalidate?: number | false } = {},
 ): Promise<PaginatedResponse<BlogPostSummary>> {
     try {
-        const res = await fetch(`${process.env.API_URL}/blog/posts/`, {
+        const res = await fetch(`${process.env.API_URL}/blog/posts/?page=${page}`, {
             ...(revalidate === false ? { cache: 'no-store' } : { next: { revalidate } }),
         })
         if (!res.ok) return EMPTY_POSTS

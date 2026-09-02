@@ -1,1 +1,45 @@
-- Added scripts
+Restyle blog post body: fix TOC, image sizing, and other Bloggle-theme markup
+
+The previous fix (data-src -> src, stripping <script>/<link>) got images
+loading, but also removed the old Shopify theme's own stylesheet with
+nothing to replace it — so every theme-specific block (table of contents,
+two-column text+image sections, quote, TL;DR callout, author card, related
+posts, product carousel, FAQ) fell back to unstyled default HTML. That's
+what was showing up as a wall of run-together TOC links and images blown
+out to the full (now wider) article width instead of sitting in a
+two-column layout next to their text.
+
+- frontend/src/components/blog/BlogContent.tsx: replaced the Tailwind
+  `[&_.foo]` arbitrary-variant className with a scoped plain <style> block.
+  Reason: Tailwind treats every underscore inside an arbitrary selector as
+  a literal space unless it's escaped, and most Bloggle class names contain
+  underscores (`bggle_faq`, `arrow__down--svg`, `bggle_text-with-image`).
+  `[&_.arrow__down--svg]` was silently compiling to the broken selector
+  `.arrow down--svg` — confirmed by building the class list through the
+  Tailwind CLI directly and inspecting the generated CSS — so the FAQ arrow
+  rotation never actually worked even in the last commit. Plain CSS avoids
+  the whole class of bug.
+
+  New rules cover:
+    - `.bggle_table-of-content` / `.fd--column`: turns the run of anchor
+      tags into a proper vertical list inside a boxed callout (parent links
+      full opacity, `.bggle--child-link` indented and slightly dimmer).
+    - `img`: `height: auto !important` overrides the scraped inline
+      `height: 540px`-style attribute that was stretching every image to a
+      fixed height at the new, wider container width.
+    - `.bggle_text-with-image` / `.bggle_text--container` /
+      `.bggle_image--container`: real two-column flex layout, with
+      `.imageLeft` / `.imageRight` (already present in the source markup)
+      mapped to `order` so images alternate sides correctly. Images inside
+      get `aspect-ratio: 4 / 3; object-fit: cover` for a consistent crop.
+    - `.bggle_quote`, `.bggle_summary` (TL;DR): boxed/centered callouts.
+    - `.bggle_button-link` ("VISIT OUR STORE" etc.): solid rounded button
+      instead of a plain underlined link.
+    - `.bggle_author`, `.bggle--slider-blog` (related posts): card layouts
+      with circular avatar / cropped thumbnails.
+    - `.bggle_product-slider`: hidden outright — every image src, name, and
+      price in the scraped markup is blank (the Shopify liquid template
+      never resolved), so it only ever rendered as empty "See Product"
+      buttons.
+    - FAQ accordion styling (box, question row, chevron rotation) moved
+      over from the old arbitrary-variant classes, now actually working.
