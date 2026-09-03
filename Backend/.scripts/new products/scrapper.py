@@ -69,7 +69,25 @@ def get_collections():
         if not path.startswith("/collections/"):
             continue
 
-        handle = path.rstrip("/").split("/")[-1]
+        # path.split("/")[-1] would take the LAST segment, which is wrong
+        # for a collection-scoped product link like
+        # /collections/thc-flower/products/purple-haze-x-10 (Shopify uses
+        # this form for "related products" widgets) - that gave a handle
+        # of "purple-haze-x-10" (a product) instead of "thc-flower" (the
+        # actual collection). Take the segment right after /collections/
+        # instead, which is correct for both a plain collection URL and a
+        # collection-scoped product URL.
+        after = path[len("/collections/"):].strip("/")
+        if not after:
+            continue
+        handle = after.split("/")[0]
+
+        # A collection-scoped product URL also isn't something we want to
+        # treat as "a collection page to crawl for its own listing" - only
+        # keep it if it's a genuine collection link (no /products/ suffix).
+        if "/products/" in after:
+            continue
+
         title = a.get_text(" ", strip=True) or handle.replace("-", " ").title()
 
         collections[url] = {
@@ -82,6 +100,7 @@ def get_collections():
 
 
 def get_collection_products(collection_url):
+    collection_handle = urlparse(collection_url).path.rstrip("/").split("/")[-1]
     products = set()
     page = 1
 
@@ -89,11 +108,33 @@ def get_collection_products(collection_url):
         url = f"{collection_url}?page={page}"
         soup = BeautifulSoup(get(url), "html.parser")
 
-        page_products = {
-            clean_url(urljoin(BASE_URL, a["href"]))
-            for a in soup.select('a[href*="/products/"]')
-            if a.get("href")
-        }
+        page_products = set()
+        for a in soup.select('a[href*="/products/"]'):
+            href = a.get("href")
+            if not href:
+                continue
+            product_url = clean_url(urljoin(BASE_URL, href))
+            path = urlparse(product_url).path
+
+            # A collection-scoped product link (/collections/{X}/products/{p})
+            # pointing at a DIFFERENT collection than the one we're crawling
+            # is a cross-sell/"related products" widget, not a real member of
+            # this collection - drop it. This was the main source of every
+            # product ending up tagged into nearly every collection.
+            #
+            # NOTE: a bare /products/{handle} link (no /collections/ prefix)
+            # can't be disambiguated this way - if the theme also renders a
+            # same-page widget using bare links, those would still slip
+            # through here. Re-scrape and spot-check collection membership
+            # after this fix; if it's still over-broad, the real fix is
+            # scoping the CSS selector to the actual product-grid container
+            # element, which needs eyes on the live page markup to get right.
+            if path.startswith("/collections/") and "/products/" in path:
+                scoped_handle = path[len("/collections/"):].split("/")[0]
+                if scoped_handle != collection_handle:
+                    continue
+
+            page_products.add(product_url)
 
         if not page_products:
             break
