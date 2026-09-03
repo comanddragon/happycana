@@ -35,9 +35,13 @@ WHAT IT DOES
 
 OUTPUT FILES (in --output)
 ---------------------------
-    products.json    - list of cleaned product records
+    products.json    - list of cleaned product records (each carries a
+                        `category_slugs` list - which scraped category
+                        pages, key + promotional/seasonal, it appears in)
     brands.json       - list of deduped brand records
-    categories.json    - unique (compliance_category, category_name) pairs
+    categories.json    - one row per distinct category slug seen across all
+                          products, with a humanized name and `is_key`
+                          (main taxonomy) vs promotional/seasonal section
     products.csv        - flat CSV for a quick spreadsheet skim
     report.json           - machine-readable data-quality summary
 """
@@ -50,6 +54,11 @@ import os
 import re
 import sys
 from collections import Counter, defaultdict
+from pathlib import Path
+
+BACKEND_DIR = Path(__file__).resolve().parent.parent
+DEFAULT_INPUT_DIR = BACKEND_DIR / ".output" / "categories"
+DEFAULT_OUTPUT_DIR = BACKEND_DIR / ".output" / "clean_data"
 
 # ─── Reference data ──────────────────────────────────────────────────────────
 
@@ -102,6 +111,27 @@ LAB_TERPENES = [
 # Files that aren't real product listings - skip when scanning for
 # "products missing from shop-all".
 NON_PRODUCT_FILES = {"shop-all.json", "category_analysis.json"}
+
+# scrapper.v2.py writes one file per category page, slugified from its
+# name/slug on the source site (e.g. "flower.json", "710.json"). The
+# handful matching our own compliance categories are the main taxonomy
+# ("key" categories) - everything else scraped (holidays, campaigns,
+# "microgrowers", ...) is a promotional/seasonal section for the shop page.
+KEY_CATEGORY_SLUGS = {v.replace("_", "-") for v in COMPLIANCE_CATEGORY_MAP.values()}
+
+# A few slugs read oddly when title-cased word-by-word - spelled out here
+# instead of guessing at humanization rules.
+CATEGORY_NAME_OVERRIDES = {
+    "cbd-products": "CBD Products",
+    "710": "710",
+    "100-spend-secret-menu": "$100 Spend Secret Menu",
+}
+
+
+def humanize_category_slug(slug: str) -> str:
+    if slug in CATEGORY_NAME_OVERRIDES:
+        return CATEGORY_NAME_OVERRIDES[slug]
+    return " ".join(word.capitalize() for word in slug.split("-"))
 
 
 # ─── Small helpers ───────────────────────────────────────────────────────────
@@ -339,7 +369,7 @@ def clean_product(raw: dict, collections: dict, brands: dict, quality: dict):
         "images": images,
         "product_url": raw.get("productUrl"),
         "review_stats": raw.get("reviewStats"),
-        "collections": sorted(set(collections.get(pid, []))),
+        "category_slugs": sorted(set(collections.get(pid, []))),
         "created": raw.get("created"),
         "modified": raw.get("modified"),
     }
@@ -350,8 +380,8 @@ def clean_product(raw: dict, collections: dict, brands: dict, quality: dict):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--input", default="./scrapped_data/output", help="Folder containing shop-all.json etc.")
-    parser.add_argument("--output", default="./clean_data", help="Where to write cleaned files")
+    parser.add_argument("--input", default=str(DEFAULT_INPUT_DIR), help="Folder containing shop-all.json etc.")
+    parser.add_argument("--output", default=str(DEFAULT_OUTPUT_DIR), help="Where to write cleaned files")
     args = parser.parse_args()
 
     os.makedirs(args.output, exist_ok=True)
@@ -411,17 +441,18 @@ def main():
     with open(brands_path, "w") as f:
         json.dump(brands_list, f, indent=2)
 
-    categories = sorted(
-        {
-            (p["compliance_category"], p["category_name"])
-            for p in products if p["compliance_category"]
-        },
-        key=lambda pair: (pair[0] or "", pair[1] or ""),
-    )
+    all_category_slugs = sorted({slug for p in products for slug in p["category_slugs"]})
     categories_path = os.path.join(args.output, "categories.json")
     with open(categories_path, "w") as f:
         json.dump(
-            [{"compliance_category": c, "category_name": n} for c, n in categories],
+            [
+                {
+                    "slug": slug,
+                    "name": humanize_category_slug(slug),
+                    "is_key": slug in KEY_CATEGORY_SLUGS,
+                }
+                for slug in all_category_slugs
+            ],
             f, indent=2,
         )
 
@@ -461,6 +492,8 @@ def main():
     print("=" * 70)
     print(f"Products cleaned : {len(products)}")
     print(f"Brands found     : {len(brands_list)}")
+    key_count = sum(1 for s in all_category_slugs if s in KEY_CATEGORY_SLUGS)
+    print(f"Categories found : {len(all_category_slugs)} ({key_count} key, {len(all_category_slugs) - key_count} sections)")
     print()
     print("By compliance category:")
     for cat, count in by_compliance.most_common():

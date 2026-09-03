@@ -22,9 +22,10 @@ class ProductFilter(django_filters.FilterSet):
 
     # -- Category --
     category = django_filters.CharFilter(
-        field_name="category__slug",
+        field_name="categories__slug",
         lookup_expr="iexact",
         label="Filter by category slug",
+        distinct=True,
     )
 
     # -- Price range --

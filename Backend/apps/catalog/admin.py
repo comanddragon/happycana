@@ -87,12 +87,16 @@ class EffectAdmin(admin.ModelAdmin):
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
     inlines         = [ProductImageInline, ProductVideoInline, ProductVariantInline]
-    list_display    = ["name", "category", "base_price", "is_active", "created_at"]
-    list_filter     = ["is_active", "category", "created_at"]
+    list_display    = ["name", "category_list", "base_price", "is_active", "created_at"]
+    list_filter     = ["is_active", "categories", "created_at"]
     search_fields   = ["name", "slug", "description"]
     prepopulated_fields = {"slug": ("name",)}
     readonly_fields = ["created_at", "updated_at"]
-    raw_id_fields   = ["category"]
+    raw_id_fields   = ["categories"]
+
+    @admin.display(description="Categories")
+    def category_list(self, obj):
+        return ", ".join(obj.categories.values_list("name", flat=True))
 
 
 @admin.register(ProductVariant)

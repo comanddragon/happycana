@@ -11,7 +11,7 @@ def index_product(product_id: str):
     """Re-index a single product after a save."""
     from apps.catalog.models import Product
     try:
-        product = Product.objects.prefetch_related("variants").select_related("category").get(id=product_id)
+        product = Product.objects.prefetch_related("variants", "categories").get(id=product_id)
         SearchService.index_product(product)
     except Product.DoesNotExist:
         SearchService.delete_product(product_id)
@@ -33,8 +33,7 @@ def reindex_all_products():
     products = (
         Product.objects
         .filter(is_active=True)
-        .select_related("category")
-        .prefetch_related("variants")
+        .prefetch_related("categories", "variants")
     )
     SearchService.bulk_index_products(products)
 

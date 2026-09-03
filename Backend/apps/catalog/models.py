@@ -69,6 +69,11 @@ class Category(UUIDModel):
     description = models.TextField(blank=True)
     image       = models.ImageField(upload_to="categories/images/", blank=True, null=True)
     is_active   = models.BooleanField(default=True)
+    is_key      = models.BooleanField(
+        default=False,
+        help_text="Main taxonomy category (Flower, Edibles, ...) as opposed to a "
+                   "promotional/seasonal section used to curate the shop page.",
+    )
     meta_title       = models.CharField(max_length=60, blank=True)
     meta_description = models.CharField(max_length=160, blank=True)
 
@@ -145,7 +150,7 @@ class Effect(models.Model):
 
 
 class Product(TimestampedModel):
-    category         = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, related_name="products")
+    categories       = models.ManyToManyField(Category, blank=True, related_name="products")
     name             = models.CharField(max_length=255)
     slug             = models.SlugField(max_length=255, unique=True)
     description      = models.TextField(blank=True)

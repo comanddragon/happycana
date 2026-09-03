@@ -13,7 +13,7 @@ class CategorySerializer(serializers.ModelSerializer):
         model  = Category
         fields = [
             "id", "parent", "name", "slug", "description", "image", "image_url",
-            "is_active", "children", "meta_title", "meta_description",
+            "is_active", "is_key", "children", "meta_title", "meta_description",
         ]
         read_only_fields = ["id"]
         extra_kwargs = {"image": {"write_only": True}}
@@ -239,7 +239,7 @@ class ProductVariantSummarySerializer(serializers.ModelSerializer):
 class ProductListSerializer(serializers.ModelSerializer):
     """Lean serializer for the product grid: no nested images/videos on
     variants, since the grid only renders name/price/primary image/brand/category/THC."""
-    category      = CategoryMinimalSerializer(read_only=True)
+    category      = CategoryMinimalSerializer(many=True, read_only=True, source="categories")
     brand         = BrandMinimalSerializer(read_only=True)
     primary_image = ProductImageSerializer(read_only=True)
     effects       = EffectSerializer(many=True, read_only=True)
@@ -258,7 +258,7 @@ class ProductListSerializer(serializers.ModelSerializer):
 
 
 class ProductSerializer(serializers.ModelSerializer):
-    category      = CategoryMinimalSerializer(read_only=True)
+    category      = CategoryMinimalSerializer(many=True, read_only=True, source="categories")
     variants      = ProductVariantSerializer(many=True, read_only=True)
     images        = ProductImageSerializer(many=True, read_only=True)
     videos        = ProductVideoSerializer(many=True, read_only=True)
@@ -287,7 +287,7 @@ class ProductWriteSerializer(serializers.ModelSerializer):
 
     class Meta:
         model  = Product
-        fields = ["category", "name", "description", "base_price", "is_active"]
+        fields = ["categories", "name", "description", "base_price", "is_active"]
 
 
 class LabResultProductSerializer(serializers.ModelSerializer):

@@ -2,22 +2,20 @@
 """
 scripts/seed_scraped_products.py
 
-Loads the output of clean_scraped_data.py (clean_data/products.json +
-brands.json) into the database.
+Loads the output of clean_scraped_data.py (products.json / brands.json /
+categories.json) straight into Postgres — psycopg2, no Django ORM/settings
+involved, same pattern as seed_blogs_direct_conn.py.
 
-Safe to run multiple times — everything is keyed by slug/sku and uses
-get_or_create / update_or_create.
+Connects with --dsn if given, otherwise the DATABASE_URL env var (loaded
+from .env if present). Whatever that resolves to is what gets written to —
+point it at Neon's connection string to seed Neon directly.
 
-FEATURE DETECTION
-------------------
-This script works TODAY, against your backend exactly as it is, by
-falling back to the generic `Attribute` EAV table for any field your
-models don't have a real column for yet (brand, cannabis type, THC/CBD,
-weight, effects, ...). Once you apply backend_patch/*.py and migrate, it
-automatically switches to writing the real columns instead — no seed
-script changes needed. Every run prints a summary of which fields landed
-as native columns vs. EAV fallback, so you can watch that fallback list
-shrink as you apply the patch.
+Assumes the catalog/inventory migrations have already been applied the
+usual way (via manage.py migrate) — this script only writes rows, it
+never touches schema.
+
+Safe to run multiple times — everything is upserted, keyed by slug/sku/
+external_source_id.
 
 USAGE
 -----
@@ -28,29 +26,24 @@ USAGE
 Useful flags:
     --limit N          only seed the first N products (fast smoke test)
     --dry-run           parse + report, write nothing to the database
-
-Images are passed through as external URLs (source_url) — not downloaded
-or re-hosted. Requires the small ProductImage.source_url / Brand.logo_url
-addition in backend_patch/catalog_models_patch.py; falls back to storing
-the URL as an EAV Attribute if that field isn't there yet.
 """
 
 import argparse
 import decimal
 import json
 import os
+import re
 import sys
 import time
+import uuid
 from pathlib import Path
 
-# ─── Bootstrap Django ────────────────────────────────────────────────────────
-sys.path.append(str(Path(__file__).resolve().parent.parent))
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings.production")
-import django
-django.setup()
+import psycopg2
+import psycopg2.extras
+from dotenv import load_dotenv
 
-from django.db import transaction
-from django.utils.text import slugify
+BACKEND_DIR = Path(__file__).resolve().parent.parent
+DEFAULT_DATA_DIR = BACKEND_DIR / ".output" / "clean_data"
 
 
 # ─── Console helpers ──────────────────────────────────────────────────────────
@@ -67,115 +60,13 @@ def banner(title):
     print(f"\n{'=' * 60}\n  {title}\n{'=' * 60}")
 
 
-# ─── Feature detection ────────────────────────────────────────────────────────
-# Figures out, once, which of the fields from MISSING_FIELDS.md actually
-# exist on your models yet. Everything downstream checks these flags
-# instead of hasattr-ing repeatedly.
+# ─── Small helpers ────────────────────────────────────────────────────────────
 
-class Schema:
-    def __init__(self):
-        from apps.catalog.models import Product, ProductVariant
+def slugify(value: str) -> str:
+    value = (value or "").strip().lower()
+    value = re.sub(r"[^a-z0-9]+", "-", value)
+    return value.strip("-") or "item"
 
-        self.Product = Product
-        self.ProductVariant = ProductVariant
-
-        try:
-            from apps.catalog.models import Brand
-            self.Brand = Brand
-        except ImportError:
-            self.Brand = None
-
-        try:
-            from apps.catalog.models import Effect
-            self.Effect = Effect
-        except ImportError:
-            self.Effect = None
-
-        try:
-            from apps.catalog.models import Lab
-            self.Lab = Lab
-        except ImportError:
-            self.Lab = None
-
-        product_fields = {f.name for f in Product._meta.get_fields()}
-        variant_fields = {f.name for f in ProductVariant._meta.get_fields()}
-
-        self.has_brand_fk = self.Brand is not None and "brand" in product_fields
-        self.has_compliance_category = "compliance_category" in product_fields
-        self.has_cannabis_type = "cannabis_type" in product_fields
-        self.has_sub_type = "sub_type" in product_fields
-        self.has_effects_m2m = self.Effect is not None and "effects" in product_fields
-        self.has_is_featured = "is_featured" in product_fields
-        self.has_is_new = "is_new" in product_fields
-        self.has_external_source_id = "external_source_id" in product_fields
-        self.has_units_sold_hint = "units_sold_hint" in product_fields
-        self.has_weight = "weight_value" in variant_fields and "weight_unit" in variant_fields
-        self.has_lab = self.Lab is not None
-
-        from apps.catalog.models import ProductImage
-        image_fields = {f.name for f in ProductImage._meta.get_fields()}
-        self.has_image_source_url = "source_url" in image_fields
-        self.has_brand_logo_url = self.Brand is not None and "logo_url" in {
-            f.name for f in self.Brand._meta.get_fields()
-        }
-
-    def summary(self):
-        checks = [
-            ("Brand model + Product.brand FK", self.has_brand_fk),
-            ("Product.compliance_category", self.has_compliance_category),
-            ("Product.cannabis_type", self.has_cannabis_type),
-            ("Product.sub_type", self.has_sub_type),
-            ("Effect model + Product.effects M2M", self.has_effects_m2m),
-            ("Product.is_featured / is_new", self.has_is_featured and self.has_is_new),
-            ("Product.external_source_id", self.has_external_source_id),
-            ("ProductVariant.weight_value / weight_unit", self.has_weight),
-            ("Lab model (potency/COA)", self.has_lab),
-            ("ProductImage.source_url", self.has_image_source_url),
-        ]
-        banner("Schema detection (see MISSING_FIELDS.md / backend_patch/)")
-        for name, present in checks:
-            print(f"  [{'x' if present else ' '}] {name}")
-        missing = [name for name, present in checks if not present]
-        if missing:
-            print(f"\n  {len(missing)} field(s) not yet on your models -> falling back to the")
-            print("  generic Attribute EAV table for those so no data is lost.")
-        else:
-            print("\n  All patched fields detected — seeding natively, no EAV fallback needed.")
-
-
-# ─── EAV fallback helper ──────────────────────────────────────────────────────
-
-class AttributeWriter:
-    """Writes a value onto ProductVariant via the existing Attribute/
-    AttributeType EAV tables, for any field the schema doesn't have a
-    real column for yet. Tracks how many writes it made for the summary."""
-
-    def __init__(self):
-        from apps.catalog.models import Attribute, AttributeType
-        self.Attribute = Attribute
-        self.AttributeType = AttributeType
-        self._type_cache = {}
-        self.count = 0
-
-    def _get_type(self, name):
-        if name not in self._type_cache:
-            self._type_cache[name], _ = self.AttributeType.objects.get_or_create(name=name)
-        return self._type_cache[name]
-
-    def write(self, variant, type_name, value):
-        if value in (None, "", []):
-            return
-        value = str(value)[:100]
-        self.Attribute.objects.update_or_create(
-            variant=variant,
-            attribute_type=self._get_type(type_name),
-            defaults={"value": value},
-        )
-        self.count += 1
-
-
-
-# ─── Core seeding ─────────────────────────────────────────────────────────────
 
 def to_decimal(value, default="0"):
     if value is None:
@@ -183,205 +74,325 @@ def to_decimal(value, default="0"):
     return decimal.Decimal(str(value))
 
 
-def unique_slug(model, base_slug, exclude_pk=None):
-    slug = base_slug
-    n = 2
-    qs = model.objects.all()
-    while qs.filter(slug=slug).exclude(pk=exclude_pk).exists():
-        slug = f"{base_slug}-{n}"
-        n += 1
-    return slug
+def new_uuid():
+    return str(uuid.uuid4())
 
 
-def seed_categories(schema, products):
-    """Flat categories, one per distinct display category name in the data."""
-    from apps.catalog.models import Category
+# ─── Seeding steps ────────────────────────────────────────────────────────────
 
+def seed_categories(cur, categories_raw):
+    """
+    Upserts every category found by clean_scraped_data.py (both the "key"
+    taxonomy - Flower, Edibles, ... - and the promotional/seasonal sections
+    for the shop page), keyed by slug. Returns {slug: category_id}.
+
+    is_active always defaults True on first insert. On re-runs it's left
+    alone (a category the person turned off in the admin shouldn't be
+    silently flipped back on just because it re-appears in a scrape) —
+    only name/is_key are refreshed.
+    """
     banner("Categories")
-    by_name = {}
-    for p in products:
-        name = p.get("category_name")
-        if name and name not in by_name:
-            by_name[name] = p
-
-    categories = {}
-    for name in sorted(by_name):
-        slug = slugify(name)
-        cat, created = Category.objects.get_or_create(
-            slug=slug, defaults={"name": name, "is_active": True}
+    ids = {}
+    for cat in categories_raw:
+        slug = cat["slug"]
+        cur.execute(
+            """
+            INSERT INTO categories (id, name, slug, description, is_active, is_key, meta_title, meta_description)
+            VALUES (%(id)s, %(name)s, %(slug)s, '', TRUE, %(is_key)s, '', '')
+            ON CONFLICT (slug) DO UPDATE SET
+                name   = EXCLUDED.name,
+                is_key = EXCLUDED.is_key
+            RETURNING id, (xmax = 0) AS inserted
+            """,
+            {"id": new_uuid(), "name": cat["name"], "slug": slug, "is_key": cat["is_key"]},
         )
-        categories[name] = cat
-        log(f"{'created' if created else 'exists '}  {name}")
-    return categories
+        cat_id, inserted = cur.fetchone()
+        ids[slug] = cat_id
+        log(f"{'created' if inserted else 'exists '}  {cat['name']} ({'key' if cat['is_key'] else 'section'})")
+    return ids
 
 
-def seed_brands(schema, brands_raw, attr_writer):
+def seed_brands(cur, brands_raw):
     banner("Brands")
-    if not schema.has_brand_fk:
-        warn(f"No Brand model on your backend yet — {len(brands_raw)} brands from the "
-             f"data will be attached to products as an EAV 'Brand' attribute instead. "
-             f"Apply backend_patch/catalog_models_patch.py to get a real Brand table.")
-        return {}
-
-    brands = {}
+    ids = {}
     for raw in brands_raw:
         slug = slugify(raw["name"])
-        defaults = {
-            "name": raw["name"],
-            "description": raw.get("description") or "",
-            "website": raw.get("website") or "",
-        }
-        if schema.has_brand_logo_url:
-            defaults["logo_url"] = raw.get("logo_url") or ""
-        brand, created = schema.Brand.objects.update_or_create(slug=slug, defaults=defaults)
-        brands[raw["name"]] = brand
-    log(f"seeded {len(brands)} brands")
-    return brands
+        cur.execute(
+            """
+            INSERT INTO brands (id, name, slug, description, logo_url, website, is_active, meta_title, meta_description)
+            VALUES (%(id)s, %(name)s, %(slug)s, %(description)s, %(logo_url)s, %(website)s, TRUE, '', '')
+            ON CONFLICT (slug) DO UPDATE SET
+                name        = EXCLUDED.name,
+                description = EXCLUDED.description,
+                logo_url    = EXCLUDED.logo_url,
+                website     = EXCLUDED.website
+            RETURNING id
+            """,
+            {
+                "id": new_uuid(),
+                "name": raw["name"],
+                "slug": slug,
+                "description": raw.get("description") or "",
+                "logo_url": raw.get("logo_url") or "",
+                "website": raw.get("website") or "",
+            },
+        )
+        (brand_id,) = cur.fetchone()
+        ids[raw["name"]] = brand_id
+    log(f"seeded {len(ids)} brands")
+    return ids
 
 
-def seed_effects(schema, all_effect_names):
-    if not schema.has_effects_m2m:
+def seed_effects(cur, all_effect_names):
+    if not all_effect_names:
         return {}
-    effects = {}
+    ids = {}
     for name in sorted(all_effect_names):
-        effect, _ = schema.Effect.objects.get_or_create(slug=slugify(name), defaults={"name": name})
-        effects[name] = effect
-    return effects
+        slug = slugify(name)
+        cur.execute(
+            """
+            INSERT INTO effects (id, name, slug)
+            VALUES (%(id)s, %(name)s, %(slug)s)
+            ON CONFLICT (slug) DO UPDATE SET name = EXCLUDED.name
+            RETURNING id
+            """,
+            {"id": new_uuid(), "name": name, "slug": slug},
+        )
+        (effect_id,) = cur.fetchone()
+        ids[name] = effect_id
+    return ids
 
 
-def seed_product(schema, raw, categories, brands, effects, attr_writer, warehouse):
-    from apps.catalog.models import Product, ProductVariant, ProductImage
+def get_or_create_warehouse(cur, name):
+    cur.execute("SELECT id FROM warehouses WHERE name = %s LIMIT 1", (name,))
+    row = cur.fetchone()
+    if row:
+        log(f"using warehouse: {name}")
+        return row[0]
+    warehouse_id = new_uuid()
+    cur.execute(
+        """
+        INSERT INTO warehouses (id, name, address, is_active)
+        VALUES (%s, %s, %s, TRUE)
+        """,
+        (warehouse_id, name, "Imported from scrape — update address"),
+    )
+    log(f"created warehouse: {name}")
+    return warehouse_id
 
+
+def unique_slug(cur, base_slug, exclude_external_source_id):
+    """Same slug-collision handling as before, just via a direct query
+    instead of the ORM: only bumps the slug if it's held by a *different*
+    product (a re-run against the same source_id should keep its slug)."""
+    slug = base_slug
+    n = 2
+    while True:
+        cur.execute(
+            "SELECT external_source_id FROM products WHERE slug = %s LIMIT 1",
+            (slug,),
+        )
+        row = cur.fetchone()
+        if row is None or row[0] == exclude_external_source_id:
+            return slug
+        slug = f"{base_slug}-{n}"
+        n += 1
+
+
+def seed_product(cur, raw, category_ids, brand_ids, effect_ids, warehouse_id):
     name = raw["name"] or f"Untitled ({raw['source_id']})"
-    slug = raw["slug"] or slugify(name)
+    base_slug = raw["slug"] or slugify(name)
+    slug = unique_slug(cur, base_slug, raw["source_id"])
+    brand_id = brand_ids.get(raw["brand_name"])
 
-    product_defaults = {
-        "name": name,
-        "category": categories.get(raw["category_name"]),
-        "description": raw["description"],
-        "base_price": to_decimal(raw["pricing"]["price"]),
-        "is_active": raw["status"]["is_active"],
-        "meta_description": (raw["short_description"] or "")[:160],
-    }
-    if schema.has_is_featured:
-        product_defaults["is_featured"] = raw["status"]["is_featured"]
-    if schema.has_is_new:
-        product_defaults["is_new"] = raw["status"]["is_new"]
-    if schema.has_compliance_category and raw["compliance_category"]:
-        product_defaults["compliance_category"] = raw["compliance_category"]
-    if schema.has_cannabis_type and raw["cannabis_type"]:
-        product_defaults["cannabis_type"] = raw["cannabis_type"]
-    if schema.has_sub_type and raw["sub_type"]:
-        product_defaults["sub_type"] = raw["sub_type"]
-    if schema.has_units_sold_hint:
-        product_defaults["units_sold_hint"] = raw["inventory"]["total_sold"]
-    if schema.has_brand_fk and raw["brand_name"] in brands:
-        product_defaults["brand"] = brands[raw["brand_name"]]
+    cur.execute(
+        """
+        INSERT INTO products (
+            id, name, slug, description, base_price, is_active,
+            meta_title, meta_description, is_featured, is_new, compliance_category,
+            cannabis_type, sub_type, units_sold_hint, brand_id,
+            external_source_id, created_at, updated_at
+        )
+        VALUES (
+            %(id)s, %(name)s, %(slug)s, %(description)s, %(base_price)s, %(is_active)s,
+            '', %(meta_description)s, %(is_featured)s, %(is_new)s, %(compliance_category)s,
+            %(cannabis_type)s, %(sub_type)s, %(units_sold_hint)s, %(brand_id)s,
+            %(external_source_id)s, now(), now()
+        )
+        ON CONFLICT (external_source_id) DO UPDATE SET
+            name                = EXCLUDED.name,
+            slug                = EXCLUDED.slug,
+            description         = EXCLUDED.description,
+            base_price          = EXCLUDED.base_price,
+            is_active           = EXCLUDED.is_active,
+            meta_description    = EXCLUDED.meta_description,
+            is_featured         = EXCLUDED.is_featured,
+            is_new              = EXCLUDED.is_new,
+            compliance_category = EXCLUDED.compliance_category,
+            cannabis_type       = EXCLUDED.cannabis_type,
+            sub_type            = EXCLUDED.sub_type,
+            units_sold_hint     = EXCLUDED.units_sold_hint,
+            brand_id            = EXCLUDED.brand_id,
+            updated_at          = now()
+        RETURNING id
+        """,
+        {
+            "id": new_uuid(),
+            "name": name,
+            "slug": slug,
+            "description": raw["description"] or "",
+            "base_price": to_decimal(raw["pricing"]["price"]),
+            "is_active": raw["status"]["is_active"],
+            "meta_description": (raw["short_description"] or "")[:160],
+            "is_featured": raw["status"]["is_featured"],
+            "is_new": raw["status"]["is_new"],
+            "compliance_category": raw["compliance_category"] or "",
+            "cannabis_type": raw["cannabis_type"] or "",
+            "sub_type": raw["sub_type"] or "",
+            "units_sold_hint": raw["inventory"]["total_sold"],
+            "brand_id": brand_id,
+            "external_source_id": raw["source_id"],
+        },
+    )
+    (product_id,) = cur.fetchone()
 
-    lookup = {}
-    if schema.has_external_source_id:
-        lookup = {"external_source_id": raw["source_id"]}
-        existing = Product.objects.filter(**lookup).first()
-        exclude_pk = existing.pk if existing else None
-        product_defaults["slug"] = unique_slug(Product, slug, exclude_pk=exclude_pk)
-    else:
-        lookup = {"slug": slug}
+    # --- categories (M2M) -----------------------------------------------------
+    cur.execute("DELETE FROM products_categories WHERE product_id = %s", (product_id,))
+    cat_ids = {category_ids[slug] for slug in raw["category_slugs"] if slug in category_ids}
+    for cat_id in cat_ids:
+        cur.execute(
+            "INSERT INTO products_categories (product_id, category_id) VALUES (%s, %s)",
+            (product_id, cat_id),
+        )
 
-    product, created = Product.objects.update_or_create(**lookup, defaults=product_defaults)
-
-    # --- effects ---------------------------------------------------------------
-    if schema.has_effects_m2m:
-        product.effects.set([effects[e] for e in raw["effects"] if e in effects])
+    # --- effects (M2M) ---------------------------------------------------------
+    cur.execute("DELETE FROM products_effects WHERE product_id = %s", (product_id,))
+    for effect_name in raw["effects"]:
+        effect_id = effect_ids.get(effect_name)
+        if effect_id:
+            cur.execute(
+                "INSERT INTO products_effects (product_id, effect_id) VALUES (%s, %s)",
+                (product_id, effect_id),
+            )
 
     # --- variant -----------------------------------------------------------------
     sku = raw["sku"] or f"SCR-{raw['source_id'][:16]}"
-    variant_defaults = {
-        "product": product,
-        "price": to_decimal(raw["pricing"]["price_with_discounts"] or raw["pricing"]["price"]),
-        "is_active": raw["status"]["is_active"],
-    }
-    if schema.has_weight and raw["weight"]["value"] is not None:
-        variant_defaults["weight_value"] = to_decimal(raw["weight"]["value"])
-        variant_defaults["weight_unit"] = raw["weight"]["unit"] or "unknown"
+    cur.execute(
+        """
+        INSERT INTO product_variants (
+            id, product_id, sku, price, is_active, weight_value, weight_unit
+        )
+        VALUES (%(id)s, %(product_id)s, %(sku)s, %(price)s, %(is_active)s, %(weight_value)s, %(weight_unit)s)
+        ON CONFLICT (sku) DO UPDATE SET
+            product_id   = EXCLUDED.product_id,
+            price        = EXCLUDED.price,
+            is_active    = EXCLUDED.is_active,
+            weight_value = EXCLUDED.weight_value,
+            weight_unit  = EXCLUDED.weight_unit
+        RETURNING id
+        """,
+        {
+            "id": new_uuid(),
+            "product_id": product_id,
+            "sku": sku,
+            "price": to_decimal(raw["pricing"]["price_with_discounts"] or raw["pricing"]["price"]),
+            "is_active": raw["status"]["is_active"],
+            "weight_value": to_decimal(raw["weight"]["value"]) if raw["weight"]["value"] is not None else None,
+            "weight_unit": raw["weight"]["unit"] or "unknown",
+        },
+    )
+    (variant_id,) = cur.fetchone()
 
-    variant, _ = ProductVariant.objects.update_or_create(sku=sku, defaults=variant_defaults)
-
-    # --- EAV fallback writes now that we have a variant to attach to ----------
-    if not schema.has_brand_fk and raw["brand_name"]:
-        attr_writer.write(variant, "Brand", raw["brand_name"])
-    if not schema.has_compliance_category and raw["compliance_category"]:
-        attr_writer.write(variant, "Compliance Category", raw["compliance_category"])
-    if not schema.has_cannabis_type and raw["cannabis_type"]:
-        attr_writer.write(variant, "Cannabis Type", raw["cannabis_type"])
-    if not schema.has_sub_type and raw["sub_type"]:
-        attr_writer.write(variant, "Sub Type", raw["sub_type"])
-    if not schema.has_effects_m2m and raw["effects"]:
-        attr_writer.write(variant, "Effects", ", ".join(raw["effects"]))
-    if not schema.has_weight and raw["weight"]["formatted"]:
-        attr_writer.write(variant, "Weight", raw["weight"]["formatted"])
-
+    # --- lab ---------------------------------------------------------------------
     compounds = raw["lab"]["compounds"]
-    if schema.has_lab:
-        lab_defaults = {"potency": raw["lab"]["potency"] or ""}
-        for compound, field in (("thc", "thc_percent"), ("thca", "thca_percent"),
-                                 ("cbd", "cbd_percent"), ("cbda", "cbda_percent"),
-                                 ("cbn", "cbn_percent"), ("cbg", "cbg_percent")):
-            info = compounds.get(compound)
-            if info and info.get("unit") == "%":
-                lab_defaults[field] = to_decimal(info["value"])
-        # Keep the raw (incl. non-percent / mg dose) values and full terpene
-        # profile alongside, so nothing is lost even when unit != '%'.
-        lab_defaults["terpenes"] = {
-            "terpenes": raw["lab"]["terpenes"],
-            "compounds_raw": compounds,
-        }
-        if raw["coa_url"]:
-            lab_defaults["coa_url"] = raw["coa_url"]
-        schema.Lab.objects.update_or_create(variant=variant, defaults=lab_defaults)
-    else:
-        for compound, info in compounds.items():
-            attr_writer.write(variant, compound.upper(), f"{info['value']}{info.get('unit') or ''}")
-        if raw["lab"]["potency"]:
-            attr_writer.write(variant, "Potency", raw["lab"]["potency"])
+    percent_fields = {"thc": "thc_percent", "thca": "thca_percent", "cbd": "cbd_percent",
+                       "cbda": "cbda_percent", "cbn": "cbn_percent", "cbg": "cbg_percent"}
+    lab_values = {field: None for field in percent_fields.values()}
+    for compound, field in percent_fields.items():
+        info = compounds.get(compound)
+        if info and info.get("unit") == "%":
+            lab_values[field] = to_decimal(info["value"])
+
+    has_lab_data = raw["lab"]["potency"] or any(v is not None for v in lab_values.values()) or compounds or raw["coa_url"]
+    if has_lab_data:
+        cur.execute(
+            """
+            INSERT INTO product_labs (
+                id, variant_id, potency, thc_percent, thca_percent, cbd_percent,
+                cbda_percent, cbn_percent, cbg_percent, terpenes, coa_url
+            )
+            VALUES (
+                %(id)s, %(variant_id)s, %(potency)s, %(thc_percent)s, %(thca_percent)s, %(cbd_percent)s,
+                %(cbda_percent)s, %(cbn_percent)s, %(cbg_percent)s, %(terpenes)s, %(coa_url)s
+            )
+            ON CONFLICT (variant_id) DO UPDATE SET
+                potency      = EXCLUDED.potency,
+                thc_percent  = EXCLUDED.thc_percent,
+                thca_percent = EXCLUDED.thca_percent,
+                cbd_percent  = EXCLUDED.cbd_percent,
+                cbda_percent = EXCLUDED.cbda_percent,
+                cbn_percent  = EXCLUDED.cbn_percent,
+                cbg_percent  = EXCLUDED.cbg_percent,
+                terpenes     = EXCLUDED.terpenes,
+                coa_url      = COALESCE(NULLIF(EXCLUDED.coa_url, ''), product_labs.coa_url)
+            """,
+            {
+                "id": new_uuid(),
+                "variant_id": variant_id,
+                "potency": raw["lab"]["potency"] or "",
+                "terpenes": psycopg2.extras.Json({
+                    "terpenes": raw["lab"]["terpenes"],
+                    "compounds_raw": compounds,
+                }),
+                "coa_url": raw["coa_url"] or "",
+                **lab_values,
+            },
+        )
 
     # --- images ------------------------------------------------------------------
-    if schema.has_image_source_url:
-        for idx, img in enumerate(raw["images"]):
-            ProductImage.objects.update_or_create(
-                product=product,
-                order=img["order"],
-                defaults={"source_url": img["url"], "is_primary": (idx == 0)},
+    for idx, img in enumerate(raw["images"]):
+        order = img["order"]
+        cur.execute(
+            "SELECT id FROM product_images WHERE product_id = %s AND \"order\" = %s LIMIT 1",
+            (product_id, order),
+        )
+        row = cur.fetchone()
+        if row:
+            cur.execute(
+                "UPDATE product_images SET source_url = %s, is_primary = %s WHERE id = %s",
+                (img["url"], idx == 0, row[0]),
             )
-    elif raw["images"]:
-        for idx, img in enumerate(raw["images"]):
-            attr_writer.write(variant, f"Image URL {idx + 1}", img["url"])
+        else:
+            cur.execute(
+                """
+                INSERT INTO product_images (id, product_id, source_url, is_primary, "order", created_at, alt_text)
+                VALUES (%s, %s, %s, %s, %s, now(), '')
+                """,
+                (new_uuid(), product_id, img["url"], idx == 0, order),
+            )
 
     # --- stock ---------------------------------------------------------------------
-    from apps.inventory.models import Stock
-    Stock.objects.update_or_create(
-        variant=variant,
-        warehouse=warehouse,
-        defaults={"quantity": raw["inventory"]["quantity"]},
+    cur.execute(
+        """
+        INSERT INTO stock (id, variant_id, warehouse_id, quantity, reserved, updated_at)
+        VALUES (%s, %s, %s, %s, 0, now())
+        ON CONFLICT (variant_id, warehouse_id) DO UPDATE SET
+            quantity = EXCLUDED.quantity, updated_at = now()
+        """,
+        (new_uuid(), variant_id, warehouse_id, raw["inventory"]["quantity"]),
     )
 
-    return product, variant
-
-
-def get_or_create_warehouse(name):
-    from apps.inventory.models import Warehouse
-    warehouse, created = Warehouse.objects.get_or_create(
-        name=name, defaults={"address": "Imported from scrape — update address", "is_active": True}
-    )
-    log(f"{'created' if created else 'using'} warehouse: {warehouse.name}")
-    return warehouse
+    return product_id
 
 
 # ─── Main ─────────────────────────────────────────────────────────────────────
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--data-dir", default="clean_data", help="Folder with products.json / brands.json from clean_scraped_data.py")
+    parser.add_argument("--data-dir", default=str(DEFAULT_DATA_DIR),
+                         help="Folder with products.json / brands.json / categories.json from clean_scraped_data.py")
     parser.add_argument("--warehouse-name", default="Happy Days LI - Farmingdale")
+    parser.add_argument("--dsn", default=None, help="Postgres DSN. Defaults to the DATABASE_URL env var.")
     parser.add_argument("--limit", type=int, default=None)
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
@@ -389,6 +400,7 @@ def main():
     data_dir = Path(args.data_dir)
     products_path = data_dir / "products.json"
     brands_path = data_dir / "brands.json"
+    categories_path = data_dir / "categories.json"
     if not products_path.exists():
         sys.exit(f"ERROR: {products_path} not found — run clean_scraped_data.py first.")
 
@@ -396,46 +408,53 @@ def main():
         products = json.load(f)
     with open(brands_path) as f:
         brands_raw = json.load(f)
+    with open(categories_path) as f:
+        categories_raw = json.load(f)
 
     if args.limit:
         products = products[: args.limit]
 
-    schema = Schema()
-    schema.summary()
-
     if args.dry_run:
         banner("Dry run — no database writes")
-        print(f"Would seed {len(products)} products, {len(brands_raw)} brands.")
+        print(f"Would seed {len(products)} products, {len(brands_raw)} brands, {len(categories_raw)} categories.")
         return
 
-    attr_writer = AttributeWriter()
+    load_dotenv()
+    dsn = args.dsn or os.environ.get("DATABASE_URL")
+    if not dsn:
+        sys.exit("No DSN given and DATABASE_URL is not set.")
 
     start = time.time()
-    with transaction.atomic():
-        categories = seed_categories(schema, products)
-        brands = seed_brands(schema, brands_raw, attr_writer)
-        all_effects = {e for p in products for e in p["effects"]}
-        effects = seed_effects(schema, all_effects)
-        warehouse = get_or_create_warehouse(args.warehouse_name)
+    conn = psycopg2.connect(dsn)
+    try:
+        with conn:
+            with conn.cursor() as cur:
+                category_ids = seed_categories(cur, categories_raw)
+                brand_ids = seed_brands(cur, brands_raw)
+                all_effects = {e for p in products for e in p["effects"]}
+                effect_ids = seed_effects(cur, all_effects)
+                warehouse_id = get_or_create_warehouse(cur, args.warehouse_name)
 
-    banner("Products")
-    seeded, errors = 0, 0
-    for i, raw in enumerate(products, 1):
-        try:
-            with transaction.atomic():
-                seed_product(schema, raw, categories, brands, effects, attr_writer, warehouse)
-            seeded += 1
-            if i % 100 == 0 or i == len(products):
-                log(f"{i}/{len(products)} processed")
-        except Exception as exc:
-            errors += 1
-            warn(f"failed on '{raw.get('name')}' ({raw.get('source_id')}): {exc}")
+        banner("Products")
+        seeded, errors = 0, 0
+        for i, raw in enumerate(products, 1):
+            try:
+                with conn:
+                    with conn.cursor() as cur:
+                        seed_product(cur, raw, category_ids, brand_ids, effect_ids, warehouse_id)
+                seeded += 1
+                if i % 100 == 0 or i == len(products):
+                    log(f"{i}/{len(products)} processed")
+            except Exception as exc:
+                errors += 1
+                warn(f"failed on '{raw.get('name')}' ({raw.get('source_id')}): {exc}")
+    finally:
+        conn.close()
 
     elapsed = time.time() - start
     banner("Done")
-    print(f"Seeded        : {seeded}/{len(products)} products in {elapsed:.1f}s")
-    print(f"Errors        : {errors}")
-    print(f"EAV fallback writes : {attr_writer.count}  (fields not yet on your models — see summary above)")
+    print(f"Seeded : {seeded}/{len(products)} products in {elapsed:.1f}s")
+    print(f"Errors : {errors}")
 
 
 if __name__ == "__main__":

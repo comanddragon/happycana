@@ -89,7 +89,7 @@ class SearchService:
             "slug":        product.slug,
             "description": product.description,
             "base_price":  float(product.base_price),
-            "category":    product.category.name if product.category else None,
+            "category":    [c.name for c in product.categories.all()],
             "is_active":   product.is_active,
             "skus":        [v.sku for v in product.variants.all()],
         }
