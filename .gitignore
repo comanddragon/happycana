@@ -4,16 +4,6 @@ __pycache__/
 .env
 *.sqlite3
 /Backend/staticfiles/
-/Backend/.output/
-/Backend/clean_data/
-/Backend/.clean_data/
-/Backend/.scripts/*
-!/Backend/.scripts/products/
-!/Backend/.scripts/products/scrape_products.py
-!/Backend/.scripts/products/seed_products.py
-!/Backend/.scripts/blogs/
-!/Backend/.scripts/blogs/scrape_blogs.py
-!/Backend/.scripts/blogs/seed_blogs.py
 node_modules/
 .next/
 frontend/.env
@@ -21,3 +11,4 @@ frontend/.env
 .idea/
 .vscode/
 .DS_Store
+
