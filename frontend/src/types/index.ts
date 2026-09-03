@@ -242,7 +242,9 @@ export interface ProductVariant {
 
 export interface Product {
     id: string
-    category: Category | null
+    // The API calls this field `category`, but it contains the product's
+    // many-to-many collection/category memberships.
+    category: Category[]
     brand: BrandMinimal | null
     name: string
     slug: string

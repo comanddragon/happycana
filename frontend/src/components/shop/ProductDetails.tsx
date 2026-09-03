@@ -14,7 +14,7 @@ import { Card }      from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import { VideoPlayer }  from '@/components/shop/VideoPlayer'
 import { useAddToCart } from '@/hooks/useApi'
-import { cn, formatPrice, mediaUrl, getVariantLabel, formatWeight, titleCase, CANNABIS_TYPE_LABEL, COMPLIANCE_CATEGORY_LABEL, POTENCY_LABEL } from '@/lib/utils'
+import { cn, formatPrice, mediaUrl, getVariantLabel, formatWeight, stripHtml, titleCase, CANNABIS_TYPE_LABEL, COMPLIANCE_CATEGORY_LABEL, POTENCY_LABEL } from '@/lib/utils'
 import {
     Product,
     ProductVariant,
@@ -38,6 +38,7 @@ export function ProductDetails({ product }: { product: Product }) {
     const addToCart                     = useAddToCart()
 
     const variant = selectedVariant
+    const category = product.category?.[0] ?? null
 
     // Build unified media list: product-level then per-variant
     const mediaList: MediaItem[] = useMemo(() => [
@@ -67,14 +68,14 @@ export function ProductDetails({ product }: { product: Product }) {
                 <Link href="/" className="hover:text-foreground transition-colors">Home</Link>
                 <ChevronRight className="h-3.5 w-3.5" />
                 <Link href="/shop/products" className="hover:text-foreground transition-colors">Products</Link>
-                {product.category && (
+                {category && (
                     <>
                         <ChevronRight className="h-3.5 w-3.5" />
                         <Link
-                            href={`/shop/products?category_slug=${product.category.slug}`}
+                            href={`/shop/products?category=${category.slug}`}
                             className="hover:text-foreground transition-colors"
                         >
-                            {product.category.name}
+                            {category.name}
                         </Link>
                     </>
                 )}
@@ -162,10 +163,10 @@ export function ProductDetails({ product }: { product: Product }) {
 
                 <div className="flex flex-col gap-5">
                     <div className="flex flex-wrap items-center gap-2">
-                        {product.category && (
-                            <Link href={`/shop/products?category=${product.category.slug}`}>
+                        {category && (
+                            <Link href={`/shop/products?category=${category.slug}`}>
                                 <Badge variant="secondary" className="text-xs uppercase tracking-widest">
-                                    {product.category.name}
+                                    {category.name}
                                 </Badge>
                             </Link>
                         )}
@@ -196,7 +197,9 @@ export function ProductDetails({ product }: { product: Product }) {
                         </p>
                     </div>
 
-                    <p className="text-muted-foreground leading-relaxed">{product.description}</p>
+                    <p className="text-muted-foreground leading-relaxed whitespace-pre-line">
+                        {stripHtml(product.description)}
+                    </p>
 
                     {product.effects.length > 0 && (
                         <div className="flex flex-wrap gap-1.5">
@@ -226,6 +229,7 @@ export function ProductDetails({ product }: { product: Product }) {
                                         key={v.id} size="sm"
                                         variant={variant?.id === v.id ? 'default' : 'outline'}
                                         onClick={() => { setSelectedVariant(v); setActiveMedia(null) }}
+                                        disabled={!v.is_active || !v.in_stock}
                                     >
                                         {getVariantLabel(v)}
                                     </Button>
@@ -255,10 +259,10 @@ export function ProductDetails({ product }: { product: Product }) {
                     <Button
                         size="lg" className="w-full"
                         onClick={() => variant && addToCart.mutate({ variant: variant.id, quantity: qty })}
-                        disabled={!variant || addToCart.isPending}
+                        disabled={!variant || !variant.is_active || !variant.in_stock || addToCart.isPending}
                     >
                         <ShoppingBag className="h-5 w-5 mr-2" />
-                        {addToCart.isPending ? 'Adding…' : 'Add to Cart'}
+                        {addToCart.isPending ? 'Adding…' : variant && !variant.in_stock ? 'Out of Stock' : 'Add to Cart'}
                     </Button>
 
                     {/* Product details — weight, subtype, potency, terpenes, COA.

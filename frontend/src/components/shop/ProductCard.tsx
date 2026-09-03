@@ -16,7 +16,7 @@ export const ProductCard = memo(function ProductCard({ product, className, prior
     const addToCart      = useAddToCart()
     const [imageLoaded, setImageLoaded] = useState(priority)
     const firstVariant   = product.variants?.[0]
-    const category       = product.category
+    const category       = product.category?.[0] ?? null
     // Prefer product-level primary image, fall back to first image, then variant image
     const displayImage = mediaUrl(
         product.primary_image?.image_url ??
@@ -122,7 +122,7 @@ export const ProductCard = memo(function ProductCard({ product, className, prior
                 </div>
             </Link>
 
-            {firstVariant && (
+            {firstVariant?.in_stock && (
                 <button
                     className="absolute bottom-[4.75rem] right-4 flex h-10 w-10 items-center justify-center rounded-full text-hc-canopy-2 opacity-100 shadow-[0_8px_18px_rgba(200,121,46,.4)] transition-all duration-200 sm:opacity-0 sm:translate-y-2 sm:group-hover:opacity-100 sm:group-hover:translate-y-0 sm:group-focus-within:opacity-100 sm:group-focus-within:translate-y-0"
                     style={{ background: 'linear-gradient(180deg, var(--color-hc-amber-light), var(--color-hc-amber))' }}

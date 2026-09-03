@@ -154,6 +154,24 @@ export function truncate(str: string, n: number): string {
     return str.length > n ? str.slice(0, n - 1) + '…' : str
 }
 
+/** Convert scraped product-description HTML into readable, safe plain text. */
+export function stripHtml(value: string | null | undefined): string {
+    if (!value) return ''
+    return value
+        .replace(/<br\s*\/?>/gi, '\n')
+        .replace(/<\/p>|<\/li>/gi, '\n')
+        .replace(/<[^>]*>/g, '')
+        .replace(/&nbsp;/gi, ' ')
+        .replace(/&amp;/gi, '&')
+        .replace(/&lt;/gi, '<')
+        .replace(/&gt;/gi, '>')
+        .replace(/&quot;/gi, '"')
+        .replace(/&#39;/gi, "'")
+        .replace(/[ \t]+\n/g, '\n')
+        .replace(/\n{3,}/g, '\n\n')
+        .trim()
+}
+
 /** e.g. titleCase('beta_caryophyllene') -> 'Beta Caryophyllene' */
 export function titleCase(str: string): string {
     return str.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())

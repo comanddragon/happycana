@@ -3,6 +3,7 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { ProductDetails } from '@/components/shop/ProductDetails' // client component
 import type { Product, ProductVariant } from '@/types'
+import { stripHtml } from '@/lib/utils'
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -27,7 +28,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     const { slug } = await params
     const product  = await getProduct(slug)
     const canonicalPath = `/shop/products/${product.slug}`
-    const description = product.meta_description || product.description?.slice(0, 160)
+    const description = product.meta_description || stripHtml(product.description).slice(0, 160)
     const ogImageUrl = product.primary_image?.image_url ?? undefined
 
     return {
@@ -100,12 +101,13 @@ export default async function ProductPage({ params }: PageProps) {
     const product  = await getProduct(slug)
     const siteUrl  = process.env.NEXT_PUBLIC_FRONTEND_URL ?? ''
     const productUrl = `${siteUrl}/shop/products/${product.slug}`
+    const category = product.category?.[0] ?? null
 
     const jsonLd = {
         '@context': 'https://schema.org',
         '@type':    'Product',
         name:        product.name,
-        description: product.description,
+        description: stripHtml(product.description),
         image:       product.primary_image?.image_url,
         url:         productUrl,
         ...(product.variants?.[0]?.sku && { sku: product.variants[0].sku }),
@@ -118,17 +120,17 @@ export default async function ProductPage({ params }: PageProps) {
         '@type':    'BreadcrumbList',
         itemListElement: [
             { '@type': 'ListItem', position: 1, name: 'Shop',    item: `${siteUrl}/shop` },
-            ...(product.category
+            ...(category
                 ? [{
                     '@type': 'ListItem',
                     position: 2,
-                    name: product.category.name,
-                    item: `${siteUrl}/shop/products?category=${product.category.slug}`,
+                    name: category.name,
+                    item: `${siteUrl}/shop/products?category=${category.slug}`,
                 }]
                 : []),
             {
                 '@type':  'ListItem',
-                position: product.category ? 3 : 2,
+                position: category ? 3 : 2,
                 name:     product.name,
                 item:     productUrl,
             },

@@ -1,4 +1,5 @@
 import csv
+import random
 import re
 import time
 from pathlib import Path
@@ -9,8 +10,10 @@ from bs4 import BeautifulSoup
 
 
 BASE_URL = "https://9realms.eu"
-OUTPUT_DIR = Path("scraped_data")
-DELAY = 0.25
+OUTPUT_DIR = Path(__file__).resolve().parents[2] / ".output" / "products"
+DELAY = 1.0
+MAX_RETRIES = 7
+BACKOFF_SECONDS = 2.0
 
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/151.0.0.0 Safari/537.36",
@@ -27,13 +30,38 @@ def clean_url(url):
 
 
 def get(url, json=False):
-    response = session.get(
-        url,
-        headers={**HEADERS, "Accept": "application/json" if json else HEADERS["Accept"]},
-        timeout=30,
-    )
-    response.raise_for_status()
-    return response.json() if json else response.text
+    """Fetch a URL, respecting Retry-After and backing off on transient errors."""
+    for attempt in range(MAX_RETRIES + 1):
+        try:
+            response = session.get(
+                url,
+                headers={**HEADERS, "Accept": "application/json" if json else HEADERS["Accept"]},
+                timeout=30,
+            )
+
+            if response.status_code not in {429, 500, 502, 503, 504}:
+                response.raise_for_status()
+                return response.json() if json else response.text
+
+            if attempt == MAX_RETRIES:
+                response.raise_for_status()
+
+            retry_after = response.headers.get("Retry-After", "")
+            try:
+                wait = float(retry_after)
+            except ValueError:
+                wait = BACKOFF_SECONDS * (2 ** attempt)
+            wait = min(wait, 120) + random.uniform(0.25, 1.25)
+            print(f"  HTTP {response.status_code}; retrying in {wait:.1f}s ({attempt + 1}/{MAX_RETRIES})")
+            time.sleep(wait)
+        except (requests.Timeout, requests.ConnectionError) as exc:
+            if attempt == MAX_RETRIES:
+                raise
+            wait = min(BACKOFF_SECONDS * (2 ** attempt), 120) + random.uniform(0.25, 1.25)
+            print(f"  Network error: {exc}; retrying in {wait:.1f}s ({attempt + 1}/{MAX_RETRIES})")
+            time.sleep(wait)
+
+    raise RuntimeError(f"Unable to fetch {url}")
 
 
 def price(value):
@@ -52,6 +80,11 @@ def product_handle(url):
     if not match:
         raise ValueError(f"Invalid product URL: {url}")
     return match.group(1)
+
+
+def canonical_product_url(url):
+    """Remove a collection prefix so one Shopify product has exactly one key."""
+    return f"{BASE_URL}/products/{product_handle(url)}"
 
 
 def get_collections():
@@ -134,7 +167,7 @@ def get_collection_products(collection_url):
                 if scoped_handle != collection_handle:
                     continue
 
-            page_products.add(product_url)
+            page_products.add(canonical_product_url(product_url))
 
         if not page_products:
             break
@@ -211,27 +244,70 @@ def write_csv(filename, rows, fields):
         writer.writeheader()
         writer.writerows(rows)
 
+
+def read_csv(filename):
+    path = OUTPUT_DIR / filename
+    if not path.exists():
+        return []
+    with path.open(encoding="utf-8", newline="") as f:
+        return list(csv.DictReader(f))
+
+
+def save_progress(collection_rows, products, images, variants, collection_products):
+    """Atomically checkpoint all output tables so an interrupted run can resume."""
+    tables = (
+        ("collections.csv", collection_rows, ["handle", "title", "url"]),
+        ("products.csv", [p["data"] for p in products.values()], [
+            "id", "handle", "title", "url", "description", "vendor", "product_type",
+            "available", "price", "compare_at_price", "featured_image", "tags",
+        ]),
+        ("product_images.csv", images, ["product_id", "position", "url"]),
+        ("variants.csv", variants, [
+            "id", "product_id", "title", "sku", "available", "price",
+            "compare_at_price", "option1", "option2", "option3", "featured_image",
+        ]),
+        ("collection_products.csv", collection_products, ["collection_handle", "product_id"]),
+    )
+    for filename, rows, fields in tables:
+        temp = (OUTPUT_DIR / filename).with_suffix(".csv.tmp")
+        with temp.open("w", encoding="utf-8", newline="") as f:
+            writer = csv.DictWriter(f, fieldnames=fields)
+            writer.writeheader()
+            writer.writerows(rows)
+        temp.replace(OUTPUT_DIR / filename)
+
 def scrape():
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
     collections = get_collections()
+    product_rows = read_csv("products.csv")
     products = {}
-    images = []
-    variants = []
-    collection_products = []
-    collection_rows = []
+    for row in product_rows:
+        if not row.get("url"):
+            continue
+        url = canonical_product_url(row["url"])
+        row["url"] = url
+        products[url] = {"raw": None, "data": row}
+    images = read_csv("product_images.csv")
+    variants = read_csv("variants.csv")
+    collection_products = read_csv("collection_products.csv")
+    collection_rows = read_csv("collections.csv")
 
-    seen_images = set()
-    seen_variants = set()
-    seen_relationships = set()
+    seen_images = {(row["product_id"], row["url"]) for row in images}
+    seen_variants = {row["id"] for row in variants}
+    seen_relationships = {(row["collection_handle"], str(row["product_id"])) for row in collection_products}
+    seen_collections = {row["handle"] for row in collection_rows}
 
     print(f"Found {len(collections)} collections")
+    print(f"Resuming with {len(products)} checkpointed products")
 
     for collection in collections:
         handle = collection["handle"]
         print(f"\n[{collection['title']}]")
 
-        collection_rows.append(collection)
+        if handle not in seen_collections:
+            collection_rows.append(collection)
+            seen_collections.add(handle)
 
         try:
             product_urls = get_collection_products(collection["url"])
@@ -265,7 +341,7 @@ def scrape():
 
                 product = products[url]["data"]
                 product_id = product["id"]
-                relationship = (handle, product_id)
+                relationship = (handle, str(product_id))
 
                 if relationship not in seen_relationships:
                     collection_products.append({
@@ -274,63 +350,12 @@ def scrape():
                     })
                     seen_relationships.add(relationship)
 
+                save_progress(collection_rows, products, images, variants, collection_products)
+
             except Exception as e:
                 print(f"  Product error [{url}]: {e}")
 
-    write_csv(
-        "collections.csv",
-        collection_rows,
-        ["handle", "title", "url"],
-    )
-
-    write_csv(
-        "products.csv",
-        [p["data"] for p in products.values()],
-        [
-            "id",
-            "handle",
-            "title",
-            "url",
-            "description",
-            "vendor",
-            "product_type",
-            "available",
-            "price",
-            "compare_at_price",
-            "featured_image",
-            "tags",
-        ],
-    )
-
-    write_csv(
-        "product_images.csv",
-        images,
-        ["product_id", "position", "url"],
-    )
-
-    write_csv(
-        "variants.csv",
-        variants,
-        [
-            "id",
-            "product_id",
-            "title",
-            "sku",
-            "available",
-            "price",
-            "compare_at_price",
-            "option1",
-            "option2",
-            "option3",
-            "featured_image",
-        ],
-    )
-
-    write_csv(
-        "collection_products.csv",
-        collection_products,
-        ["collection_handle", "product_id"],
-    )
+    save_progress(collection_rows, products, images, variants, collection_products)
 
     print("\nDone.")
     print(f"Collections: {len(collection_rows)}")
