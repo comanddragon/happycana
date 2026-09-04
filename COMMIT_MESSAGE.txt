@@ -1,13 +1,21 @@
-commit 5819f98e91f392c2271b1f0048d2a81d8b2abf9b
+commit 0549aeaea6d6fe113aced39ef2f13be9a560a117
 Author: Claude <claude@anthropic.com>
 Commit: Claude <claude@anthropic.com>
 
-    sitemap.ts: replace locally-caught throw with a direct return
+    Add production readiness audit (AUDIT.md)
     
-    IntelliJ flagged 'throw of exception caught locally' on the product
-    pagination loop's throw new Error(...) — it's thrown and caught within
-    the same try/catch in this one function, so it was just an indirect
-    way of returning early. Return the fallback (static + blog entries)
-    directly instead. The other throw in getAllBrandsForSitemap() is left
-    as-is since it legitimately crosses a function boundary into this
-    function's catch block.
+    Point-in-time review of the backend and frontend covering config,
+    dependency hygiene, auth/payment handling, and test coverage.
+    
+    Blockers found:
+    - django-ratelimit is listed as a dependency for 'rate limiting on
+      sensitive endpoints' but never actually applied anywhere.
+    - Backend requirements are almost entirely unpinned (2 of 42 lines
+      in base.txt use ==).
+    - Zero frontend test coverage (no test files, no test script).
+    - No idempotency key on Stripe payment intent creation.
+    
+    Also notes what's already solid (env-gated settings, security
+    headers, verified webhook signatures, no committed secrets, strict
+    TS, backend test coverage) and two minor items (no CI config found
+    in-repo, wildcard HTTPS image remote pattern).
