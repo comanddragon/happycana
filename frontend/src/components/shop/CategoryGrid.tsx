@@ -13,7 +13,10 @@ const CATEGORY_CDN_IMAGES: Record<string, string> = {
     concentrates: 'https://imgix.dispenseapp.com/145c714690909516_1777388397629-785352325-4352345.jpg',
     edibles: 'https://imgix.dispenseapp.com/145c714690909516_1779201340005-919424689-35345345.avif',
     flower: 'https://imgix.dispenseapp.com/145c714690909516_1781719195742-35570527-54325234.png',
-    'gift-cards': 'https://imgix.dispenseapp.com/145c714690909516_1765203152550-533809155-IMG_4037.jpg',
+    'pre-rolls': 'https://imgix.dispenseapp.com/145c714690909516_1742468117692-457039296-899808908908.png',
+    tinctures: 'https://imgix.dispenseapp.com/145c714690909516_1749723350648-817544208-5416516519818525252.jpg',
+    topicals: 'https://imgix.dispenseapp.com/145c714690909516_1749723176656-191914202-452141748485424.jpg',
+    vaporizers: 'https://imgix.dispenseapp.com/145c714690909516_1703343990098-451147540-gorilla_glu_vape.webp',
 }
 
 function CategoryTile({ cat }: { cat: Category }) {
