@@ -10,7 +10,7 @@ class ChatParticipantSerializer(serializers.ModelSerializer):
     full_name = serializers.SerializerMethodField()
 
     class Meta:
-        model  = User
+        model = User
         fields = ["id", "email", "first_name", "last_name", "full_name"]
 
     def get_full_name(self, obj):
@@ -18,12 +18,22 @@ class ChatParticipantSerializer(serializers.ModelSerializer):
 
 
 class ChatMessageSerializer(serializers.ModelSerializer):
-    sender      = ChatParticipantSerializer(read_only=True)
-    is_own      = serializers.SerializerMethodField()
+    sender = ChatParticipantSerializer(read_only=True)
+    is_own = serializers.SerializerMethodField()
 
     class Meta:
-        model  = ChatMessage
-        fields = ["id", "room", "sender", "message_type", "body", "file", "is_read", "created_at", "is_own"]
+        model = ChatMessage
+        fields = [
+            "id",
+            "room",
+            "sender",
+            "message_type",
+            "body",
+            "file",
+            "is_read",
+            "created_at",
+            "is_own",
+        ]
         read_only_fields = ["id", "room", "sender", "created_at"]
 
     def get_is_own(self, obj):
@@ -34,17 +44,24 @@ class ChatMessageSerializer(serializers.ModelSerializer):
 
 
 class ChatRoomSerializer(serializers.ModelSerializer):
-    customer       = ChatParticipantSerializer(read_only=True)
-    agent          = ChatParticipantSerializer(read_only=True)
+    customer = ChatParticipantSerializer(read_only=True)
+    agent = ChatParticipantSerializer(read_only=True)
     latest_message = serializers.SerializerMethodField()
-    unread_count   = serializers.SerializerMethodField()
+    unread_count = serializers.SerializerMethodField()
 
     class Meta:
-        model  = ChatRoom
+        model = ChatRoom
         fields = [
-            "id", "customer", "agent", "order", "subject",
-            "status", "created_at", "updated_at",
-            "latest_message", "unread_count",
+            "id",
+            "customer",
+            "agent",
+            "order",
+            "subject",
+            "status",
+            "created_at",
+            "updated_at",
+            "latest_message",
+            "unread_count",
         ]
         read_only_fields = ["id", "customer", "created_at", "updated_at"]
 
@@ -59,7 +76,11 @@ class ChatRoomSerializer(serializers.ModelSerializer):
         else:
             msg = latest[0] if latest else None
         if msg:
-            return {"body": msg.body, "created_at": msg.created_at.isoformat(), "type": msg.message_type}
+            return {
+                "body": msg.body,
+                "created_at": msg.created_at.isoformat(),
+                "type": msg.message_type,
+            }
         return None
 
     def get_unread_count(self, obj):
@@ -75,20 +96,30 @@ class ChatRoomSerializer(serializers.ModelSerializer):
 
 class CreateChatRoomSerializer(serializers.ModelSerializer):
     class Meta:
-        model  = ChatRoom
+        model = ChatRoom
         fields = ["subject", "order"]
 
     def create(self, validated_data):
-        validated_data["customer"] = self.context["request"].user
+        request = self.context["request"]
+        validated_data["customer"] = request.user
+        validated_data["storefront"] = getattr(request, "storefront", None)
+        order = validated_data.get("order")
+        if order and (
+            order.user_id != request.user.id
+            or order.storefront_id != getattr(request.storefront, "id", None)
+        ):
+            raise serializers.ValidationError(
+                {"order": "Order belongs to another storefront."}
+            )
         return super().create(validated_data)
 
 
 class SendMessageSerializer(serializers.ModelSerializer):
     class Meta:
-        model  = ChatMessage
+        model = ChatMessage
         fields = ["body", "message_type", "file"]
 
     def create(self, validated_data):
         validated_data["sender"] = self.context["request"].user
-        validated_data["room"]   = self.context["room"]
+        validated_data["room"] = self.context["room"]
         return super().create(validated_data)

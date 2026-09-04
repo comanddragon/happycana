@@ -29,14 +29,15 @@ class ChatConsumer(BaseConsumer):
     """
 
     async def connect(self):
-        self.room_id    = self.scope["url_route"]["kwargs"]["room_id"]
-        self.group_name = f"chat_{self.room_id}"
-        user            = self.scope["user"]
+        self.room_id = self.scope["url_route"]["kwargs"]["room_id"]
+        user = self.scope["user"]
 
         # Verify the user is a participant (customer, agent, or staff)
         if not await self.can_access_room(user, self.room_id):
             await self.close(code=4003)
             return
+
+        self.group_name = await self.get_group_name(self.room_id)
 
         await self.join_group(self.group_name)
         await self.accept()
@@ -46,15 +47,23 @@ class ChatConsumer(BaseConsumer):
         await self.send_json({"type": "chat.history", "payload": {"messages": history}})
 
         # Announce join to everyone else
-        await self.push(self.group_name, "chat_join", {
-            "sender": user.email,
-        })
+        await self.push(
+            self.group_name,
+            "chat_join",
+            {
+                "sender": user.email,
+            },
+        )
 
     async def disconnect(self, code):
         user = self.scope["user"]
-        await self.push(self.group_name, "chat_leave", {
-            "sender": getattr(user, "email", "anonymous"),
-        })
+        await self.push(
+            self.group_name,
+            "chat_leave",
+            {
+                "sender": getattr(user, "email", "anonymous"),
+            },
+        )
         await self.leave_group(self.group_name)
 
     # ------------------------------------------------------------------
@@ -74,33 +83,44 @@ class ChatConsumer(BaseConsumer):
     # Action handlers
     # ------------------------------------------------------------------
     async def handle_send_message(self, content):
-        body         = content.get("body", "").strip()
+        body = content.get("body", "").strip()
         message_type = content.get("message_type", "text")
         if not body:
             await self.send_json({"error": "Message body cannot be empty."})
             return
 
         user = self.scope["user"]
-        msg  = await self.save_message(self.room_id, user, body, message_type)
+        msg = await self.save_message(self.room_id, user, body, message_type)
         if not msg:
-            await self.send_json({"error": "Could not save message. Check room status."})
+            await self.send_json(
+                {"error": "Could not save message. Check room status."}
+            )
             return
 
-        await self.push(self.group_name, "chat_message", {
-            "id":           str(msg["id"]),
-            "sender_email": user.email,
-            "sender_name":  f"{user.first_name} {user.last_name}".strip() or user.email,
-            "message_type": message_type,
-            "body":         body,
-            "created_at":   msg["created_at"],
-        })
+        await self.push(
+            self.group_name,
+            "chat_message",
+            {
+                "id": str(msg["id"]),
+                "sender_email": user.email,
+                "sender_name": f"{user.first_name} {user.last_name}".strip()
+                or user.email,
+                "message_type": message_type,
+                "body": body,
+                "created_at": msg["created_at"],
+            },
+        )
 
     async def handle_typing(self, content):
         user = self.scope["user"]
-        await self.push(self.group_name, "chat_typing", {
-            "sender":    user.email,
-            "is_typing": bool(content.get("is_typing", False)),
-        })
+        await self.push(
+            self.group_name,
+            "chat_typing",
+            {
+                "sender": user.email,
+                "is_typing": bool(content.get("is_typing", False)),
+            },
+        )
 
     async def handle_read_messages(self):
         user = self.scope["user"]
@@ -111,9 +131,9 @@ class ChatConsumer(BaseConsumer):
     # Channel layer event handlers (group → individual socket)
     # ------------------------------------------------------------------
     async def chat_message(self, event):
-        payload    = event["payload"]
-        my_email   = self.scope["user"].email
-        payload    = {**payload, "is_own": payload.get("sender_email") == my_email}
+        payload = event["payload"]
+        my_email = self.scope["user"].email
+        payload = {**payload, "is_own": payload.get("sender_email") == my_email}
         await self.send_json({"type": "chat.message", "payload": payload})
 
     async def chat_typing(self, event):
@@ -134,22 +154,29 @@ class ChatConsumer(BaseConsumer):
     # DB helpers
     # ------------------------------------------------------------------
     @database_sync_to_async
+    def get_group_name(self, room_id):
+        from apps.chat.models import ChatRoom
+
+        return ChatRoom.objects.get(id=room_id).group_name
+
+    @database_sync_to_async
     def can_access_room(self, user, room_id):
         from apps.chat.models import ChatRoom
         from django.contrib.auth.models import AnonymousUser
+
         if isinstance(user, AnonymousUser):
             return False
         if user.is_staff:
             return ChatRoom.objects.filter(id=room_id).exists()
-        return ChatRoom.objects.filter(
-            id=room_id
-        ).filter(
-            customer=user
-        ).exists() or ChatRoom.objects.filter(id=room_id, agent=user).exists()
+        return (
+            ChatRoom.objects.filter(id=room_id).filter(customer=user).exists()
+            or ChatRoom.objects.filter(id=room_id, agent=user).exists()
+        )
 
     @database_sync_to_async
     def save_message(self, room_id, user, body, message_type="text"):
         from apps.chat.models import ChatRoom, ChatMessage
+
         try:
             room = ChatRoom.objects.get(id=room_id)
             if room.status in (ChatRoom.Status.RESOLVED, ChatRoom.Status.CLOSED):
@@ -169,25 +196,26 @@ class ChatConsumer(BaseConsumer):
     @database_sync_to_async
     def get_message_history(self, room_id, user, limit=50):
         from apps.chat.models import ChatMessage
+
         messages = (
-            ChatMessage.objects
-            .filter(room_id=room_id)
+            ChatMessage.objects.filter(room_id=room_id)
             .select_related("sender")
             .order_by("-created_at")[:limit]
         )
         return [
             {
-                "id":           str(m.id),
+                "id": str(m.id),
                 "sender_email": m.sender.email if m.sender else None,
-                "sender_name":  (
+                "sender_name": (
                     f"{m.sender.first_name} {m.sender.last_name}".strip()
-                    if m.sender else "System"
+                    if m.sender
+                    else "System"
                 ),
                 "message_type": m.message_type,
-                "body":         m.body,
-                "created_at":   m.created_at.isoformat(),
-                "is_own":       m.sender_id == user.id if m.sender_id else False,
-                "is_read":      m.is_read,
+                "body": m.body,
+                "created_at": m.created_at.isoformat(),
+                "is_own": m.sender_id == user.id if m.sender_id else False,
+                "is_read": m.is_read,
             }
             for m in reversed(list(messages))
         ]
@@ -195,6 +223,7 @@ class ChatConsumer(BaseConsumer):
     @database_sync_to_async
     def mark_messages_read(self, room_id, user):
         from apps.chat.models import ChatMessage
-        ChatMessage.objects.filter(
-            room_id=room_id, is_read=False
-        ).exclude(sender=user).update(is_read=True)
+
+        ChatMessage.objects.filter(room_id=room_id, is_read=False).exclude(
+            sender=user
+        ).update(is_read=True)

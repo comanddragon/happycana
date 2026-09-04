@@ -37,4 +37,3 @@ def auto_complete_delivered_orders():
     Order.objects.ready_for_auto_complete(days=14).filter(
         id__in=shipped_order_ids
     ).update(status=Order.Status.DELIVERED)
-

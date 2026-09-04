@@ -9,11 +9,11 @@ from apps.promotions.api.serializers import CouponSerializer
 
 
 class CartItemSerializer(serializers.ModelSerializer):
-    variant  = ProductVariantSerializer(read_only=True)
+    variant = ProductVariantSerializer(read_only=True)
     subtotal = serializers.SerializerMethodField()
 
     class Meta:
-        model  = CartItem
+        model = CartItem
         fields = ["id", "variant", "quantity", "subtotal", "added_at"]
         read_only_fields = ["id", "added_at"]
 
@@ -23,7 +23,7 @@ class CartItemSerializer(serializers.ModelSerializer):
 
 class CartItemWriteSerializer(serializers.ModelSerializer):
     class Meta:
-        model  = CartItem
+        model = CartItem
         fields = ["variant", "quantity"]
 
     def validate_quantity(self, value):
@@ -31,14 +31,28 @@ class CartItemWriteSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Quantity must be at least 1.")
         return value
 
+    def validate_variant(self, value):
+        request = self.context.get("request")
+        storefront = getattr(request, "storefront", None)
+        if storefront is not None:
+            from apps.catalog.models import Listing
+
+            if not Listing.objects.filter(
+                storefront=storefront, product=value.product, is_active=True
+            ).exists():
+                raise serializers.ValidationError(
+                    "Product is not sold by this storefront."
+                )
+        return value
+
 
 class CartSerializer(serializers.ModelSerializer):
-    items       = CartItemSerializer(many=True, read_only=True)
+    items = CartItemSerializer(many=True, read_only=True)
     total_price = serializers.SerializerMethodField()
-    item_count  = serializers.SerializerMethodField()
+    item_count = serializers.SerializerMethodField()
 
     class Meta:
-        model  = Cart
+        model = Cart
         fields = ["id", "items", "item_count", "total_price", "updated_at"]
         read_only_fields = ["id", "updated_at"]
 
@@ -53,15 +67,15 @@ class OrderItemSerializer(serializers.ModelSerializer):
     variant = ProductVariantSerializer(read_only=True)
 
     class Meta:
-        model  = OrderItem
+        model = OrderItem
         fields = ["id", "variant", "quantity", "unit_price", "total_price"]
         read_only_fields = ["id"]
 
 
 class OrderSerializer(serializers.ModelSerializer):
-    items   = OrderItemSerializer(many=True, read_only=True)
+    items = OrderItemSerializer(many=True, read_only=True)
     address = AddressSerializer(read_only=True)
-    coupon  = CouponSerializer(read_only=True)
+    coupon = CouponSerializer(read_only=True)
     payment_method = serializers.SerializerMethodField()
 
     def get_payment_method(self, obj):
@@ -75,13 +89,30 @@ class OrderSerializer(serializers.ModelSerializer):
         }
 
     class Meta:
-        model  = Order
+        model = Order
         fields = [
-            "id", "status", "address", "coupon", "payment_method",
-            "subtotal", "discount_amount", "shipping_cost", "total",
-            "items", "created_at", "updated_at",
+            "id",
+            "status",
+            "address",
+            "coupon",
+            "payment_method",
+            "subtotal",
+            "discount_amount",
+            "shipping_cost",
+            "total",
+            "items",
+            "created_at",
+            "updated_at",
         ]
-        read_only_fields = ["id", "status", "subtotal", "discount_amount", "total", "created_at", "updated_at"]
+        read_only_fields = [
+            "id",
+            "status",
+            "subtotal",
+            "discount_amount",
+            "total",
+            "created_at",
+            "updated_at",
+        ]
 
 
 class OrderCreateSerializer(serializers.Serializer):
@@ -89,8 +120,9 @@ class OrderCreateSerializer(serializers.Serializer):
     Handed off to services/checkout.py which orchestrates the full
     cart → order → stock reservation → payment flow.
     """
+
     address_id = serializers.UUIDField()
-    coupon_code= serializers.CharField(required=False, allow_blank=True)
+    coupon_code = serializers.CharField(required=False, allow_blank=True)
     shipping_method_id = serializers.UUIDField()
     payment_method_id = serializers.IntegerField()
 
@@ -102,19 +134,28 @@ class OrderCreateSerializer(serializers.Serializer):
 
     def validate_shipping_method_id(self, value):
         from apps.shipping.models import ShippingMethod
-        if not ShippingMethod.objects.filter(id=value, is_active=True).exists():
+
+        storefront = getattr(self.context["request"], "storefront", None)
+        if not ShippingMethod.objects.filter(
+            id=value, is_active=True, storefront=storefront
+        ).exists():
             raise serializers.ValidationError("Shipping method not found.")
         return value
 
     def validate_payment_method_id(self, value):
         from apps.payments.models import PaymentMethod
-        if not PaymentMethod.objects.filter(id=value, is_active=True).exists():
+
+        storefront = getattr(self.context["request"], "storefront", None)
+        if not PaymentMethod.objects.filter(
+            id=value, is_active=True, storefront=storefront
+        ).exists():
             raise serializers.ValidationError("Payment method not found.")
         return value
 
 
 class OrderStatusSerializer(serializers.ModelSerializer):
     """Admin-only serializer to manually update an order's status."""
+
     class Meta:
-        model  = Order
+        model = Order
         fields = ["status"]

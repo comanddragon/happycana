@@ -167,41 +167,9 @@ class Product(TimestampedModel):
     meta_title       = models.CharField(max_length=60, blank=True)
     meta_description = models.CharField(max_length=160, blank=True)
 
-    class ComplianceCategory(models.TextChoices):
-        FLOWER        = "flower",        "Flower"
-        VAPORIZERS    = "vaporizers",    "Vaporizers"
-        EDIBLES       = "edibles",       "Edibles"
-        CONCENTRATES  = "concentrates",  "Concentrates"
-        PRE_ROLLS     = "pre_rolls",     "Pre-Rolls"
-        TINCTURES     = "tinctures",     "Tinctures"
-        TOPICALS      = "topicals",      "Topicals"
-        BEVERAGES     = "beverages",     "Beverages"
-        ACCESSORIES   = "accessories",   "Accessories"
-        MERCHANDISE   = "merchandise",   "Merchandise"
-        CBD_PRODUCTS  = "cbd_products",  "CBD Products"
-        GIFT_CARDS    = "gift_cards",    "Gift Cards"
-
-    class CannabisType(models.TextChoices):
-        SATIVA        = "sativa",         "Sativa"
-        INDICA        = "indica",         "Indica"
-        HYBRID        = "hybrid",         "Hybrid"
-        HYBRID_SATIVA = "hybrid_sativa",  "Hybrid (Sativa Leaning)"
-        HYBRID_INDICA = "hybrid_indica",  "Hybrid (Indica Leaning)"
-        NA            = "na",             "N/A"
-
     brand = models.ForeignKey(
         Brand, on_delete=models.SET_NULL, null=True, blank=True, related_name="products"
     )
-    compliance_category = models.CharField(
-        max_length=20, choices=ComplianceCategory.choices, blank=True,
-        help_text="Regulatory product type — distinct from the display Category.",
-    )
-    cannabis_type = models.CharField(
-        max_length=20, choices=CannabisType.choices, blank=True,
-    )
-    sub_type = models.CharField(max_length=100, blank=True)
-    effects = models.ManyToManyField(Effect, blank=True, related_name="products")
-
     is_featured = models.BooleanField(default=False)
     is_new      = models.BooleanField(default=False)
 

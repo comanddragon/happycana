@@ -7,29 +7,33 @@ PRODUCT_TTL  = 60 * 60       # 1 hour
 CATEGORY_TTL = 60 * 60 * 6   # 6 hours
 
 
-def get_product_cache_key(product_id):
-    return f"product:{product_id}"
+def _storefront_namespace(storefront_id=None):
+    return str(storefront_id) if storefront_id else "legacy"
 
-def get_category_cache_key(category_id):
-    return f"category:{category_id}"
 
-def cache_product(product_id, data):
-    cache.set(get_product_cache_key(product_id), data, timeout=PRODUCT_TTL)
+def get_product_cache_key(product_id, storefront_id=None):
+    return f"storefront:{_storefront_namespace(storefront_id)}:product:{product_id}"
 
-def get_cached_product(product_id):
-    return cache.get(get_product_cache_key(product_id))
+def get_category_cache_key(category_id, storefront_id=None):
+    return f"storefront:{_storefront_namespace(storefront_id)}:category:{category_id}"
 
-def invalidate_product(product_id):
-    cache.delete(get_product_cache_key(product_id))
+def cache_product(product_id, data, storefront_id=None):
+    cache.set(get_product_cache_key(product_id, storefront_id), data, timeout=PRODUCT_TTL)
 
-def cache_category(category_id, data):
-    cache.set(get_category_cache_key(category_id), data, timeout=CATEGORY_TTL)
+def get_cached_product(product_id, storefront_id=None):
+    return cache.get(get_product_cache_key(product_id, storefront_id))
 
-def get_cached_category(category_id):
-    return cache.get(get_category_cache_key(category_id))
+def invalidate_product(product_id, storefront_id=None):
+    cache.delete(get_product_cache_key(product_id, storefront_id))
 
-def invalidate_category(category_id):
-    cache.delete(get_category_cache_key(category_id))
+def cache_category(category_id, data, storefront_id=None):
+    cache.set(get_category_cache_key(category_id, storefront_id), data, timeout=CATEGORY_TTL)
+
+def get_cached_category(category_id, storefront_id=None):
+    return cache.get(get_category_cache_key(category_id, storefront_id))
+
+def invalidate_category(category_id, storefront_id=None):
+    cache.delete(get_category_cache_key(category_id, storefront_id))
 
 
 # -----------------------------------------------------------------------
@@ -68,16 +72,16 @@ def bump_category_tree_version():
         cache.set(CATEGORY_TREE_VERSION_KEY, 1, timeout=None)
 
 
-def get_category_tree_cache_key(request_path):
-    return f"category:tree:v{get_category_tree_version()}:{request_path}"
+def get_category_tree_cache_key(request_path, storefront_id=None):
+    return f"storefront:{_storefront_namespace(storefront_id)}:category:tree:v{get_category_tree_version()}:{request_path}"
 
 
-def cache_category_tree_response(request_path, data):
-    cache.set(get_category_tree_cache_key(request_path), data, timeout=CATEGORY_TTL)
+def cache_category_tree_response(request_path, data, storefront_id=None):
+    cache.set(get_category_tree_cache_key(request_path, storefront_id), data, timeout=CATEGORY_TTL)
 
 
-def get_cached_category_tree_response(request_path):
-    return cache.get(get_category_tree_cache_key(request_path))
+def get_cached_category_tree_response(request_path, storefront_id=None):
+    return cache.get(get_category_tree_cache_key(request_path, storefront_id))
 
 
 # -----------------------------------------------------------------------
@@ -116,5 +120,4 @@ def cache_blog_response(request_path, data):
 
 def get_cached_blog_response(request_path):
     return cache.get(get_blog_cache_key(request_path))
-
 

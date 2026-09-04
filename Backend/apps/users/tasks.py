@@ -23,4 +23,3 @@ def send_password_reset_email(user_id: str, reset_url: str):
         EmailService.send_password_reset(user, reset_url)
     except User.DoesNotExist:
         pass
-

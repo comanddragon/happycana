@@ -83,10 +83,10 @@ class ProductFilter(django_filters.FilterSet):
         field_name="brand__slug", lookup_expr="iexact", label="Filter by brand slug",
     )
     compliance_category = django_filters.CharFilter(
-        field_name="compliance_category", lookup_expr="iexact",
+        field_name="cannabis_profile__compliance_category", lookup_expr="iexact",
     )
     cannabis_type = django_filters.CharFilter(
-        field_name="cannabis_type", lookup_expr="iexact",
+        field_name="cannabis_profile__cannabis_type", lookup_expr="iexact",
     )
     effect = django_filters.CharFilter(
         method="filter_effect", label="Products with this effect, e.g. ?effect=relaxed",
@@ -116,7 +116,7 @@ class ProductFilter(django_filters.FilterSet):
     # ------------------------------------------------------------------
 
     def filter_effect(self, queryset, name, value):
-        return queryset.filter(effects__slug__iexact=value).distinct()
+        return queryset.filter(cannabis_profile__effect_tags__slug__iexact=value).distinct()
 
     def filter_on_discount(self, queryset, name, value):
         if not value:

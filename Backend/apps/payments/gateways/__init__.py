@@ -29,4 +29,3 @@ class GatewayFactory:
                 f"Available: {list(cls._registry.keys())}"
             )
         return klass()
-

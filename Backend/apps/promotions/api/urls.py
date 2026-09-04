@@ -9,4 +9,3 @@ urlpatterns = [
     path("coupons/<uuid:pk>/",   views.CouponDetailView.as_view(),     name="coupon-detail"),
     path("coupons/validate/",    views.ValidateCouponView.as_view(),   name="coupon-validate"),
 ]
-

@@ -36,4 +36,3 @@ def reindex_all_products():
         .prefetch_related("categories", "variants")
     )
     SearchService.bulk_index_products(products)
-

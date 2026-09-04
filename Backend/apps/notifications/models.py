@@ -3,20 +3,30 @@ from django.db import models
 from apps.users.models import User
 from .mangers import NotificationManager
 
+
 class Notification(models.Model):
     class Type(models.TextChoices):
-        ORDER      = "order",      "Order Update"
-        PAYMENT    = "payment",    "Payment"
-        SHIPMENT   = "shipment",   "Shipment"
-        PROMOTION  = "promotion",  "Promotion"
-        SYSTEM     = "system",     "System"
+        ORDER = "order", "Order Update"
+        PAYMENT = "payment", "Payment"
+        SHIPMENT = "shipment", "Shipment"
+        PROMOTION = "promotion", "Promotion"
+        SYSTEM = "system", "System"
 
-    id         = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    user       = models.ForeignKey(User, on_delete=models.CASCADE, related_name="notifications")
-    type       = models.CharField(max_length=20, choices=Type.choices)
-    title      = models.CharField(max_length=255)
-    body       = models.TextField()
-    is_read    = models.BooleanField(default=False)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    storefront = models.ForeignKey(
+        "storefronts.Storefront",
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="notifications",
+    )
+    user = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="notifications"
+    )
+    type = models.CharField(max_length=20, choices=Type.choices)
+    title = models.CharField(max_length=255)
+    body = models.TextField()
+    is_read = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     objects = NotificationManager()
 

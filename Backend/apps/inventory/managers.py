@@ -80,4 +80,3 @@ class StockMovementManager(db_models.Manager):
 # Integrate into apps/inventory/models.py:
 #   Stock.objects         = StockManager()
 #   StockMovement.objects = StockMovementManager()
-

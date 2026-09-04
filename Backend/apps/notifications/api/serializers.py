@@ -1,4 +1,3 @@
-
 # =============================================================================
 # apps/notifications/api/serializers.py
 # =============================================================================
@@ -8,23 +7,32 @@ from apps.notifications.models import Notification
 
 class NotificationSerializer(serializers.ModelSerializer):
     class Meta:
-        model  = Notification
+        model = Notification
         fields = ["id", "type", "title", "body", "is_read", "created_at"]
         read_only_fields = ["id", "type", "title", "body", "created_at"]
 
 
 class MarkReadSerializer(serializers.Serializer):
     """Accepts a list of notification IDs to mark as read in bulk."""
+
     ids = serializers.ListField(child=serializers.UUIDField(), min_length=1)
 
     def validate_ids(self, value):
-        user = self.context["request"].user
-        found = Notification.objects.filter(id__in=value, user=user).count()
+        request = self.context["request"]
+        found = Notification.objects.filter(
+            id__in=value,
+            user=request.user,
+            storefront=getattr(request, "storefront", None),
+        ).count()
         if found != len(value):
-            raise serializers.ValidationError("One or more notification IDs are invalid.")
+            raise serializers.ValidationError(
+                "One or more notification IDs are invalid."
+            )
         return value
 
     def save(self):
         Notification.objects.filter(
-            id__in=self.validated_data["ids"]
+            id__in=self.validated_data["ids"],
+            user=self.context["request"].user,
+            storefront=getattr(self.context["request"], "storefront", None),
         ).update(is_read=True)

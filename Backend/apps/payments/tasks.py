@@ -102,4 +102,3 @@ def handle_paypal_event(event_data: dict):
             )
         except Order.DoesNotExist:
             pass
-

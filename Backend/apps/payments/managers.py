@@ -67,4 +67,3 @@ class RefundManager(db_models.Manager):
 # Integrate into apps/payments/models.py:
 #   Payment.objects = PaymentManager()
 #   Refund.objects  = RefundManager()
-

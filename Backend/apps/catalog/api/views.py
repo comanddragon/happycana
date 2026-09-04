@@ -59,7 +59,8 @@ class CategoryListView(generics.ListCreateAPIView):
         # response per path+querystring instead of walking/serializing
         # the whole active tree on every storefront request.
         cache_key = request.get_full_path()
-        cached = get_cached_category_tree_response(cache_key)
+        storefront_id = getattr(getattr(request, "storefront", None), "id", None)
+        cached = get_cached_category_tree_response(cache_key, storefront_id)
         if cached is not None:
             return Response(cached)
 
@@ -72,7 +73,7 @@ class CategoryListView(generics.ListCreateAPIView):
         Category.objects.attach_full_tree(objs)
         serializer = self.get_serializer(objs, many=True)
         response_data = self.get_paginated_response(serializer.data).data if page is not None else serializer.data
-        cache_category_tree_response(cache_key, response_data)
+        cache_category_tree_response(cache_key, response_data, storefront_id)
         return Response(response_data)
 
 
@@ -131,15 +132,19 @@ class ProductListView(generics.ListCreateAPIView):
         # product on every page, none of which the grid displays. Stock is
         # prefetched on its own (cheap, one extra query) so the grid can
         # show accurate in_stock without an N+1.
-        return (
+        queryset = (
             Product.objects.active()
             .with_category().with_images()
-            .select_related("brand")
+            .select_related("brand", "cannabis_profile", "peptide_profile", "footwear_profile")
             .prefetch_related(
-                "effects", "variants__lab", "variants__stock_levels",
+                "cannabis_profile__effect_tags", "variants__lab", "variants__stock_levels",
                 Prefetch("discounts", queryset=ProductDiscount.objects.filter(is_active=True), to_attr="_prefetched_discounts"),
             )
         )
+        storefront = getattr(self.request, "storefront", None)
+        if storefront is not None:
+            queryset = queryset.filter(listings__storefront=storefront, listings__is_active=True).distinct()
+        return queryset
 
     def get_serializer_class(self):
         return ProductWriteSerializer if self.request.method == "POST" else ProductListSerializer
@@ -165,9 +170,13 @@ class ProductDetailView(generics.RetrieveUpdateDestroyAPIView):
     lookup_field = "slug"
 
     def get_queryset(self):
-        return Product.objects.full().prefetch_related(
+        queryset = Product.objects.full().prefetch_related(
             Prefetch("discounts", queryset=ProductDiscount.objects.filter(is_active=True), to_attr="_prefetched_discounts")
         )
+        storefront = getattr(self.request, "storefront", None)
+        if storefront is not None:
+            queryset = queryset.filter(listings__storefront=storefront, listings__is_active=True)
+        return queryset
 
     def get_serializer_class(self):
         return ProductWriteSerializer if self.request.method in ("PUT", "PATCH") else ProductSerializer
@@ -191,9 +200,12 @@ class StorefrontListingQuerysetMixin(StorefrontRequiredMixin):
             return self.queryset
         return (
             Listing.objects.filter(storefront=self.get_storefront(), is_active=True)
-            .select_related("product", "product__brand")
+            .select_related(
+                "product", "product__brand", "product__cannabis_profile",
+                "product__peptide_profile", "product__footwear_profile",
+            )
             .prefetch_related(
-                "product__categories", "product__images", "product__effects",
+                "product__categories", "product__images", "product__cannabis_profile__effect_tags",
                 "product__variants__lab", "product__variants__stock_levels",
             )
         )

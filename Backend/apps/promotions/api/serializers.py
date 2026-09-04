@@ -1,4 +1,3 @@
-
 # =============================================================================
 # apps/promotions/api/serializers.py
 # =============================================================================
@@ -11,11 +10,18 @@ class CouponSerializer(serializers.ModelSerializer):
     is_expired = serializers.SerializerMethodField()
 
     class Meta:
-        model  = Coupon
+        model = Coupon
         fields = [
-            "id", "code", "discount_type", "discount_value",
-            "min_order_value", "max_uses", "used_count",
-            "expires_at", "is_active", "is_expired",
+            "id",
+            "code",
+            "discount_type",
+            "discount_value",
+            "min_order_value",
+            "max_uses",
+            "used_count",
+            "expires_at",
+            "is_active",
+            "is_expired",
         ]
         read_only_fields = ["id", "used_count", "is_expired"]
 
@@ -29,26 +35,35 @@ class CouponSerializer(serializers.ModelSerializer):
 
 class CouponValidateSerializer(serializers.Serializer):
     """Used by the checkout flow to validate and apply a coupon code."""
-    code        = serializers.CharField()
+
+    code = serializers.CharField()
     order_total = serializers.DecimalField(max_digits=12, decimal_places=2)
 
     def validate(self, data):
+        storefront = getattr(self.context.get("request"), "storefront", None)
         try:
-            coupon = Coupon.objects.get(code=data["code"], is_active=True)
+            coupon = Coupon.objects.get(
+                code=data["code"], is_active=True, storefront=storefront
+            )
         except Coupon.DoesNotExist:
-            raise serializers.ValidationError({"code": "Invalid or inactive coupon code."})
+            raise serializers.ValidationError(
+                {"code": "Invalid or inactive coupon code."}
+            )
 
         if coupon.expires_at and coupon.expires_at < timezone.now():
             raise serializers.ValidationError({"code": "This coupon has expired."})
 
         if coupon.max_uses and coupon.used_count >= coupon.max_uses:
-            raise serializers.ValidationError({"code": "This coupon has reached its usage limit."})
+            raise serializers.ValidationError(
+                {"code": "This coupon has reached its usage limit."}
+            )
 
         if data["order_total"] < coupon.min_order_value:
-            raise serializers.ValidationError({
-                "code": f"Minimum order value for this coupon is {coupon.min_order_value}."
-            })
+            raise serializers.ValidationError(
+                {
+                    "code": f"Minimum order value for this coupon is {coupon.min_order_value}."
+                }
+            )
 
         data["coupon"] = coupon
         return data
-

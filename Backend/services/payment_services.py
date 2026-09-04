@@ -10,7 +10,6 @@ from apps.notifications.models import Notification
 
 
 class PaymentService:
-
     @classmethod
     @transaction.atomic
     def confirm_payment(cls, order, gateway, gateway_ref, amount, currency="USD"):
@@ -19,12 +18,12 @@ class PaymentService:
         Called by the Stripe/PayPal webhook handler.
         """
         payment = Payment.objects.create(
-            order       = order,
-            gateway     = gateway,
-            gateway_ref = gateway_ref,
-            amount      = amount,
-            currency    = currency,
-            status      = Payment.Status.SUCCESS,
+            order=order,
+            gateway=gateway,
+            gateway_ref=gateway_ref,
+            amount=amount,
+            currency=currency,
+            status=Payment.Status.SUCCESS,
         )
         FulfillmentService.confirm_order(order)
         return payment
@@ -34,12 +33,12 @@ class PaymentService:
     def fail_payment(cls, order, gateway, gateway_ref, amount, currency="USD"):
         """Records a failed payment attempt."""
         return Payment.objects.create(
-            order       = order,
-            gateway     = gateway,
-            gateway_ref = gateway_ref,
-            amount      = amount,
-            currency    = currency,
-            status      = Payment.Status.FAILED,
+            order=order,
+            gateway=gateway,
+            gateway_ref=gateway_ref,
+            amount=amount,
+            currency=currency,
+            status=Payment.Status.FAILED,
         )
 
     @classmethod
@@ -49,6 +48,7 @@ class PaymentService:
         Calls the gateway to process the refund, then marks it approved/rejected.
         """
         from apps.payments.gateways.stripe import StripeGateway
+
         gateway = StripeGateway()
         try:
             gateway.refund(refund.payment.gateway_ref, float(refund.amount))
@@ -57,7 +57,8 @@ class PaymentService:
 
             # Mark the original payment as refunded if fully refunded
             total_refunded = sum(
-                r.amount for r in refund.payment.refunds.filter(status=Refund.Status.APPROVED)
+                r.amount
+                for r in refund.payment.refunds.filter(status=Refund.Status.APPROVED)
             )
             if total_refunded >= refund.payment.amount:
                 refund.payment.status = Payment.Status.REFUNDED
@@ -66,12 +67,14 @@ class PaymentService:
                 sm.refund()
 
             Notification.objects.create(
-                user  = refund.payment.order.user,
-                type  = Notification.Type.PAYMENT,
-                title = "Refund Processed",
-                body  = f"Your refund of ${refund.amount} has been processed.",
+                storefront=refund.payment.order.storefront,
+                user=refund.payment.order.user,
+                type=Notification.Type.PAYMENT,
+                title="Refund Processed",
+                body=f"Your refund of ${refund.amount} has been processed.",
             )
             from services.email import EmailService
+
             EmailService.send_refund_processed(refund)
 
         except Exception:

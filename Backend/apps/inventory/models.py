@@ -5,9 +5,16 @@ from .managers import StockManager, StockMovementManager
 
 
 class Warehouse(models.Model):
-    id        = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    name      = models.CharField(max_length=255)
-    address   = models.CharField(max_length=500)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    storefront = models.ForeignKey(
+        "storefronts.Storefront",
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="warehouses",
+    )
+    name = models.CharField(max_length=255)
+    address = models.CharField(max_length=500)
     is_active = models.BooleanField(default=True)
 
     class Meta:
@@ -18,11 +25,15 @@ class Warehouse(models.Model):
 
 
 class Stock(models.Model):
-    id         = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    variant    = models.ForeignKey(ProductVariant, on_delete=models.CASCADE, related_name="stock_levels")
-    warehouse  = models.ForeignKey(Warehouse, on_delete=models.CASCADE, related_name="stock_levels")
-    quantity   = models.PositiveIntegerField(default=0)
-    reserved   = models.PositiveIntegerField(default=0)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    variant = models.ForeignKey(
+        ProductVariant, on_delete=models.CASCADE, related_name="stock_levels"
+    )
+    warehouse = models.ForeignKey(
+        Warehouse, on_delete=models.CASCADE, related_name="stock_levels"
+    )
+    quantity = models.PositiveIntegerField(default=0)
+    reserved = models.PositiveIntegerField(default=0)
     updated_at = models.DateTimeField(auto_now=True)
     objects = StockManager()
 
@@ -40,17 +51,17 @@ class Stock(models.Model):
 
 class StockMovement(models.Model):
     class Reason(models.TextChoices):
-        PURCHASE   = "purchase",   "Purchase"
-        SALE       = "sale",       "Sale"
-        RETURN     = "return",     "Return"
+        PURCHASE = "purchase", "Purchase"
+        SALE = "sale", "Sale"
+        RETURN = "return", "Return"
         ADJUSTMENT = "adjustment", "Adjustment"
-        TRANSFER   = "transfer",   "Transfer"
+        TRANSFER = "transfer", "Transfer"
 
-    id             = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    stock          = models.ForeignKey(Stock, on_delete=models.CASCADE, related_name="movements")
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    stock = models.ForeignKey(Stock, on_delete=models.CASCADE, related_name="movements")
     quantity_delta = models.IntegerField()  # positive = in, negative = out
-    reason         = models.CharField(max_length=20, choices=Reason.choices)
-    created_at     = models.DateTimeField(auto_now_add=True)
+    reason = models.CharField(max_length=20, choices=Reason.choices)
+    created_at = models.DateTimeField(auto_now_add=True)
     objects = StockMovementManager()
 
     class Meta:
@@ -58,4 +69,3 @@ class StockMovement(models.Model):
 
     def __str__(self):
         return f"{self.quantity_delta:+d} on {self.stock} ({self.reason})"
-

@@ -40,4 +40,3 @@ class AddressAdmin(admin.ModelAdmin):
     list_filter   = ["country", "is_default"]
     search_fields = ["user__email", "line1", "city"]
     raw_id_fields = ["user"]
-

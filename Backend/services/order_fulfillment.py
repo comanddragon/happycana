@@ -3,7 +3,7 @@
 # Handles post-payment order lifecycle:
 # confirming, fulfilling, and cancelling orders.
 # =============================================================================
-from django.db import models, transaction
+from django.db import transaction
 from apps.orders.models import Order
 from apps.inventory.models import Stock, StockMovement
 from apps.notifications.models import Notification
@@ -12,7 +12,6 @@ from services.sms import SMSService
 
 
 class FulfillmentService:
-
     @classmethod
     @transaction.atomic
     def confirm_order(cls, order):
@@ -28,10 +27,11 @@ class FulfillmentService:
 
         EmailService.send_order_confirmation(order)
         Notification.objects.create(
-            user  = order.user,
-            type  = Notification.Type.ORDER,
-            title = "Order Confirmed",
-            body  = f"Order #{order.id} is confirmed and being prepared.",
+            storefront=order.storefront,
+            user=order.user,
+            type=Notification.Type.ORDER,
+            title="Order Confirmed",
+            body=f"Order #{order.id} is confirmed and being prepared.",
         )
 
     @classmethod
@@ -49,35 +49,37 @@ class FulfillmentService:
 
         # Deduct stock and release reservation
         for item in order.items.select_related("variant").all():
-            stock = (
-                Stock.objects.select_for_update()
-                .filter(variant=item.variant)
-                .first()
-            )
+            stock = Stock.objects.select_for_update().filter(variant=item.variant)
+            if item.fulfillment_warehouse_id:
+                stock = stock.filter(warehouse_id=item.fulfillment_warehouse_id)
+            stock = stock.first()
             if stock:
                 stock.quantity -= item.quantity
                 stock.reserved -= item.quantity
                 stock.save(update_fields=["quantity", "reserved"])
                 StockMovement.objects.create(
-                    stock          = stock,
-                    quantity_delta = -item.quantity,
-                    reason         = StockMovement.Reason.SALE,
+                    stock=stock,
+                    quantity_delta=-item.quantity,
+                    reason=StockMovement.Reason.SALE,
                 )
 
         EmailService.send_order_shipped(order, shipment)
         SMSService.send_order_shipped(order, shipment.tracking_number)
         Notification.objects.create(
-            user  = order.user,
-            type  = Notification.Type.SHIPMENT,
-            title = "Order Shipped",
-            body  = f"Your order #{order.id} is on its way! Tracking: {shipment.tracking_number}",
+            storefront=order.storefront,
+            user=order.user,
+            type=Notification.Type.SHIPMENT,
+            title="Order Shipped",
+            body=f"Your order #{order.id} is on its way! Tracking: {shipment.tracking_number}",
         )
 
     @classmethod
     @transaction.atomic
     def mark_delivered(cls, order):
         if order.status != Order.Status.SHIPPED:
-            raise ValueError(f"Cannot mark delivered an order with status '{order.status}'.")
+            raise ValueError(
+                f"Cannot mark delivered an order with status '{order.status}'."
+            )
 
         order.status = Order.Status.DELIVERED
         order.save(update_fields=["status"])
@@ -85,10 +87,11 @@ class FulfillmentService:
         SMSService.send_delivery_confirmation(order)
         EmailService.send_order_delivered(order)
         Notification.objects.create(
-            user  = order.user,
-            type  = Notification.Type.ORDER,
-            title = "Order Delivered",
-            body  = f"Your order #{order.id} has been delivered. Enjoy!",
+            storefront=order.storefront,
+            user=order.user,
+            type=Notification.Type.ORDER,
+            title="Order Delivered",
+            body=f"Your order #{order.id} has been delivered. Enjoy!",
         )
 
     @classmethod
@@ -103,16 +106,21 @@ class FulfillmentService:
 
         # Release reserved stock
         for item in order.items.select_related("variant").all():
-            Stock.objects.filter(variant=item.variant).update(
-                reserved=models.F("reserved") - item.quantity
-            )
+            stocks = Stock.objects.select_for_update().filter(variant=item.variant)
+            if item.fulfillment_warehouse_id:
+                stocks = stocks.filter(warehouse_id=item.fulfillment_warehouse_id)
+            stock = stocks.first()
+            if stock:
+                stock.reserved = max(0, stock.reserved - item.quantity)
+                stock.save(update_fields=["reserved"])
 
         order.status = Order.Status.CANCELLED
         order.save(update_fields=["status"])
 
         Notification.objects.create(
-            user  = order.user,
-            type  = Notification.Type.ORDER,
-            title = "Order Cancelled",
-            body  = f"Your order #{order.id} has been cancelled.",
+            storefront=order.storefront,
+            user=order.user,
+            type=Notification.Type.ORDER,
+            title="Order Cancelled",
+            body=f"Your order #{order.id} has been cancelled.",
         )

@@ -23,4 +23,3 @@ class NotificationAdmin(admin.ModelAdmin):
     @admin.action(description="Mark selected as unread")
     def mark_as_unread(self, request, queryset):
         queryset.update(is_read=False)
-

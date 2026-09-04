@@ -11,20 +11,29 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from apps.users.models import User, Address
 from apps.users.tasks import send_welcome_email
 from .serializers import (
-    UserSerializer, RegisterSerializer, ChangePasswordSerializer,
-    AddressSerializer, CustomTokenObtainPairSerializer, GuestSessionSerializer,
+    UserSerializer,
+    RegisterSerializer,
+    ChangePasswordSerializer,
+    AddressSerializer,
+    CustomTokenObtainPairSerializer,
+    GuestSessionSerializer,
 )
 
 
-@method_decorator(ratelimit(key="ip", rate="5/m", method="POST", block=True), name="dispatch")
+@method_decorator(
+    ratelimit(key="ip", rate="5/m", method="POST", block=True), name="dispatch"
+)
 class LoginView(TokenObtainPairView):
     """Rate-limited to blunt credential-stuffing / brute-force attempts."""
+
     serializer_class = CustomTokenObtainPairSerializer
 
 
-@method_decorator(ratelimit(key="ip", rate="10/h", method="POST", block=True), name="dispatch")
+@method_decorator(
+    ratelimit(key="ip", rate="10/h", method="POST", block=True), name="dispatch"
+)
 class RegisterView(generics.CreateAPIView):
-    serializer_class   = RegisterSerializer
+    serializer_class = RegisterSerializer
     permission_classes = [permissions.AllowAny]
 
     def create(self, request, *args, **kwargs):
@@ -33,14 +42,19 @@ class RegisterView(generics.CreateAPIView):
         user = s.save()
         send_welcome_email.enqueue(str(user.id))
         token = RefreshToken.for_user(user)
-        return Response({
-            "user":    UserSerializer(user).data,
-            "refresh": str(token),
-            "access":  str(token.access_token),
-        }, status=status.HTTP_201_CREATED)
+        return Response(
+            {
+                "user": UserSerializer(user).data,
+                "refresh": str(token),
+                "access": str(token.access_token),
+            },
+            status=status.HTTP_201_CREATED,
+        )
 
 
-@method_decorator(ratelimit(key="ip", rate="30/m", method="POST", block=True), name="dispatch")
+@method_decorator(
+    ratelimit(key="ip", rate="30/m", method="POST", block=True), name="dispatch"
+)
 class GuestSessionView(APIView):
     """
     Issues a passwordless guest identity so unauthenticated visitors can hit
@@ -53,10 +67,13 @@ class GuestSessionView(APIView):
     already holds a guest JWT, this reuses that same user (so the cart isn't
     lost) and just attaches the email if one wasn't set yet.
     """
+
     permission_classes = [permissions.AllowAny]
 
     def post(self, request):
-        already_guest = request.user.is_authenticated and getattr(request.user, "is_guest", False)
+        already_guest = request.user.is_authenticated and getattr(
+            request.user, "is_guest", False
+        )
         s = GuestSessionSerializer(
             data=request.data,
             context={"exclude_user_id": request.user.id if already_guest else None},
@@ -88,11 +105,14 @@ class GuestSessionView(APIView):
             user = User.objects.create_guest(email)
 
         token = RefreshToken.for_user(user)
-        return Response({
-            "user":    UserSerializer(user).data,
-            "refresh": str(token),
-            "access":  str(token.access_token),
-        }, status=status.HTTP_200_OK)
+        return Response(
+            {
+                "user": UserSerializer(user).data,
+                "refresh": str(token),
+                "access": str(token.access_token),
+            },
+            status=status.HTTP_200_OK,
+        )
 
     @staticmethod
     def _merge_guest_into(target_user, stale_user):
@@ -107,9 +127,12 @@ class GuestSessionView(APIView):
         Address.objects.filter(user=stale_user).update(user=target_user)
 
         from apps.orders.models import Cart
-        stale_cart = Cart.objects.filter(user=stale_user).prefetch_related("items").first()
-        if stale_cart:
-            target_cart, _ = Cart.objects.get_or_create(user=target_user)
+
+        stale_carts = Cart.objects.filter(user=stale_user).prefetch_related("items")
+        for stale_cart in stale_carts:
+            target_cart, _ = Cart.objects.get_or_create(
+                user=target_user, storefront=stale_cart.storefront
+            )
             for item in stale_cart.items.all():
                 existing_item = target_cart.items.filter(variant=item.variant).first()
                 if existing_item:
@@ -134,7 +157,9 @@ class LogoutView(APIView):
             RefreshToken(request.data["refresh"]).blacklist()
             return Response(status=status.HTTP_204_NO_CONTENT)
         except Exception:
-            return Response({"detail": "Invalid token."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"detail": "Invalid token."}, status=status.HTTP_400_BAD_REQUEST
+            )
 
 
 class MeView(generics.RetrieveUpdateAPIView):

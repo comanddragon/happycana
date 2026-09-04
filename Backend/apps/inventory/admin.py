@@ -40,4 +40,3 @@ class StockMovementAdmin(admin.ModelAdmin):
     list_filter    = ["reason", "created_at"]
     readonly_fields= ["created_at"]
     raw_id_fields  = ["stock"]
-

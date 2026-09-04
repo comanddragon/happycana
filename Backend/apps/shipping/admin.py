@@ -34,4 +34,3 @@ class TrackingEventAdmin(admin.ModelAdmin):
     list_display  = ["shipment", "status", "location", "occurred_at"]
     list_filter   = ["occurred_at"]
     raw_id_fields = ["shipment"]
-

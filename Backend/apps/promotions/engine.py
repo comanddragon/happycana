@@ -1,4 +1,3 @@
-
 # =============================================================================
 # apps/promotions/engine.py
 # Single source of truth for all discount calculation logic.
@@ -22,20 +21,21 @@ class CartContext:
     Decoupled from the ORM so the engine is fully unit-testable
     without hitting the database.
     """
-    subtotal:    Decimal
-    item_count:  int
-    user_id:     Optional[str] = None
-    item_skus:   list          = field(default_factory=list)
+
+    subtotal: Decimal
+    item_count: int
+    user_id: Optional[str] = None
+    item_skus: list = field(default_factory=list)
 
 
 @dataclass
 class DiscountResult:
-    coupon:          Optional[Coupon]
+    coupon: Optional[Coupon]
     discount_amount: Decimal
-    discount_type:   str          # "percentage" | "fixed" | "none"
-    applied_value:   Decimal      # the raw coupon value before capping
-    final_total:     Decimal
-    summary:         str          # human-readable description e.g. "10% off → -$12.50"
+    discount_type: str  # "percentage" | "fixed" | "none"
+    applied_value: Decimal  # the raw coupon value before capping
+    final_total: Decimal
+    summary: str  # human-readable description e.g. "10% off → -$12.50"
 
 
 class PromotionEngine:
@@ -49,39 +49,43 @@ class PromotionEngine:
     """
 
     @classmethod
-    def apply_coupon(cls, code: str, context: CartContext) -> DiscountResult:
-        coupon = cls._resolve(code)
+    def apply_coupon(
+        cls, code: str, context: CartContext, storefront=None
+    ) -> DiscountResult:
+        coupon = cls._resolve(code, storefront)
         cls._validate(coupon, context)
         return cls._calculate(coupon, context)
 
     @classmethod
-    def preview_coupon(cls, code: str, context: CartContext) -> DiscountResult:
+    def preview_coupon(
+        cls, code: str, context: CartContext, storefront=None
+    ) -> DiscountResult:
         """
         Same as apply_coupon but does NOT raise on validation failure —
         returns a zero-discount result with an error summary instead.
         Safe to call from the frontend for live coupon previews.
         """
         try:
-            return cls.apply_coupon(code, context)
+            return cls.apply_coupon(code, context, storefront=storefront)
         except PromotionError as e:
             return DiscountResult(
-                coupon          = None,
-                discount_amount = Decimal("0.00"),
-                discount_type   = "none",
-                applied_value   = Decimal("0.00"),
-                final_total     = context.subtotal,
-                summary         = str(e),
+                coupon=None,
+                discount_amount=Decimal("0.00"),
+                discount_type="none",
+                applied_value=Decimal("0.00"),
+                final_total=context.subtotal,
+                summary=str(e),
             )
 
     @classmethod
     def calculate_without_coupon(cls, context: CartContext) -> DiscountResult:
         return DiscountResult(
-            coupon          = None,
-            discount_amount = Decimal("0.00"),
-            discount_type   = "none",
-            applied_value   = Decimal("0.00"),
-            final_total     = context.subtotal,
-            summary         = "No discount applied.",
+            coupon=None,
+            discount_amount=Decimal("0.00"),
+            discount_type="none",
+            applied_value=Decimal("0.00"),
+            final_total=context.subtotal,
+            summary="No discount applied.",
         )
 
     # ------------------------------------------------------------------
@@ -89,9 +93,11 @@ class PromotionEngine:
     # ------------------------------------------------------------------
 
     @staticmethod
-    def _resolve(code: str) -> Coupon:
+    def _resolve(code: str, storefront=None) -> Coupon:
         try:
-            return Coupon.objects.get(code=code.strip().upper(), is_active=True)
+            return Coupon.objects.get(
+                code=code.strip().upper(), is_active=True, storefront=storefront
+            )
         except Coupon.DoesNotExist:
             raise PromotionError(f"Coupon '{code}' is invalid or inactive.")
 
@@ -114,22 +120,28 @@ class PromotionEngine:
         if coupon.discount_type == Coupon.DiscountType.PERCENTAGE:
             raw_discount = (coupon.discount_value / Decimal("100")) * context.subtotal
             # Cap at subtotal so total never goes negative
-            discount     = min(raw_discount, context.subtotal).quantize(Decimal("0.01"), ROUND_HALF_UP)
-            summary      = f"{coupon.discount_value}% off → -${discount}"
+            discount = min(raw_discount, context.subtotal).quantize(
+                Decimal("0.01"), ROUND_HALF_UP
+            )
+            summary = f"{coupon.discount_value}% off → -${discount}"
 
         elif coupon.discount_type == Coupon.DiscountType.FIXED:
-            discount = min(coupon.discount_value, context.subtotal).quantize(Decimal("0.01"), ROUND_HALF_UP)
-            summary  = f"${coupon.discount_value} off → -${discount}"
+            discount = min(coupon.discount_value, context.subtotal).quantize(
+                Decimal("0.01"), ROUND_HALF_UP
+            )
+            summary = f"${coupon.discount_value} off → -${discount}"
 
         else:
             discount = Decimal("0.00")
-            summary  = "No discount."
+            summary = "No discount."
 
         return DiscountResult(
-            coupon          = coupon,
-            discount_amount = discount,
-            discount_type   = coupon.discount_type,
-            applied_value   = coupon.discount_value,
-            final_total     = (context.subtotal - discount).quantize(Decimal("0.01"), ROUND_HALF_UP),
-            summary         = summary,
+            coupon=coupon,
+            discount_amount=discount,
+            discount_type=coupon.discount_type,
+            applied_value=coupon.discount_value,
+            final_total=(context.subtotal - discount).quantize(
+                Decimal("0.01"), ROUND_HALF_UP
+            ),
+            summary=summary,
         )

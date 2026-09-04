@@ -73,4 +73,3 @@ class BaseGateway(ABC):
     @abstractmethod
     def cancel(self, gateway_ref: str) -> dict:
         """Cancel an uncaptured payment intent or authorisation."""
-

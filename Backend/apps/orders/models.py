@@ -7,29 +7,50 @@ from .managers import CartManager, OrderManager
 
 
 class Cart(models.Model):
-    id          = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    user        = models.OneToOneField(User, on_delete=models.CASCADE, null=True, blank=True, related_name="cart")
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    storefront = models.ForeignKey(
+        "storefronts.Storefront",
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="carts",
+    )
+    user = models.ForeignKey(
+        User, on_delete=models.CASCADE, null=True, blank=True, related_name="carts"
+    )
     session_key = models.CharField(max_length=100, blank=True)  # for anonymous carts
-    created_at  = models.DateTimeField(auto_now_add=True)
-    updated_at  = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
     objects = CartManager()
 
     class Meta:
         db_table = "carts"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user", "storefront"],
+                condition=models.Q(user__isnull=False, storefront__isnull=False),
+                name="unique_user_cart_per_storefront",
+            ),
+            models.UniqueConstraint(
+                fields=["user"],
+                condition=models.Q(user__isnull=False, storefront__isnull=True),
+                name="unique_user_legacy_cart",
+            ),
+        ]
 
     def __str__(self):
         return f"Cart({self.user or self.session_key})"
 
 
 class CartItem(models.Model):
-    id       = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    cart     = models.ForeignKey(Cart, on_delete=models.CASCADE, related_name="items")
-    variant  = models.ForeignKey(ProductVariant, on_delete=models.CASCADE)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    cart = models.ForeignKey(Cart, on_delete=models.CASCADE, related_name="items")
+    variant = models.ForeignKey(ProductVariant, on_delete=models.CASCADE)
     quantity = models.PositiveIntegerField(default=1)
     added_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        db_table       = "cart_items"
+        db_table = "cart_items"
         unique_together = ("cart", "variant")
 
     def __str__(self):
@@ -38,27 +59,40 @@ class CartItem(models.Model):
 
 class Order(models.Model):
     class Status(models.TextChoices):
-        PENDING    = "pending",    "Pending"
-        CONFIRMED  = "confirmed",  "Confirmed"
+        PENDING = "pending", "Pending"
+        CONFIRMED = "confirmed", "Confirmed"
         PROCESSING = "processing", "Processing"
-        SHIPPED    = "shipped",    "Shipped"
-        DELIVERED  = "delivered",  "Delivered"
-        CANCELLED  = "cancelled",  "Cancelled"
-        REFUNDED   = "refunded",   "Refunded"
+        SHIPPED = "shipped", "Shipped"
+        DELIVERED = "delivered", "Delivered"
+        CANCELLED = "cancelled", "Cancelled"
+        REFUNDED = "refunded", "Refunded"
 
-    id              = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    user            = models.ForeignKey(User, on_delete=models.PROTECT, related_name="orders")
-    address         = models.ForeignKey(Address, on_delete=models.PROTECT)
-    shipping_method = models.ForeignKey("shipping.ShippingMethod", on_delete=models.PROTECT, null=True, blank=True)
-    payment_method  = models.ForeignKey("payments.PaymentMethod", on_delete=models.PROTECT, related_name="orders")
-    coupon          = models.ForeignKey(Coupon, null=True, blank=True, on_delete=models.SET_NULL)
-    status          = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
-    subtotal        = models.DecimalField(max_digits=12, decimal_places=2)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    storefront = models.ForeignKey(
+        "storefronts.Storefront",
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="orders",
+    )
+    user = models.ForeignKey(User, on_delete=models.PROTECT, related_name="orders")
+    address = models.ForeignKey(Address, on_delete=models.PROTECT)
+    shipping_method = models.ForeignKey(
+        "shipping.ShippingMethod", on_delete=models.PROTECT, null=True, blank=True
+    )
+    payment_method = models.ForeignKey(
+        "payments.PaymentMethod", on_delete=models.PROTECT, related_name="orders"
+    )
+    coupon = models.ForeignKey(Coupon, null=True, blank=True, on_delete=models.SET_NULL)
+    status = models.CharField(
+        max_length=20, choices=Status.choices, default=Status.PENDING
+    )
+    subtotal = models.DecimalField(max_digits=12, decimal_places=2)
     discount_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
-    shipping_cost   = models.DecimalField(max_digits=12, decimal_places=2, default=0)
-    total           = models.DecimalField(max_digits=12, decimal_places=2)
-    created_at      = models.DateTimeField(auto_now_add=True)
-    updated_at      = models.DateTimeField(auto_now=True)
+    shipping_cost = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    total = models.DecimalField(max_digits=12, decimal_places=2)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
     objects = OrderManager()
 
     class Meta:
@@ -77,11 +111,18 @@ class Order(models.Model):
 
 
 class OrderItem(models.Model):
-    id          = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    order       = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="items")
-    variant     = models.ForeignKey(ProductVariant, on_delete=models.PROTECT)
-    quantity    = models.PositiveIntegerField()
-    unit_price  = models.DecimalField(max_digits=12, decimal_places=2)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="items")
+    variant = models.ForeignKey(ProductVariant, on_delete=models.PROTECT)
+    fulfillment_warehouse = models.ForeignKey(
+        "inventory.Warehouse",
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="order_items",
+    )
+    quantity = models.PositiveIntegerField()
+    unit_price = models.DecimalField(max_digits=12, decimal_places=2)
     total_price = models.DecimalField(max_digits=12, decimal_places=2)
 
     class Meta:

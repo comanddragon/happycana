@@ -61,8 +61,8 @@ class ProductQuerySet(db_models.QuerySet):
          return (
              self.with_category().with_variants().with_stock()
                  .with_images().with_videos()
-                 .select_related("brand")
-                 .prefetch_related("effects", "variants__lab")
+                 .select_related("brand", "cannabis_profile", "peptide_profile", "footwear_profile")
+                 .prefetch_related("cannabis_profile__effect_tags", "variants__lab")
          )
 
     def in_stock(self):

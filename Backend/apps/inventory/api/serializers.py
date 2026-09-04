@@ -48,4 +48,3 @@ class StockMovementSerializer(serializers.ModelSerializer):
         if value == 0:
             raise serializers.ValidationError("quantity_delta cannot be zero.")
         return value
-

@@ -43,4 +43,3 @@ class NotificationManager(db_models.Manager):
 
 # Integrate into apps/notifications/models.py:
 #   Notification.objects = NotificationManager()
-

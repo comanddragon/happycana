@@ -1,5 +1,7 @@
 from urllib.parse import urlsplit
 
+from django.http import JsonResponse
+
 from .models import Storefront, StorefrontDomain, StorefrontOrigin
 
 
@@ -17,6 +19,11 @@ class StorefrontMiddleware:
 
     def __call__(self, request):
         request.storefront = self.resolve(request)
+        if (
+            request.META.get(self.header_name, "").strip()
+            and request.storefront is None
+        ):
+            return JsonResponse({"detail": "Storefront not found."}, status=404)
         return self.get_response(request)
 
     @classmethod
@@ -27,16 +34,20 @@ class StorefrontMiddleware:
 
         origin = request.META.get("HTTP_ORIGIN", "").rstrip("/")
         if origin:
-            match = StorefrontOrigin.objects.select_related("storefront").filter(
-                origin=origin, storefront__is_active=True
-            ).first()
+            match = (
+                StorefrontOrigin.objects.select_related("storefront")
+                .filter(origin=origin, storefront__is_active=True)
+                .first()
+            )
             if match:
                 return match.storefront
 
         host = urlsplit(f"//{request.get_host()}").hostname
         if not host:
             return None
-        match = StorefrontDomain.objects.select_related("storefront").filter(
-            domain=host.lower(), storefront__is_active=True
-        ).first()
+        match = (
+            StorefrontDomain.objects.select_related("storefront")
+            .filter(domain=host.lower(), storefront__is_active=True)
+            .first()
+        )
         return match.storefront if match else None

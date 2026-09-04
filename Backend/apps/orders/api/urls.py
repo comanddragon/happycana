@@ -14,4 +14,3 @@ urlpatterns = [
     path("orders/<uuid:pk>/cancel/",       views.OrderCancelView.as_view(),      name="order-cancel"),
     path("orders/<uuid:pk>/status/",       views.OrderStatusUpdateView.as_view(),name="order-status"),
 ]
-

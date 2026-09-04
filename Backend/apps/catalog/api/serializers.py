@@ -7,6 +7,9 @@ from apps.catalog.models import (
     Listing,
 )
 from django.utils import timezone
+from apps.catalog_cannabis.models import CannabisProfile
+from apps.catalog_peptides.models import PeptideProfile
+from apps.catalog_footwear.models import FootwearProfile
 
 class CategorySerializer(serializers.ModelSerializer):
     children  = serializers.SerializerMethodField()
@@ -82,6 +85,54 @@ class EffectSerializer(serializers.ModelSerializer):
         model  = Effect
         fields = ["id", "name", "slug"]
         read_only_fields = ["id"]
+
+
+class CannabisProfileSerializer(serializers.ModelSerializer):
+    effects = EffectSerializer(source="effect_tags", many=True, read_only=True)
+
+    class Meta:
+        model = CannabisProfile
+        fields = [
+            "compliance_category", "cannabis_type", "sub_type", "thc_percent",
+            "cbd_percent", "terpenes", "effects", "coa_url",
+        ]
+        read_only_fields = fields
+
+
+class PeptideProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PeptideProfile
+        fields = [
+            "sequence", "molecular_weight", "purity_percent", "form",
+            "concentration", "storage_requirements", "documentation_url",
+        ]
+        read_only_fields = fields
+
+
+class FootwearProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FootwearProfile
+        fields = [
+            "model_name", "style_code", "release_date", "size_system", "condition",
+            "authenticity_status", "box_condition",
+        ]
+        read_only_fields = fields
+
+
+def serialize_vertical_profile(product):
+    serializers_by_kind = {
+        Product.Kind.CANNABIS: ("cannabis_profile", CannabisProfileSerializer),
+        Product.Kind.PEPTIDE: ("peptide_profile", PeptideProfileSerializer),
+        Product.Kind.FOOTWEAR: ("footwear_profile", FootwearProfileSerializer),
+    }
+    config = serializers_by_kind.get(product.kind)
+    if config is None:
+        return None
+    relation_name, serializer_class = config
+    profile = getattr(product, relation_name, None)
+    if profile is None:
+        return None
+    return {"kind": product.kind, "data": serializer_class(profile).data}
 
 class LabSerializer(serializers.ModelSerializer):
     class Meta:
@@ -288,13 +339,39 @@ class ProductListSerializer(serializers.ModelSerializer):
     category      = CategoryMinimalSerializer(many=True, read_only=True, source="categories")
     brand         = BrandMinimalSerializer(read_only=True)
     primary_image = ProductImageSerializer(read_only=True)
-    effects       = EffectSerializer(many=True, read_only=True)
+    compliance_category = serializers.SerializerMethodField()
+    cannabis_type = serializers.SerializerMethodField()
+    sub_type = serializers.SerializerMethodField()
+    effects = serializers.SerializerMethodField()
     variants      = ProductVariantSummarySerializer(many=True, read_only=True)
     active_discount = serializers.SerializerMethodField()
+    vertical_profile = serializers.SerializerMethodField()
 
     def get_active_discount(self, obj):
         discount = current_discount(obj)
         return ProductDiscountSerializer(discount).data if discount else None
+
+    def _cannabis_profile(self, obj):
+        return getattr(obj, "cannabis_profile", None)
+
+    def get_compliance_category(self, obj):
+        profile = self._cannabis_profile(obj)
+        return profile.compliance_category if profile else ""
+
+    def get_cannabis_type(self, obj):
+        profile = self._cannabis_profile(obj)
+        return profile.cannabis_type if profile else ""
+
+    def get_sub_type(self, obj):
+        profile = self._cannabis_profile(obj)
+        return profile.sub_type if profile else ""
+
+    def get_effects(self, obj):
+        profile = self._cannabis_profile(obj)
+        return EffectSerializer(profile.effect_tags.all(), many=True).data if profile else []
+
+    def get_vertical_profile(self, obj):
+        return serialize_vertical_profile(obj)
 
     class Meta:
         model  = Product
@@ -303,7 +380,7 @@ class ProductListSerializer(serializers.ModelSerializer):
             "base_price", "compare_at_price", "is_active", "created_at", "updated_at",
             "primary_image", "brand", "compliance_category",
             "cannabis_type", "sub_type", "is_featured", "is_new",
-            "effects", "variants", "active_discount",
+            "effects", "variants", "active_discount", "vertical_profile",
         ]
         read_only_fields = ["id", "slug", "created_at", "updated_at"]
 
@@ -316,12 +393,38 @@ class ProductSerializer(serializers.ModelSerializer):
     primary_image = ProductImageSerializer(read_only=True)
     primary_video = ProductVideoSerializer(read_only=True)
     brand = BrandMinimalSerializer(read_only=True)
-    effects = EffectSerializer(many=True, read_only=True)
+    compliance_category = serializers.SerializerMethodField()
+    cannabis_type = serializers.SerializerMethodField()
+    sub_type = serializers.SerializerMethodField()
+    effects = serializers.SerializerMethodField()
     active_discount = serializers.SerializerMethodField()
+    vertical_profile = serializers.SerializerMethodField()
 
     def get_active_discount(self, obj):
         discount = current_discount(obj)
         return ProductDiscountSerializer(discount).data if discount else None
+
+    def _cannabis_profile(self, obj):
+        return getattr(obj, "cannabis_profile", None)
+
+    def get_compliance_category(self, obj):
+        profile = self._cannabis_profile(obj)
+        return profile.compliance_category if profile else ""
+
+    def get_cannabis_type(self, obj):
+        profile = self._cannabis_profile(obj)
+        return profile.cannabis_type if profile else ""
+
+    def get_sub_type(self, obj):
+        profile = self._cannabis_profile(obj)
+        return profile.sub_type if profile else ""
+
+    def get_effects(self, obj):
+        profile = self._cannabis_profile(obj)
+        return EffectSerializer(profile.effect_tags.all(), many=True).data if profile else []
+
+    def get_vertical_profile(self, obj):
+        return serialize_vertical_profile(obj)
 
     class Meta:
         model  = Product
@@ -332,7 +435,7 @@ class ProductSerializer(serializers.ModelSerializer):
             "primary_image", "primary_video",
             "images", "videos", "variants",
             "brand", "compliance_category", "cannabis_type", "sub_type",
-            "is_featured", "is_new", "effects", "active_discount"
+            "is_featured", "is_new", "effects", "active_discount", "vertical_profile"
         ]
         read_only_fields = ["id", "slug", "created_at"]
 
@@ -348,9 +451,33 @@ class ProductWriteSerializer(serializers.ModelSerializer):
             "brand", "effects",
         ]
 
+    def _save_effects(self, product, effects):
+        from apps.catalog_cannabis.models import CannabisProfile
+
+        profile, _ = CannabisProfile.objects.get_or_create(product=product)
+        profile.effect_tags.set(effects)
+        if product.kind != Product.Kind.CANNABIS:
+            product.kind = Product.Kind.CANNABIS
+            product.save(update_fields=["kind"])
+
+    def create(self, validated_data):
+        effects = validated_data.pop("effects", None)
+        product = super().create(validated_data)
+        if effects is not None:
+            self._save_effects(product, effects)
+        return product
+
+    def update(self, instance, validated_data):
+        effects = validated_data.pop("effects", None)
+        product = super().update(instance, validated_data)
+        if effects is not None:
+            self._save_effects(product, effects)
+        return product
+
 
 class ListingSerializer(serializers.ModelSerializer):
     product = ProductListSerializer(read_only=True)
+    categories = CategoryMinimalSerializer(many=True, read_only=True)
     effective_price = serializers.DecimalField(max_digits=12, decimal_places=2, read_only=True)
     display_name = serializers.CharField(read_only=True)
 
@@ -359,7 +486,7 @@ class ListingSerializer(serializers.ModelSerializer):
         fields = [
             "id", "slug", "display_name", "effective_price",
             "compare_at_price_override", "is_featured", "meta_title",
-            "meta_description", "product",
+            "meta_description", "categories", "product",
         ]
         read_only_fields = fields
 
@@ -369,6 +496,8 @@ class LabResultProductSerializer(serializers.ModelSerializer):
     back to the product — leaner than ProductSerializer/ProductListSerializer."""
     brand         = BrandMinimalSerializer(read_only=True)
     primary_image = ProductImageSerializer(read_only=True)
+    cannabis_type = serializers.CharField(source="cannabis_profile.cannabis_type", read_only=True, default="")
+    compliance_category = serializers.CharField(source="cannabis_profile.compliance_category", read_only=True, default="")
 
     class Meta:
         model  = Product

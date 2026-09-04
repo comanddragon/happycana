@@ -19,10 +19,17 @@ class CheckoutError(Exception):
 
 
 class CheckoutService:
-
     @classmethod
     @transaction.atomic
-    def create_order(cls, user, address_id, shipping_method_id, payment_method_id, coupon_code=None):
+    def create_order(
+        cls,
+        user,
+        address_id,
+        shipping_method_id,
+        payment_method_id,
+        coupon_code=None,
+        storefront=None,
+    ):
         """
         Full checkout pipeline:
           1. Validate cart is not empty
@@ -35,7 +42,7 @@ class CheckoutService:
           8. Trigger confirmation notification
         Returns the created Order instance.
         """
-        cart = cls._get_cart(user)
+        cart = cls._get_cart(user, storefront)
         # NOTE: stock is intentionally NOT select_related/prefetched here —
         # _reserve_stock() takes a row-level lock (select_for_update) on the
         # matching Stock row per item at reservation time, so a prefetched
@@ -49,49 +56,71 @@ class CheckoutService:
             raise CheckoutError("Your cart is empty.")
 
         # 1. Validate & reserve stock
-        stock_reservations = cls._reserve_stock(items)
+        if storefront is not None:
+            from apps.catalog.models import Listing
+
+            listed_product_ids = set(
+                Listing.objects.filter(
+                    storefront=storefront,
+                    product_id__in=[item.variant.product_id for item in items],
+                    is_active=True,
+                ).values_list("product_id", flat=True)
+            )
+            if any(item.variant.product_id not in listed_product_ids for item in items):
+                raise CheckoutError(
+                    "Your cart contains a product not sold by this storefront."
+                )
+
+        stock_reservations = cls._reserve_stock(items, storefront)
 
         # 2. Resolve coupon & calculate totals via PromotionEngine
         from apps.promotions.engine import PromotionEngine, CartContext
-        subtotal      = cls._calculate_subtotal(items)
-        shipping_cost = cls._calculate_shipping(shipping_method_id)
+
+        subtotal = cls._calculate_subtotal(items)
+        shipping_cost = cls._calculate_shipping(shipping_method_id, storefront)
 
         if coupon_code:
-            ctx    = CartContext(subtotal=subtotal, item_count=len(items))
-            result = PromotionEngine.apply_coupon(coupon_code, ctx)
-            coupon   = result.coupon
+            ctx = CartContext(subtotal=subtotal, item_count=len(items))
+            result = PromotionEngine.apply_coupon(
+                coupon_code, ctx, storefront=storefront
+            )
+            coupon = result.coupon
             discount = result.discount_amount
         else:
-            coupon   = None
+            coupon = None
             discount = Decimal("0.00")
 
         total = max(Decimal("0.00"), subtotal - discount + shipping_cost)
 
         # 3. Create Order
         order = Order.objects.create(
-            user            = user,
-            address_id      = address_id,
-            shipping_method_id = shipping_method_id,
-            payment_method_id  = payment_method_id,
-            coupon          = coupon,
-            status          = Order.Status.PENDING,
-            subtotal        = subtotal,
-            discount_amount = discount,
-            shipping_cost   = shipping_cost,
-            total           = total,
+            storefront=storefront,
+            user=user,
+            address_id=address_id,
+            shipping_method_id=shipping_method_id,
+            payment_method_id=payment_method_id,
+            coupon=coupon,
+            status=Order.Status.PENDING,
+            subtotal=subtotal,
+            discount_amount=discount,
+            shipping_cost=shipping_cost,
+            total=total,
         )
 
         # 4. Create OrderItems
-        OrderItem.objects.bulk_create([
-            OrderItem(
-                order       = order,
-                variant     = item.variant,
-                quantity    = item.quantity,
-                unit_price  = item.variant.price,
-                total_price = item.variant.price * item.quantity,
-            )
-            for item in items
-        ])
+        OrderItem.objects.bulk_create(
+            [
+                OrderItem(
+                    order=order,
+                    variant=item.variant,
+                    fulfillment_warehouse=stock.warehouse,
+                    quantity=item.quantity,
+                    unit_price=item.variant.price,
+                    total_price=item.variant.price * item.quantity,
+                )
+                for item, (stock, _) in zip(items, stock_reservations)
+            ]
+        )
 
         # 5. Commit stock reservations
         cls._commit_stock_reservations(stock_reservations)
@@ -105,10 +134,11 @@ class CheckoutService:
 
         # 8. Notify user
         Notification.objects.create(
-            user  = user,
-            type  = Notification.Type.ORDER,
-            title = "Order Placed",
-            body  = f"Your order #{order.id} has been placed successfully. Total: ${order.total}",
+            storefront=storefront,
+            user=user,
+            type=Notification.Type.ORDER,
+            title="Order Placed",
+            body=f"Your order #{order.id} has been placed successfully. Total: ${order.total}",
         )
 
         # 9. Email the admin the order details, and the customer their
@@ -116,12 +146,18 @@ class CheckoutService:
         #    already succeeded at this point — a transport failure sending
         #    either email (e.g. an unverified Resend sending domain) must be
         #    logged, not allowed to turn a successful checkout into a 500.
-        transaction.on_commit(lambda: cls._notify_safely(
-            "admin notification", EmailService.send_order_notification_to_admin, order
-        ))
-        transaction.on_commit(lambda: cls._notify_safely(
-            "order placed email", EmailService.send_order_placed, order
-        ))
+        transaction.on_commit(
+            lambda: cls._notify_safely(
+                "admin notification",
+                EmailService.send_order_notification_to_admin,
+                order,
+            )
+        )
+        transaction.on_commit(
+            lambda: cls._notify_safely(
+                "order placed email", EmailService.send_order_placed, order
+            )
+        )
 
         return order
 
@@ -137,19 +173,19 @@ class CheckoutService:
     # ------------------------------------------------------------------
 
     @staticmethod
-    def _get_cart(user):
+    def _get_cart(user, storefront=None):
         # No prefetch here: create_order immediately re-queries
         # cart.items.select_related("variant") itself, and _reserve_stock
         # below deliberately re-queries stock fresh under select_for_update
         # (a prefetched snapshot would be stale for the lock anyway). A
         # prefetch on this fetch would run and never be read.
         try:
-            return Cart.objects.get(user=user)
+            return Cart.objects.get(user=user, storefront=storefront)
         except Cart.DoesNotExist:
             raise CheckoutError("No active cart found.")
 
     @staticmethod
-    def _reserve_stock(items):
+    def _reserve_stock(items, storefront=None):
         """
         Checks availability and increments the reserved counter for every
         item. Done inside the atomic transaction so concurrent checkouts
@@ -158,15 +194,12 @@ class CheckoutService:
         reservations = []
         for item in items:
             stock = (
-                item.variant.stock_levels
-                .select_for_update()          # row-level DB lock
-                .filter(quantity__gt=0)
+                item.variant.stock_levels.select_for_update()  # row-level DB lock
+                .filter(quantity__gt=0, warehouse__storefront=storefront)
                 .first()
             )
             if not stock:
-                raise CheckoutError(
-                    f"'{item.variant.sku}' is out of stock."
-                )
+                raise CheckoutError(f"'{item.variant.sku}' is out of stock.")
             if stock.available < item.quantity:
                 raise CheckoutError(
                     f"Only {stock.available} units of '{item.variant.sku}' available."
@@ -185,8 +218,10 @@ class CheckoutService:
         return sum(item.variant.price * item.quantity for item in items)
 
     @staticmethod
-    def _calculate_shipping(shipping_method_id):
+    def _calculate_shipping(shipping_method_id, storefront=None):
         try:
-            return ShippingMethod.objects.get(id=shipping_method_id, is_active=True).price
+            return ShippingMethod.objects.get(
+                id=shipping_method_id, is_active=True, storefront=storefront
+            ).price
         except ShippingMethod.DoesNotExist:
             raise CheckoutError("Shipping method not found.")
