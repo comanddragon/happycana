@@ -77,8 +77,10 @@ class ProductQuerySet(db_models.QuerySet):
 
     def price_range(self, min_price=None, max_price=None):
         qs = self
-        if min_price is not None: qs = qs.filter(base_price__gte=min_price)
-        if max_price is not None: qs = qs.filter(base_price__lte=max_price)
+        if min_price is not None:
+            qs = qs.filter(base_price__gte=min_price)
+        if max_price is not None:
+            qs = qs.filter(base_price__lte=max_price)
         return qs
 
     def search(self, query):
@@ -120,4 +122,6 @@ class ProductVariantManager(db_models.Manager):
     def active(self):           return self.get_queryset().active()
     def available(self):        return self.get_queryset().active().available()
     def with_coa(self):         return self.get_queryset().active().with_coa()
-
+    def for_product(self, product_id): return self.get_queryset().for_product(product_id)
+    def with_attributes(self):   return self.get_queryset().with_attributes()
+    def with_stock(self):        return self.get_queryset().with_stock()

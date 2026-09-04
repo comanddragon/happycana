@@ -4,7 +4,7 @@
 # =============================================================================
 from django.db import transaction
 from apps.payments.models import Payment, Refund
-from apps.orders.models import Order
+from apps.orders.state_machine import OrderStateMachine
 from services.order_fulfillment import FulfillmentService
 from apps.notifications.models import Notification
 
@@ -74,7 +74,7 @@ class PaymentService:
             from services.email import EmailService
             EmailService.send_refund_processed(refund)
 
-        except Exception as exc:
+        except Exception:
             refund.status = Refund.Status.REJECTED
             refund.save(update_fields=["status"])
             raise

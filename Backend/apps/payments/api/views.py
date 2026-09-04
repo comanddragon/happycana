@@ -1,16 +1,14 @@
 # =============================================================================
 # apps/payments/api/views.py
 # =============================================================================
-import hmac, hashlib
-from django.conf import settings
 from django.utils.decorators import method_decorator
 from django_ratelimit.decorators import ratelimit
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from apps.payments.models import Payment, PaymentMethod, Refund
+from apps.payments.models import Payment, PaymentMethod
 from apps.payments.gateways import GatewayFactory
-from .serializers import PaymentMethodSerializer, PaymentSerializer, RefundSerializer, WebhookSerializer
+from .serializers import PaymentMethodSerializer, PaymentSerializer, RefundSerializer
 
 
 class PaymentMethodListView(generics.ListAPIView):

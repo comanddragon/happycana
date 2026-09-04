@@ -5,12 +5,9 @@
 from decimal import Decimal
 import logging
 from django.db import transaction
-from django.utils import timezone
 from apps.orders.models import Cart, Order, OrderItem
-from apps.inventory.models import Stock
 from apps.shipping.models import ShippingMethod
 from apps.promotions.models import Coupon
-from apps.payments.models import Payment
 from apps.notifications.models import Notification
 from services.email import EmailService
 

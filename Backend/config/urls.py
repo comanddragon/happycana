@@ -29,6 +29,7 @@ urlpatterns = [
     path("admin/",     admin.site.urls),
 
     # API apps
+    path(API, include("apps.storefronts.urls")),
     path(API, include("apps.users.api.urls")),
     path(API, include("apps.catalog.api.urls")),
     path(API, include("apps.inventory.api.urls")),

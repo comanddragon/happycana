@@ -53,7 +53,7 @@ class PayPalGateway(BaseGateway):
                 },
             })
             approval_url = next(
-                (l["href"] for l in response.get("links", []) if l["rel"] == "approve"),
+                (link["href"] for link in response.get("links", []) if link["rel"] == "approve"),
                 None,
             )
             logger.info("PayPal order created: %s for order %s", response["id"], order.id)

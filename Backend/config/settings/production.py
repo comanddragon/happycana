@@ -1,4 +1,8 @@
+import os
 from urllib.parse import urlparse, parse_qsl
+
+import sentry_sdk
+from sentry_sdk.integrations.django import DjangoIntegration
 
 from .base import *  # noqa
 
@@ -80,9 +84,6 @@ AWS_QUERYSTRING_AUTH  = False
 # ---------------------------------------------------------------------------
 # Sentry — error tracking
 # ---------------------------------------------------------------------------
-import sentry_sdk
-from sentry_sdk.integrations.django import DjangoIntegration
-
 sentry_sdk.init(
     dsn=os.environ["SENTRY_DSN"],
     integrations=[DjangoIntegration()],

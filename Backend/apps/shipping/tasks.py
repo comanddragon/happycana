@@ -1,19 +1,16 @@
 # =============================================================================
 # apps/shipping/tasks.py
 # =============================================================================
-# `django.tasks` does not exist in Django's stdlib.
-# This file uses Celery — the standard async task queue for Django projects.
-# If you're on a different runner (Django Q, Huey, etc.) swap the decorator;
-# the task logic is identical.
+# Uses the same Django Tasks backend configured for every other application.
 # =============================================================================
-from celery import shared_task
+from django.tasks import task
 
 import logging
 logger = logging.getLogger(__name__)
 
 
-@shared_task(bind=True, max_retries=3, default_retry_delay=60)
-def poll_tracking_updates(self):
+@task()
+def poll_tracking_updates():
     """
     Fetches latest tracking events from shipping providers for all
     in-transit shipments. Schedule every 2 hours via Celery Beat.
@@ -57,11 +54,10 @@ def poll_tracking_updates(self):
 
         except Exception as exc:
             logger.exception("Tracking poll failed for shipment %s: %s", shipment.id, exc)
-            # Retry the whole task on unexpected errors (e.g. provider outage)
-            raise self.retry(exc=exc)
+            raise
 
 
-@shared_task
+@task()
 def send_shipping_notification(shipment_id: str):
     from apps.shipping.models import Shipment
     from services.email import EmailService

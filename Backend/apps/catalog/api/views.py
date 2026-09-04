@@ -6,7 +6,32 @@ from django.db.models import Count, Q, Prefetch
 from django_filters.rest_framework import DjangoFilterBackend
 from core.permissions import IsAdminOrReadOnly
 from core.cache import cache_category_tree_response, get_cached_category_tree_response
-from .serializers import *
+from apps.catalog.models import (
+    Brand,
+    Category,
+    Effect,
+    Listing,
+    Product,
+    ProductDiscount,
+    ProductImage,
+    ProductVariant,
+    ProductVideo,
+)
+from .serializers import (
+    BrandSerializer,
+    CategorySerializer,
+    CollectionSerializer,
+    EffectSerializer,
+    LabResultSerializer,
+    ListingSerializer,
+    ProductImageSerializer,
+    ProductListSerializer,
+    ProductSerializer,
+    ProductVariantSerializer,
+    ProductVariantWriteSerializer,
+    ProductVideoSerializer,
+    ProductWriteSerializer,
+)
 from .filters import ProductFilter, ProductVariantFilter, CategoryFilter
 
 
@@ -146,6 +171,43 @@ class ProductDetailView(generics.RetrieveUpdateDestroyAPIView):
 
     def get_serializer_class(self):
         return ProductWriteSerializer if self.request.method in ("PUT", "PATCH") else ProductSerializer
+
+
+class StorefrontRequiredMixin:
+    def get_storefront(self):
+        storefront = getattr(self.request, "storefront", None)
+        if storefront is None:
+            from rest_framework.exceptions import ValidationError
+
+            raise ValidationError({"storefront": "Select a storefront with X-Storefront or a configured origin/domain."})
+        return storefront
+
+
+class StorefrontListingQuerysetMixin(StorefrontRequiredMixin):
+    queryset = Listing.objects.none()
+
+    def get_queryset(self):
+        if getattr(self, "swagger_fake_view", False):
+            return self.queryset
+        return (
+            Listing.objects.filter(storefront=self.get_storefront(), is_active=True)
+            .select_related("product", "product__brand")
+            .prefetch_related(
+                "product__categories", "product__images", "product__effects",
+                "product__variants__lab", "product__variants__stock_levels",
+            )
+        )
+
+
+class ListingListView(StorefrontListingQuerysetMixin, generics.ListAPIView):
+    serializer_class = ListingSerializer
+    permission_classes = [permissions.AllowAny]
+
+
+class ListingDetailView(StorefrontListingQuerysetMixin, generics.RetrieveAPIView):
+    serializer_class = ListingSerializer
+    permission_classes = [permissions.AllowAny]
+    lookup_field = "slug"
 
 
 # ------------------------------------------------------------------

@@ -150,7 +150,14 @@ class Effect(models.Model):
 
 
 class Product(TimestampedModel):
+    class Kind(models.TextChoices):
+        GENERAL  = "general", "General"
+        CANNABIS = "cannabis", "Cannabis"
+        PEPTIDE  = "peptide", "Peptide"
+        FOOTWEAR = "footwear", "Footwear"
+
     categories       = models.ManyToManyField(Category, blank=True, related_name="products")
+    kind             = models.CharField(max_length=20, choices=Kind.choices, default=Kind.GENERAL)
     name             = models.CharField(max_length=255)
     slug             = models.SlugField(max_length=255, unique=True)
     description      = models.TextField(blank=True)
@@ -418,3 +425,53 @@ class ProductDiscount(models.Model):
 
     def __str__(self):
         return f"{self.product.name}: {self.value}{'%' if self.discount_type == 'percent' else ''} off"
+
+
+class Listing(TimestampedModel):
+    """A storefront-specific offer for a canonical product.
+
+    Product owns universal product facts. Listing owns merchandising facts that
+    can differ by storefront: URL, publication state, pricing, taxonomy, and SEO.
+    """
+
+    storefront = models.ForeignKey(
+        "storefronts.Storefront", on_delete=models.CASCADE, related_name="listings"
+    )
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="listings")
+    categories = models.ManyToManyField(Category, blank=True, related_name="listings")
+    slug = models.SlugField(max_length=255)
+    title = models.CharField(max_length=255, blank=True)
+    price_override = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    compare_at_price_override = models.DecimalField(
+        max_digits=12, decimal_places=2, null=True, blank=True
+    )
+    is_active = models.BooleanField(default=True)
+    is_featured = models.BooleanField(default=False)
+    meta_title = models.CharField(max_length=60, blank=True)
+    meta_description = models.CharField(max_length=160, blank=True)
+
+    class Meta:
+        db_table = "catalog_listings"
+        ordering = ["-created_at"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["storefront", "product"], name="unique_product_per_storefront"
+            ),
+            models.UniqueConstraint(
+                fields=["storefront", "slug"], name="unique_listing_slug_per_storefront"
+            ),
+        ]
+        indexes = [
+            models.Index(fields=["storefront", "is_active", "-created_at"]),
+        ]
+
+    @property
+    def display_name(self):
+        return self.title or self.product.name
+
+    @property
+    def effective_price(self):
+        return self.price_override if self.price_override is not None else self.product.base_price
+
+    def __str__(self):
+        return f"{self.storefront.slug}: {self.display_name}"

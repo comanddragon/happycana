@@ -3,7 +3,7 @@
 # Handles post-payment order lifecycle:
 # confirming, fulfilling, and cancelling orders.
 # =============================================================================
-from django.db import transaction
+from django.db import models, transaction
 from apps.orders.models import Order
 from apps.inventory.models import Stock, StockMovement
 from apps.notifications.models import Notification
@@ -116,4 +116,3 @@ class FulfillmentService:
             title = "Order Cancelled",
             body  = f"Your order #{order.id} has been cancelled.",
         )
-

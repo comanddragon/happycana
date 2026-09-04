@@ -1,0 +1,35 @@
+name: Backend
+
+on:
+  pull_request:
+    paths:
+      - "Backend/**"
+      - ".github/workflows/backend.yml"
+  push:
+    branches: [main]
+    paths:
+      - "Backend/**"
+      - ".github/workflows/backend.yml"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: Backend
+    env:
+      DJANGO_SECRET_KEY: ci-only-secret
+      DJANGO_SETTINGS_MODULE: config.settings.test
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: Backend/requirements/*.txt
+      - run: pip install -r requirements/development.txt
+      - run: ruff check . --exclude .venv,.output,.scripts,staticfiles
+      - run: python manage.py check
+      - run: python manage.py makemigrations --check --dry-run
+      - run: pytest -q

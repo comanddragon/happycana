@@ -5,7 +5,6 @@ import uuid
 from django.db import models
 from apps.users.models import User
 from apps.catalog.models import Product
-from apps.orders.models import Order
 from .managers import EventManager, DailySalesSnapshotManager, ProductPerformanceManager
 
 

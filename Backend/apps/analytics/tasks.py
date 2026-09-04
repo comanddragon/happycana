@@ -14,7 +14,7 @@ def aggregate_daily_sales(date_str: str = None):
     from django.utils import timezone
     from datetime import timedelta, date
     from django.db.models import Sum, Count
-    from apps.orders.models import Order, OrderItem
+    from apps.orders.models import Order
     from apps.payments.models import Refund
     from apps.users.models import User
     from apps.analytics.models import DailySalesSnapshot
@@ -63,7 +63,7 @@ def aggregate_product_performance(date_str: str = None):
     """
     from django.utils import timezone
     from datetime import timedelta, date
-    from django.db.models import Count, Sum
+    from django.db.models import Sum
     from apps.analytics.models import Event, ProductPerformance
     from apps.orders.models import OrderItem
     from apps.catalog.models import Product

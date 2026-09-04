@@ -7,13 +7,9 @@ DEBUG = False
 
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME":   os.environ.get("TEST_DB_NAME", "ecommerce_test"),
-        "USER":   os.environ.get("DB_USER",      "postgres"),
-        "PASSWORD": os.environ.get("DB_PASSWORD","postgres"),
-        "HOST":   os.environ.get("DB_HOST",      "localhost"),
-        "PORT":   "5432",
-    }
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": ":memory:",
+    },
 }
 
 # Use in-memory channel layer — no Redis needed for tests
@@ -28,4 +24,10 @@ PASSWORD_HASHERS = ["django.contrib.auth.hashers.MD5PasswordHasher"]
 
 RESEND_API_KEY = "test-key"  # tests must mock resend.Emails.send — real calls will fail/hang
 
+# Unit tests must not depend on a running Redis service.
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+    },
+}
 

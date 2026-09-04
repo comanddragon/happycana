@@ -42,13 +42,10 @@ def release_expired_reservations():
     for more than 30 minutes (e.g. abandoned checkouts).
     Run every 15 minutes via cron.
     """
-    from django.utils import timezone
-    from datetime import timedelta
     from apps.orders.models import Order
     from apps.inventory.models import Stock
     from django.db import models as db_models
 
-    cutoff = timezone.now() - timedelta(minutes=30)
     stale_orders = Order.objects.stale_pending(minutes=30).prefetch_related("items__variant")
 
     for order in stale_orders:
@@ -58,4 +55,3 @@ def release_expired_reservations():
             )
         order.status = Order.Status.CANCELLED
         order.save(update_fields=["status"])
-

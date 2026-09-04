@@ -4,23 +4,13 @@
 -r base.txt
 
 # Debugging
-django-debug-toolbar
+django-debug-toolbar==6.2.0
 
 # Testing
-pytest
-pytest-django
-pytest-asyncio         # Async consumer tests
-factory-boy            # Model factories for test data
-Faker                  # Realistic fake data
-model-bakery           # Quick model instance creation
+pytest==9.0.2
+pytest-django==4.12.0
+pytest-asyncio==1.3.0         # Async consumer tests
+model-bakery==1.23.3          # Quick model instance creation
 
 # Code quality
-black
-flake8
-isort
-mypy
-django-stubs
-
-# Shell & REPL
-ipython
-django-extensions
+ruff==0.15.6

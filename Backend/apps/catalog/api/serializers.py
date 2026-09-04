@@ -4,6 +4,7 @@ from apps.catalog.models import (
     Attribute, AttributeType,
     ProductImage, ProductVideo, VariantImage, VariantVideo,
     ProductDiscount,
+    Listing,
 )
 from django.utils import timezone
 
@@ -224,7 +225,7 @@ class ProductVariantWriteSerializer(serializers.ModelSerializer):
 
     class Meta:
         model  = ProductVariant
-        fields = ["sku", "price", "image", "is_active", "attributes"]
+        fields = ["sku", "price", "is_active", "attributes"]
 
     def create(self, validated_data):
         attrs = validated_data.pop("attributes", [])
@@ -342,7 +343,25 @@ class ProductWriteSerializer(serializers.ModelSerializer):
 
     class Meta:
         model  = Product
-        fields = ["categories", "name", "description", "base_price", "is_active"]
+        fields = [
+            "categories", "name", "description", "base_price", "is_active",
+            "brand", "effects",
+        ]
+
+
+class ListingSerializer(serializers.ModelSerializer):
+    product = ProductListSerializer(read_only=True)
+    effective_price = serializers.DecimalField(max_digits=12, decimal_places=2, read_only=True)
+    display_name = serializers.CharField(read_only=True)
+
+    class Meta:
+        model = Listing
+        fields = [
+            "id", "slug", "display_name", "effective_price",
+            "compare_at_price_override", "is_featured", "meta_title",
+            "meta_description", "product",
+        ]
+        read_only_fields = fields
 
 
 class LabResultProductSerializer(serializers.ModelSerializer):

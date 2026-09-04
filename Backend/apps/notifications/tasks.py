@@ -29,13 +29,9 @@ def cleanup_old_notifications():
     Deletes read notifications older than 30 days.
     Run nightly via cron to keep the notifications table lean.
     """
-    from django.utils import timezone
-    from datetime import timedelta
     from apps.notifications.models import Notification
 
-    cutoff = timezone.now() - timedelta(days=30)
     deleted, _ = Notification.objects.cleanup_old(days=30).delete()
 
     import logging
     logging.getLogger(__name__).info("Cleaned up %d old notifications.", deleted)
-

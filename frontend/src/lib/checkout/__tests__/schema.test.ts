@@ -26,7 +26,7 @@ describe('addressSchema (checkout)', () => {
     })
 
     it('rejects a missing city', () => {
-        const { city, ...rest } = validAddress
+        const { city: _city, ...rest } = validAddress
         const result = addressSchema.safeParse(rest)
         expect(result.success).toBe(false)
     })

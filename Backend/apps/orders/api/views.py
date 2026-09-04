@@ -10,6 +10,7 @@ from rest_framework.views import APIView
 from django_filters.rest_framework import DjangoFilterBackend
 from core.permissions import IsOwnerOrAdmin
 from apps.orders.models import Cart, CartItem, Order, OrderItem
+from apps.orders.state_machine import InvalidTransitionError, OrderStateMachine
 from services.checkout import CheckoutService, CheckoutError
 from .serializers import (
     CartSerializer, CartItemWriteSerializer,
@@ -131,8 +132,6 @@ class OrderCreateView(APIView):
         except CheckoutError as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-
-from apps.orders.state_machine import OrderStateMachine, InvalidTransitionError
 
 class OrderCancelView(APIView):
     permission_classes = [IsOwnerOrAdmin]

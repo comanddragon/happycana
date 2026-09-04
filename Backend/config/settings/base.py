@@ -41,6 +41,10 @@ INSTALLED_APPS = [
     "apps.analytics",
     "apps.chat",
     "apps.blog",
+    "apps.storefronts",
+    "apps.catalog_cannabis",
+    "apps.catalog_peptides",
+    "apps.catalog_footwear",
 ]
 
 MIDDLEWARE = [
@@ -49,6 +53,7 @@ MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
+    "apps.storefronts.middleware.StorefrontMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
@@ -182,6 +187,17 @@ DEFAULT_FROM_EMAIL = os.environ.get(
 # Resend — all transactional email goes through services/email.py.
 RESEND_API_KEY = os.environ.get("RESEND_API_KEY", "")
 ADMIN_NOTIFICATION_EMAIL = os.environ.get("ADMIN_NOTIFICATION_EMAIL", "")
+
+# Payment providers. Individual storefronts can override these through a
+# provider-account model later; these defaults preserve the existing gateways.
+STRIPE_SECRET_KEY = os.environ.get("STRIPE_SECRET_KEY", "")
+STRIPE_WEBHOOK_SECRET = os.environ.get("STRIPE_WEBHOOK_SECRET", "")
+PAYPAL_CLIENT_ID = os.environ.get("PAYPAL_CLIENT_ID", "")
+PAYPAL_CLIENT_SECRET = os.environ.get("PAYPAL_CLIENT_SECRET", "")
+PAYPAL_BASE_URL = os.environ.get("PAYPAL_BASE_URL", "https://api-m.paypal.com")
+PAYPAL_WEBHOOK_ID = os.environ.get("PAYPAL_WEBHOOK_ID", "")
+PAYPAL_RETURN_URL = os.environ.get("PAYPAL_RETURN_URL", "")
+PAYPAL_CANCEL_URL = os.environ.get("PAYPAL_CANCEL_URL", "")
 
 # Branding vars injected into every templates/emails/*.html render.
 STORE_NAME    = os.environ.get("STORE_NAME", "Our Store")

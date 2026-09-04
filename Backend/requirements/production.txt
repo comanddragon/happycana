@@ -4,17 +4,9 @@
 -r base.txt
 
 # Error tracking
-sentry-sdk
-gunicorn
-uvicorn[standard]
+sentry-sdk==2.68.1
+gunicorn==26.2.0
+uvicorn[standard]==0.52.4
 
 # Structured JSON logging
-python-json-logger
-
-# Email (choose one based on your provider)
-# SendGrid
-sendgrid
-# Amazon SES — already covered by boto3 in base.txt
-
-# Security
-django-ratelimit        # Rate limiting on sensitive endpoints
+python-json-logger==4.2.0
