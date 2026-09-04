@@ -4,6 +4,7 @@
 // lib/api.ts, which is wired for the browser — auth cookies, 401 refresh,
 // etc.). Used from Server Components and route handlers only.
 
+import { cache } from 'react'
 import { timedFetch } from './timedFetch.server'
 import type {
     Product, Effect, Category, Collection, Brand, PaginatedResponse, ProductFilterParams, LabResult,
@@ -116,7 +117,11 @@ export async function getCollections(): Promise<Collection[]> {
     }
 }
 
-export async function getCollection(slug: string): Promise<Collection | null> {
+// Wrapped in React's `cache()` so the two `getCollection(slug)` call sites in
+// app/shop/collections/[slug]/page.tsx (generateMetadata + the page
+// component) explicitly share one fetch per request, instead of relying on
+// Next.js's fetch-level memoization silently doing it for them.
+export const getCollection = cache(async (slug: string): Promise<Collection | null> => {
     try {
         const res = await timedFetch(`${process.env.API_URL}/catalog/collections/${encodeURIComponent(slug)}/`, {
             next: { revalidate: 3600 },
@@ -126,7 +131,7 @@ export async function getCollection(slug: string): Promise<Collection | null> {
     } catch {
         return null
     }
-}
+})
 
 export async function getCollectionProducts(
     slug: string,

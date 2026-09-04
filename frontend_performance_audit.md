@@ -61,24 +61,22 @@ category count is small — but it compounds with #1.
 
 ## Fetch/caching notes (not bugs, but worth flagging)
 
-### 3. Duplicate `getProduct`/`getCollection` fetch relies on Next.js request memoization
+### 3. Duplicate `getProduct`/`getCollection` fetch relies on Next.js request memoization — FIXED
 `app/shop/products/[slug]/page.tsx:30,102`, `app/shop/collections/[slug]/page.tsx:16,29`
 
 Both `generateMetadata` and the page component call `getProduct(slug)` (or
-`getCollection(slug)`) independently. This is only a single network request
-today because Next.js's automatic `fetch()` request memoization collapses
+`getCollection(slug)`) independently. This was only a single network request
+because Next.js's automatic `fetch()` request memoization collapses
 identical `url`+`options` calls within one render pass — and both call
-sites use identical `timedFetch` args (`next: { revalidate: ... }`).
-This is correct as written, but it's a fragile correctness-by-convention:
-if either call site's fetch options ever drift (e.g. one adds a header or
-changes `revalidate`), the dedup silently breaks and the page fetches the
-same resource twice server-side.
+sites used identical `timedFetch` args (`next: { revalidate: ... }`).
+Correct as written, but fragile correctness-by-convention: if either call
+site's fetch options ever drifted, the dedup would silently break and the
+page would fetch the same resource twice server-side.
 
-**Suggestion:** not urgent to change, but worth a code comment at each
-`getProduct`/`getCollection` call noting the two calls must stay
-option-identical to keep deduping, or extract a single `cache()`-wrapped
-fetcher (React's `cache()` from `next/cache`/`react`) so the dedup is
-explicit rather than incidental.
+**Fix applied:** `getProduct` (`app/shop/products/[slug]/page.tsx`) and
+`getCollection` (`lib/catalog.server.ts`) are now wrapped in React's
+`cache()`, so the two call sites explicitly share one fetch per request
+regardless of whether their options stay identical in the future.
 
 ---
 
@@ -125,9 +123,6 @@ explicit rather than incidental.
 
 ## Recommended order of operations
 
-1. Fix #1 (`CartDrawer`/`Navbar`/addresses-page store selectors) — cheap,
-   removes a real (if currently low-cost) re-render source on a component
-   that mounts on every page.
-2. Fix #2 (`useCategoriesMenuTree` memoization) — cheap, compounds with #1.
-3. Add the stability comment/refactor for #3 if the team wants to
-   de-risk future drift — not urgent, nothing is broken today.
+1. ~~Fix #1 (`CartDrawer`/`Navbar`/addresses-page store selectors)~~ — done.
+2. ~~Fix #2 (`useCategoriesMenuTree` memoization)~~ — done.
+3. ~~Fix #3 (`getProduct`/`getCollection` explicit `cache()`)~~ — done.

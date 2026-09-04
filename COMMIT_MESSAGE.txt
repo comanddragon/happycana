@@ -1,4 +1,14 @@
-fix(chat): eliminate N+1 in ChatRoomSerializer latest_message/unread_count
-fix(orders): fix cart/order N+1 on ProductVariantSerializer relations
-perf(checkout): drop dead prefetch in CheckoutService._get_cart
-perf: add missing composite indexes (Order.status, Product.is_active, Notification.user/is_read)
+perf: make getProduct/getCollection dedup explicit with React cache()
+
+generateMetadata and the page component both call getProduct(slug) (or
+getCollection(slug)); this only avoided a duplicate server-side fetch
+because Next.js's fetch-level request memoization happened to see
+identical timedFetch options at both call sites. That's
+correctness-by-convention — if either call site's options ever drifted,
+the dedup would silently break.
+
+Wrap getProduct (app/shop/products/[slug]/page.tsx) and getCollection
+(lib/catalog.server.ts) in React's cache() so both call sites explicitly
+share one fetch per request instead.
+
+Addresses finding #3 in frontend_performance_audit.md.

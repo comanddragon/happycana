@@ -1,5 +1,6 @@
 // app/(shop)/shop/products/[slug]/page.tsx
 import type { Metadata } from 'next'
+import { cache } from 'react'
 import { notFound } from 'next/navigation'
 import { ProductDetails } from '@/components/shop/ProductDetails' // client component
 import type { Product, ProductVariant } from '@/types'
@@ -14,14 +15,19 @@ interface PageProps {
 
 // ── Data fetching ──────────────────────────────────────────────────────────
 
-async function getProduct(slug: string): Promise<Product> {
+// Wrapped in React's `cache()` so `generateMetadata` and the page component
+// below share one fetch per request explicitly — rather than relying on
+// Next.js's fetch-level request memoization (which only dedupes when both
+// call sites happen to pass identical `timedFetch` options and silently
+// stops deduping if either one ever drifts).
+const getProduct = cache(async (slug: string): Promise<Product> => {
     const res = await timedFetch(`${process.env.API_URL}/catalog/products/${slug}/`, {
         next: { revalidate: 60 },
     })
     if (res.status === 404) notFound()
     if (!res.ok) throw new Error(`Failed to fetch product: ${res.status}`)
     return res.json()
-}
+})
 
 // ── Metadata ───────────────────────────────────────────────────────────────
 
