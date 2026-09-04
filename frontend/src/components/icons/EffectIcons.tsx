@@ -6,7 +6,7 @@
 // Unrecognized slugs (any future effect added on the backend) fall back
 // to a neutral face rather than breaking.
 
-import type { ReactNode, SVGProps } from 'react'
+import type { ReactElement, ReactNode, SVGProps } from 'react'
 
 type IconProps = SVGProps<SVGSVGElement>
 
@@ -117,7 +117,7 @@ export function NeutralEffectIcon(props: IconProps) {
     )
 }
 
-const EFFECT_ICONS: Record<string, (props: IconProps) => JSX.Element> = {
+const EFFECT_ICONS: Record<string, (props: IconProps) => ReactElement> = {
     happy: HappyEffectIcon,
     relaxed: RelaxedEffectIcon,
     sleepy: SleepyEffectIcon,

@@ -1,1 +1,6 @@
-Add FedEx shipping method
+Fix pre-existing TS2503 error in EffectIcons
+
+React 19 dropped the global JSX namespace, so 'JSX.Element' no longer
+resolves. Swap it for ReactElement (imported from 'react'), the
+modern equivalent. tsc --noEmit is now clean across the project.
+
