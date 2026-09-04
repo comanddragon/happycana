@@ -1,6 +1,9 @@
-Fix pre-existing TS2503 error in EffectIcons
+Restyle google-pay.svg to match the badge+wordmark pattern (like venmo.svg/apple-pay.svg)
 
-React 19 dropped the global JSX namespace, so 'JSX.Element' no longer
-resolves. Swap it for ReactElement (imported from 'react'), the
-modern equivalent. tsc --noEmit is now clean across the project.
+The provided icon paths had the 'Pay' wordmark baked into the badge
+glyph alongside the G mark, which duplicated the outer text label and
+overflowed the badge bounds. Keeps only the four-color G logo, scales
+and centers it in the 36x36 badge the same way apple-pay.svg's glyph
+is centered, and matches its wordmark font-size (23) and title casing
+('Google Pay') for visual consistency across the two.
 
