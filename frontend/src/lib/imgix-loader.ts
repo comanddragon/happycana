@@ -45,5 +45,9 @@ export default function imgixLoader({
         return url.toString()
     }
 
-    return src
+    // Shopify and other remote CDNs may ignore an unknown width parameter,
+    // but the URL must still vary by requested width for next/image to build
+    // a valid responsive srcset. Shopify understands this parameter directly.
+    url.searchParams.set('width', String(width))
+    return url.toString()
 }

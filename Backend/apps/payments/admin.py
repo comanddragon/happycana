@@ -3,7 +3,13 @@
 # apps/payments/admin.py
 # =============================================================================
 from django.contrib import admin
-from apps.payments.models import Payment, Refund
+from apps.payments.models import Payment, PaymentMethod, Refund
+
+
+@admin.register(PaymentMethod)
+class PaymentMethodAdmin(admin.ModelAdmin):
+    list_display = ["name", "slug", "is_active", "sort_order"]
+    list_editable = ["is_active", "sort_order"]
 
 
 class RefundInline(admin.TabularInline):

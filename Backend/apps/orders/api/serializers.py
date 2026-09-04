@@ -62,11 +62,22 @@ class OrderSerializer(serializers.ModelSerializer):
     items   = OrderItemSerializer(many=True, read_only=True)
     address = AddressSerializer(read_only=True)
     coupon  = CouponSerializer(read_only=True)
+    payment_method = serializers.SerializerMethodField()
+
+    def get_payment_method(self, obj):
+        method = obj.payment_method
+        return {
+            "id": method.id,
+            "name": method.name,
+            "slug": method.slug,
+            "description": method.description,
+            "logo_url": method.logo_url,
+        }
 
     class Meta:
         model  = Order
         fields = [
-            "id", "status", "address", "coupon",
+            "id", "status", "address", "coupon", "payment_method",
             "subtotal", "discount_amount", "shipping_cost", "total",
             "items", "created_at", "updated_at",
         ]
@@ -81,6 +92,7 @@ class OrderCreateSerializer(serializers.Serializer):
     address_id = serializers.UUIDField()
     coupon_code= serializers.CharField(required=False, allow_blank=True)
     shipping_method_id = serializers.UUIDField()
+    payment_method_id = serializers.IntegerField()
 
     def validate_address_id(self, value):
         user = self.context["request"].user
@@ -92,6 +104,12 @@ class OrderCreateSerializer(serializers.Serializer):
         from apps.shipping.models import ShippingMethod
         if not ShippingMethod.objects.filter(id=value, is_active=True).exists():
             raise serializers.ValidationError("Shipping method not found.")
+        return value
+
+    def validate_payment_method_id(self, value):
+        from apps.payments.models import PaymentMethod
+        if not PaymentMethod.objects.filter(id=value, is_active=True).exists():
+            raise serializers.ValidationError("Payment method not found.")
         return value
 
 

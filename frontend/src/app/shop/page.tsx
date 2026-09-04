@@ -7,7 +7,7 @@ import { CategoryGrid, CategoryGridSkeleton } from '@/components/shop/CategoryGr
 import { BrandStrip, BrandStripSkeleton } from '@/components/shop/BrandStrip'
 import { Reveal } from '@/components/home/Reveal'
 import { CtaBand } from '@/components/home/CtaBand'
-import { getProducts, getEffects, getCategories, getBrands } from '@/lib/catalog.server'
+import { flattenCategories, getProducts, getEffects, getCategories, getBrands, getCollections, getCollectionProducts } from '@/lib/catalog.server'
 import { Product, Effect } from "@/types"
 import type { Metadata } from "next"
 
@@ -15,8 +15,9 @@ const getNewArrivals = () => getProducts({ ordering: '-created_at', page_size: 4
 const getBestSellers = () => getProducts({ ordering: '-units_sold_hint', page_size: 4 })
 
 export const metadata: Metadata = {
-    title: 'Shop the Menu | HappyCana',
+    title: 'Shop the Menu',
     description: 'Flower, edibles, vapes, and concentrates from small-batch growers, third-party tested and ready for same-day pickup or delivery.',
+    alternates: { canonical: '/shop' },
     openGraph: {
         title: 'Shop the Menu | HappyCana',
         description: 'Flower, edibles, vapes, and concentrates — every lot lab-tested twice.',
@@ -71,13 +72,82 @@ async function EffectsSection() {
 
 async function CategoryGridSection() {
     const categories = await getCategories()
-    if (categories.length === 0) return null
+    const keyCategories = flattenCategories(categories).filter(category => category.is_key)
+    if (keyCategories.length === 0) return null
 
     return (
         <Reveal>
             <SectionHeading eyebrow="Categories" title="Select a Category" />
-            <CategoryGrid categories={categories} />
+            <CategoryGrid categories={keyCategories} />
         </Reveal>
+    )
+}
+
+const EXISTING_FEATURE_SLUGS = new Set(['most-popular', 'best-sellers', 'new-release', 'new-releases'])
+
+async function CollectionsSections() {
+    const collections = (await getCollections()).filter(
+        collection => collection.product_count > 0 && !EXISTING_FEATURE_SLUGS.has(collection.slug),
+    )
+    if (collections.length === 0) return null
+
+    const showcases = await Promise.all(
+        collections.map(async category => ({
+            category,
+            products: await getCollectionProducts(category.slug, { page_size: 4 }, { revalidate: false }),
+        })),
+    )
+
+    return (
+        <>
+            <Reveal>
+                <SectionHeading eyebrow="Collections" title="Explore Our Collections" />
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+                    {collections.map(collection => (
+                        <Link
+                            key={collection.id}
+                            href={`/shop/collections/${collection.slug}`}
+                            className="group flex min-h-24 flex-col justify-between rounded-xl border border-hc-ink/10 bg-hc-paper-2 p-4 transition-colors hover:border-hc-amber/50"
+                        >
+                            <span className="font-hc-display text-lg font-medium text-hc-ink group-hover:text-hc-amber-dim">
+                                {collection.name}
+                            </span>
+                            <span className="mt-3 font-hc-mono text-[11px] uppercase tracking-wide text-hc-ink-soft">
+                                {collection.product_count
+                                    ? `${collection.product_count} product${collection.product_count === 1 ? '' : 's'}`
+                                    : 'Explore collection'}
+                            </span>
+                        </Link>
+                    ))}
+                </div>
+            </Reveal>
+
+            {showcases
+                .filter(showcase => showcase.products.results.length > 0)
+                .map(({ category, products }) => (
+                    <Reveal key={category.id}>
+                        <div className="flex items-end justify-between mb-7">
+                            <div>
+                                <div className="mb-2 inline-flex items-center gap-2 font-hc-mono text-xs uppercase tracking-[0.12em] text-hc-canopy-3 before:h-px before:w-3.5 before:bg-current before:opacity-50">
+                                    Collection
+                                </div>
+                                <h2 className="font-hc-display text-2xl font-medium text-hc-ink">{category.name}</h2>
+                            </div>
+                            <Link
+                                href={`/shop/collections/${category.slug}`}
+                                className="inline-flex items-center gap-1.5 font-hc-mono text-xs uppercase tracking-wide text-hc-amber-dim hover:text-hc-amber transition-colors"
+                            >
+                                See all <ArrowRight className="h-3.5 w-3.5" />
+                            </Link>
+                        </div>
+                        <div className="grid grid-cols-2 gap-x-5 gap-y-8 sm:grid-cols-4">
+                            {products.results.map((product, index) => (
+                                <ProductCard key={product.id} product={product} priority={index < 2} />
+                            ))}
+                        </div>
+                    </Reveal>
+                ))}
+        </>
     )
 }
 
@@ -89,6 +159,35 @@ async function BrandStripSection() {
         <Reveal>
             <SectionHeading eyebrow="Brands" title="Shop by Brand" />
             <BrandStrip brands={brands} />
+        </Reveal>
+    )
+}
+
+async function OnDiscountSection() {
+    const discounted = await getProducts(
+        { on_discount: true, ordering: '-created_at', page_size: 4 },
+        { revalidate: false },
+    )
+    if (discounted.results.length === 0) return null
+
+    return (
+        <Reveal>
+            <div className="flex items-end justify-between mb-7">
+                <div>
+                    <div className="mb-2 inline-flex items-center gap-2 font-hc-mono text-xs uppercase tracking-[0.12em] text-hc-canopy-3 before:h-px before:w-3.5 before:bg-current before:opacity-50">
+                        Limited-time savings
+                    </div>
+                    <h2 className="font-hc-display text-2xl font-medium text-hc-ink">On Discount</h2>
+                </div>
+                <Link href="/shop/products?on_discount=true" className="inline-flex items-center gap-1.5 font-hc-mono text-xs uppercase tracking-wide text-hc-amber-dim hover:text-hc-amber transition-colors">
+                    See all <ArrowRight className="h-3.5 w-3.5" />
+                </Link>
+            </div>
+            <div className="grid grid-cols-2 gap-x-5 gap-y-8 sm:grid-cols-4">
+                {discounted.results.map((product, index) => (
+                    <ProductCard key={product.id} product={product} priority={index < 2} />
+                ))}
+            </div>
         </Reveal>
     )
 }
@@ -202,6 +301,11 @@ export default function ShopPage() {
                     <BrandStripSection />
                 </Suspense>
 
+                {/* Active discounts */}
+                <Suspense fallback={<ProductGridSkeleton />}>
+                    <OnDiscountSection />
+                </Suspense>
+
                 {/* Bestsellers */}
                 <Suspense fallback={<ProductGridSkeleton />}>
                     <BestSellersSection />
@@ -210,6 +314,11 @@ export default function ShopPage() {
                 {/* New arrivals */}
                 <Suspense fallback={<ProductGridSkeleton />}>
                     <NewArrivalsSection />
+                </Suspense>
+
+                {/* Curated collections (non-key categories) */}
+                <Suspense fallback={<ProductGridSkeleton />}>
+                    <CollectionsSections />
                 </Suspense>
 
             </div>

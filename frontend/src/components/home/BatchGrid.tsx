@@ -8,7 +8,10 @@ import { toJarProduct } from '@/lib/jarProduct'
 // terpene, COA availability) traces back to an actual product/variant
 // record, and each card links straight to that product's page.
 export async function BatchGrid() {
-    const { results } = await getProducts({ ordering: '-created_at', page_size: 3 })
+    const { results } = await getProducts(
+        { ordering: '-created_at', page_size: 3, min_thc: 0.01 },
+        { revalidate: false },
+    )
     if (results.length === 0) return null
 
     const batch = results.map(toJarProduct)

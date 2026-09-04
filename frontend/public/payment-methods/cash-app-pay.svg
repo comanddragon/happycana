@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="180" height="64" viewBox="0 0 180 64" role="img" aria-labelledby="title">
+  <title id="title">Cash App Pay</title>
+  <rect width="180" height="64" rx="12" fill="#fff"/>
+  <rect x="16" y="13" width="38" height="38" rx="9" fill="#00D64F"/>
+  <text x="28" y="41" font-family="Arial,sans-serif" font-size="24" font-weight="700" fill="#fff">$</text>
+  <text x="65" y="39" font-family="Arial,sans-serif" font-size="19" font-weight="700" fill="#111">Cash App</text>
+</svg>

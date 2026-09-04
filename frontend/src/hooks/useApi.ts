@@ -29,6 +29,10 @@ export function useProducts(params?: ProductFilterParams) {
         queryKey: qk.products(params),
         queryFn:  () => catalogService.listProducts(params),
         staleTime: 60_000,
+        // Product grids are server-prefetched and hydrated. Refetching while
+        // React is attaching to that markup can change optional card rows and
+        // cause a fatal hydration mismatch.
+        refetchOnMount: false,
         placeholderData: keepPreviousData,
     })
 }
@@ -170,6 +174,14 @@ export function useShippingMethods() {
     return useQuery({
         queryKey: qk.shipping(),
         queryFn:  checkoutService.listShippingMethods,
+        staleTime: 300_000,
+    })
+}
+
+export function usePaymentMethods() {
+    return useQuery({
+        queryKey: qk.paymentMethods(),
+        queryFn: checkoutService.listPaymentMethods,
         staleTime: 300_000,
     })
 }

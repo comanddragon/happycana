@@ -15,6 +15,9 @@
 <p style="margin:0 0 24px;font-size:14px;line-height:20px;color:#141413;">
   <strong>Customer email:</strong> {{ order.user.email }}
 </p>
+<p style="margin:0 0 24px;font-size:14px;line-height:20px;color:#141413;">
+  <strong>Chosen payment method:</strong> {{ order.payment_method.name }}
+</p>
 
 <h3 style="margin:0 0 8px;font-family:Georgia,'Times New Roman',serif;font-size:16px;font-weight:400;color:#141413;">Shipping to</h3>
 <p style="margin:0 0 32px;font-size:14px;line-height:20px;color:#6E6C66;">
@@ -50,7 +53,7 @@
 </table>
 
 <p style="margin:0;font-size:14px;line-height:20px;color:#6E6C66;">
-  Payment hasn't been collected yet — reach out to the customer to arrange it.
+  Payment hasn't been collected yet — follow up using {{ order.payment_method.name }}.
 </p>
 
 <div class="btn" style="margin-top:24px;">

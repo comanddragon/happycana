@@ -155,6 +155,7 @@ class Product(TimestampedModel):
     slug             = models.SlugField(max_length=255, unique=True)
     description      = models.TextField(blank=True)
     base_price       = models.DecimalField(max_digits=12, decimal_places=2)
+    compare_at_price = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
     is_active        = models.BooleanField(default=True)
     meta_title       = models.CharField(max_length=60, blank=True)
     meta_description = models.CharField(max_length=160, blank=True)

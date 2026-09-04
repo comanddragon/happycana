@@ -2,6 +2,7 @@ from rest_framework import generics, filters, permissions
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from django.db.models import Count, Q, Prefetch
 from django_filters.rest_framework import DjangoFilterBackend
 from core.permissions import IsAdminOrReadOnly
 from core.cache import cache_category_tree_response, get_cached_category_tree_response
@@ -63,6 +64,35 @@ class CategoryDetailView(generics.RetrieveUpdateDestroyAPIView):
         serializer = self.get_serializer(instance)
         return Response(serializer.data)
 
+
+class CollectionQuerysetMixin:
+    """Collections are active, root-level categories not marked as key."""
+
+    def get_queryset(self):
+        return (
+            Category.objects.filter(is_active=True, is_key=False, parent__isnull=True)
+            .annotate(
+                product_count=Count(
+                    "products",
+                    filter=Q(products__is_active=True),
+                    distinct=True,
+                )
+            )
+            .order_by("name", "id")
+        )
+
+
+class CollectionListView(CollectionQuerysetMixin, generics.ListAPIView):
+    serializer_class = CollectionSerializer
+    permission_classes = [IsAdminOrReadOnly]
+    pagination_class = None
+
+
+class CollectionDetailView(CollectionQuerysetMixin, generics.RetrieveAPIView):
+    serializer_class = CollectionSerializer
+    permission_classes = [IsAdminOrReadOnly]
+    lookup_field = "slug"
+
 class ProductListView(generics.ListCreateAPIView):
     permission_classes = [IsAdminOrReadOnly]
     filter_backends    = [DjangoFilterBackend, filters.OrderingFilter]
@@ -80,11 +110,29 @@ class ProductListView(generics.ListCreateAPIView):
             Product.objects.active()
             .with_category().with_images()
             .select_related("brand")
-            .prefetch_related("effects", "variants__lab", "variants__stock_levels")
+            .prefetch_related(
+                "effects", "variants__lab", "variants__stock_levels",
+                Prefetch("discounts", queryset=ProductDiscount.objects.filter(is_active=True), to_attr="_prefetched_discounts"),
+            )
         )
 
     def get_serializer_class(self):
         return ProductWriteSerializer if self.request.method == "POST" else ProductListSerializer
+
+
+class CollectionProductListView(ProductListView):
+    """Filtered product listing scoped to one public collection."""
+
+    http_method_names = ["get", "head", "options"]
+
+    def get_queryset(self):
+        # Resolve through the collection queryset so key categories and
+        # inactive categories return 404 instead of masquerading as collections.
+        collection = generics.get_object_or_404(
+            Category.objects.filter(is_active=True, is_key=False, parent__isnull=True),
+            slug=self.kwargs["slug"],
+        )
+        return super().get_queryset().filter(categories=collection).distinct()
 
 
 class ProductDetailView(generics.RetrieveUpdateDestroyAPIView):
@@ -92,7 +140,9 @@ class ProductDetailView(generics.RetrieveUpdateDestroyAPIView):
     lookup_field = "slug"
 
     def get_queryset(self):
-        return Product.objects.full()
+        return Product.objects.full().prefetch_related(
+            Prefetch("discounts", queryset=ProductDiscount.objects.filter(is_active=True), to_attr="_prefetched_discounts")
+        )
 
     def get_serializer_class(self):
         return ProductWriteSerializer if self.request.method in ("PUT", "PATCH") else ProductSerializer
@@ -208,6 +258,7 @@ class BrandListView(generics.ListAPIView):
 class BrandDetailView(generics.RetrieveAPIView):
   queryset = Brand.objects.filter(is_active=True)
   serializer_class = BrandSerializer
+  permission_classes = [IsAdminOrReadOnly]
   lookup_field = "slug"
 
 

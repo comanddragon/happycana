@@ -16,7 +16,7 @@ interface ContactStepProps {
 export function ContactStep({ isGuest, knownEmail, email, onEmailChange, locked }: ContactStepProps) {
     return (
         <CheckoutSection
-            index={3}
+            index={4}
             title="Contact"
             icon={Mail}
             locked={locked}
@@ -45,7 +45,7 @@ export function ContactStep({ isGuest, knownEmail, email, onEmailChange, locked 
             )}
             <p className="mt-3.5 flex items-center gap-1.5 text-xs text-hc-ink-soft">
                 <ShieldCheck className="h-3.5 w-3.5 text-hc-sage-dim" />
-                No payment is collected here — we&apos;ll contact you shortly to confirm your order and arrange payment.
+                Your selected payment method will be included with your order confirmation.
             </p>
         </CheckoutSection>
     )

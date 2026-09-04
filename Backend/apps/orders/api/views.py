@@ -62,7 +62,7 @@ class OrderListView(generics.ListAPIView):
 
     def get_queryset(self):
         user = self.request.user
-        qs   = Order.objects.select_related("address", "coupon").prefetch_related("items__variant")
+        qs   = Order.objects.select_related("address", "coupon", "payment_method").prefetch_related("items__variant")
         return qs if user.is_staff else qs.filter(user=user)
 
 
@@ -71,7 +71,7 @@ class OrderDetailView(generics.RetrieveAPIView):
     permission_classes = [IsOwnerOrAdmin]
 
     def get_queryset(self):
-        return Order.objects.select_related("address", "coupon").prefetch_related("items__variant")
+        return Order.objects.select_related("address", "coupon", "payment_method").prefetch_related("items__variant")
 
 
 class OrderCreateView(APIView):
@@ -85,6 +85,7 @@ class OrderCreateView(APIView):
                 address_id         = s.validated_data["address_id"],
                 coupon_code        = s.validated_data.get("coupon_code"),
                 shipping_method_id = s.validated_data["shipping_method_id"],
+                payment_method_id  = s.validated_data["payment_method_id"],
             )
             return Response(OrderSerializer(order).data, status=status.HTTP_201_CREATED)
         except CheckoutError as e:

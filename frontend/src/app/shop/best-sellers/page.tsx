@@ -39,7 +39,7 @@ export default async function BestSellersPage({ searchParams }: PageProps) {
     await Promise.all([
         queryClient.prefetchQuery({
             queryKey: qk.products({ ...(category && { category }), ordering: ORDERING, page }),
-            queryFn:  () => getProducts({ ...(category && { category }), ordering: ORDERING, page }, { revalidate: 60 }),
+            queryFn:  () => getProducts({ ...(category && { category }), ordering: ORDERING, page }, { revalidate: false }),
         }),
         queryClient.prefetchQuery({ queryKey: qk.categories(), queryFn: getCategories }),
         queryClient.prefetchQuery({ queryKey: qk.brands(),     queryFn: getBrands }),

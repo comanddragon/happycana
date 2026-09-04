@@ -103,6 +103,7 @@ export function Navbar() {
                             search={search}
                             setSearch={setSearch}
                             onKeyDown={handleSearch}
+                            isAuthenticated={mounted && showAccountUI}
                         />
                     </div>
                 </div>

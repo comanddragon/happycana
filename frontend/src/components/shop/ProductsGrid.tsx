@@ -34,10 +34,12 @@ interface Props {
     initialOrdering?: string
     initialSearch?: string
     initialPage?: number
+    initialBrand?: string
     /** Route filter/sort/pagination changes push to. Lets landing pages like
      *  /shop/new-arrivals or /shop/best-sellers reuse this grid without
      *  navigating the user away to /shop/products on the first interaction. */
     basePath?: string
+    showCategoryFilter?: boolean
 }
 
 export function ProductsGrid({
@@ -45,7 +47,9 @@ export function ProductsGrid({
     initialOrdering = '-created_at',
     initialSearch = '',
     initialPage = 1,
+    initialBrand = '',
     basePath = '/shop/products',
+    showCategoryFilter = true,
 }: Props) {
     const router       = useRouter()
     const searchParams = useSearchParams()
@@ -53,11 +57,12 @@ export function ProductsGrid({
     const category    = searchParams.get('category') ?? initialCategory
     const ordering     = searchParams.get('ordering') ?? initialOrdering
     const search        = searchParams.get('search')   ?? initialSearch
-    const brand          = searchParams.get('brand') ?? ''
+    const brand          = searchParams.get('brand') ?? initialBrand
     const cannabisType    = searchParams.get('cannabis_type') ?? ''
     const effect            = searchParams.get('effect') ?? ''
     const minThc              = searchParams.get('min_thc') ?? ''
     const inStock               = searchParams.get('in_stock') === 'true'
+    const onDiscount            = searchParams.get('on_discount') === 'true'
     const page                    = Number(searchParams.get('page') ?? initialPage)
 
     const [searchDraft, setSearchDraft] = useState(search)
@@ -70,6 +75,7 @@ export function ProductsGrid({
         ...(effect && { effect }),
         ...(minThc && { min_thc: Number(minThc) }),
         ...(inStock && { in_stock: true }),
+        ...(onDiscount && { on_discount: true }),
         ordering,
         ...(search && { search }),
         page,
@@ -112,7 +118,7 @@ export function ProductsGrid({
         setParams({ brand: '', cannabis_type: '', effect: '', min_thc: '', in_stock: '' })
     }
 
-    const hasFilters = Boolean(category || search || brand || cannabisType || effect || minThc || inStock)
+    const hasFilters = Boolean(category || search || brand || cannabisType || effect || minThc || inStock || onDiscount)
     const advancedFilterCount = [brand, cannabisType, effect, minThc, inStock ? '1' : ''].filter(Boolean).length
 
     const selectedThcPreset = useMemo(
@@ -136,20 +142,22 @@ export function ProductsGrid({
                         />
                     </div>
 
-                    <Select
-                        value={category || ALL_CATEGORIES}
-                        onValueChange={val => setParam('category', val === ALL_CATEGORIES ? '' : val)}
-                    >
-                        <SelectTrigger className="w-auto min-w-[9rem]">
-                            <SelectValue placeholder="All Categories" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value={ALL_CATEGORIES}>All Categories</SelectItem>
-                            {categories?.map(cat => (
-                                <SelectItem key={cat.id} value={cat.slug}>{cat.name}</SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
+                    {showCategoryFilter && (
+                        <Select
+                            value={category || ALL_CATEGORIES}
+                            onValueChange={val => setParam('category', val === ALL_CATEGORIES ? '' : val)}
+                        >
+                            <SelectTrigger className="w-auto min-w-[9rem]">
+                                <SelectValue placeholder="All Categories" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value={ALL_CATEGORIES}>All Categories</SelectItem>
+                                {categories?.filter(cat => cat.is_key).map(cat => (
+                                    <SelectItem key={cat.id} value={cat.slug}>{cat.name}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    )}
 
                     <Button
                         variant="outline"

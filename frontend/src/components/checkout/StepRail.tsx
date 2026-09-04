@@ -6,13 +6,15 @@ interface StepRailProps {
     addressDone: boolean
     shippingDone: boolean
     paymentDone: boolean
+    contactDone: boolean
 }
 
-export function StepRail({ addressDone, shippingDone, paymentDone }: StepRailProps) {
+export function StepRail({ addressDone, shippingDone, paymentDone, contactDone }: StepRailProps) {
     const steps = [
         { label: 'Address',  done: addressDone },
         { label: 'Shipping', done: shippingDone },
-        { label: 'Contact',  done: paymentDone },
+        { label: 'Payment',  done: paymentDone },
+        { label: 'Contact',  done: contactDone },
         { label: 'Review',   done: false },
     ]
     return (

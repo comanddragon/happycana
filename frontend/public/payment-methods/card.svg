@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="180" height="64" viewBox="0 0 180 64" role="img" aria-labelledby="title">
+  <title id="title">Credit or debit card</title>
+  <rect width="180" height="64" rx="12" fill="#fff"/>
+  <rect x="14" y="17" width="46" height="30" rx="5" fill="#172319"/>
+  <path d="M14 25h46v7H14z" fill="#EAB767"/>
+  <text x="70" y="38" font-family="Arial,sans-serif" font-size="17" font-weight="700" fill="#172319">CARD</text>
+</svg>

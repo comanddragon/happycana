@@ -3,6 +3,7 @@
 # =============================================================================
 import django_filters
 from django.db.models import Q
+from django.utils import timezone
 from apps.catalog.models import Product, ProductVariant, Category
 
 
@@ -90,6 +91,7 @@ class ProductFilter(django_filters.FilterSet):
     effect = django_filters.CharFilter(
         method="filter_effect", label="Products with this effect, e.g. ?effect=relaxed",
     )
+    on_discount = django_filters.BooleanFilter(method="filter_on_discount")
     min_thc = django_filters.NumberFilter(
         field_name="variants__lab__thc_percent", lookup_expr="gte",
     )
@@ -105,7 +107,7 @@ class ProductFilter(django_filters.FilterSet):
             "in_stock", "is_active",
             "search", "min_thc", "max_thc",
             "has_variant_attribute", "attribute_value",
-            "brand", "compliance_category", "cannabis_type",
+            "brand", "compliance_category", "cannabis_type", "on_discount",
 
         ]
 
@@ -115,6 +117,15 @@ class ProductFilter(django_filters.FilterSet):
 
     def filter_effect(self, queryset, name, value):
         return queryset.filter(effects__slug__iexact=value).distinct()
+
+    def filter_on_discount(self, queryset, name, value):
+        if not value:
+            return queryset
+        now = timezone.now()
+        return queryset.filter(discounts__is_active=True).filter(
+            Q(discounts__starts_at__isnull=True) | Q(discounts__starts_at__lte=now),
+            Q(discounts__ends_at__isnull=True) | Q(discounts__ends_at__gte=now),
+        ).distinct()
 
     def filter_in_stock(self, queryset, name, value):
         if value is True:

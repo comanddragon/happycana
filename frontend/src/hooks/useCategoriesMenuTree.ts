@@ -8,7 +8,7 @@ import type { Category } from '@/types'
 function categoryToNode(category: Category): MenuNode {
     return {
         label: category.name,
-        href: `/shop/products?category=${category.slug}`,
+        href: category.is_key ? `/shop/categories/${category.slug}` : `/shop/collections/${category.slug}`,
         children: category.children?.length
             ? category.children.map(categoryToNode)
             : undefined,
@@ -38,7 +38,7 @@ export function useCategoriesMenuTree() {
             label: 'Brands',
             children: brands.map(b => ({
                 label: b.name,
-                href: `/shop/products?brand=${b.slug}`,
+                href: `/shop/brands/${b.slug}`,
             })),
         }
         : null

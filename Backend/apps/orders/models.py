@@ -50,6 +50,7 @@ class Order(models.Model):
     user            = models.ForeignKey(User, on_delete=models.PROTECT, related_name="orders")
     address         = models.ForeignKey(Address, on_delete=models.PROTECT)
     shipping_method = models.ForeignKey("shipping.ShippingMethod", on_delete=models.PROTECT, null=True, blank=True)
+    payment_method  = models.ForeignKey("payments.PaymentMethod", on_delete=models.PROTECT, related_name="orders")
     coupon          = models.ForeignKey(Coupon, null=True, blank=True, on_delete=models.SET_NULL)
     status          = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
     subtotal        = models.DecimalField(max_digits=12, decimal_places=2)

@@ -5,7 +5,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { ShoppingBag, Plus } from 'lucide-react'
-import { cn, formatPrice, mediaUrl, formatWeight, formatThc, CANNABIS_TYPE_LABEL } from '@/lib/utils'
+import { cn, formatPrice, mediaUrl, formatWeight, formatThc, CANNABIS_TYPE_LABEL, COMPLIANCE_CATEGORY_LABEL } from '@/lib/utils'
 import { useAddToCart } from '@/hooks/useApi'
 import type { Product } from '@/types'
 
@@ -25,6 +25,19 @@ export const ProductCard = memo(function ProductCard({ product, className, prior
     )
 
     const displayPrice = firstVariant ? formatPrice(firstVariant.price) : formatPrice(product.base_price)
+    const regularPrice = Number(firstVariant?.price ?? product.base_price)
+    const discount = product.active_discount
+    const importedOriginalPrice = Number(product.compare_at_price ?? 0)
+    const discountedPrice = discount
+        ? Math.max(0, discount.discount_type === 'percent'
+            ? regularPrice * (1 - Number(discount.value) / 100)
+            : regularPrice - Number(discount.value))
+        : null
+    const discountLabel = discount
+        ? discount.discount_type === 'percent'
+            ? `${Number(discount.value).toLocaleString()}% OFF`
+            : `${formatPrice(discount.value)} OFF`
+        : null
     const hasMultiplePrices = product.variants?.length > 1 &&
         product.variants.some(v => v.price !== product.variants[0].price)
 
@@ -32,12 +45,16 @@ export const ProductCard = memo(function ProductCard({ product, className, prior
     // brand/classification/lab/weight fields rather than the old generic
     // EAV attributes (which are empty for the seeded catalog now that
     // those values live in their own columns; see MISSING_FIELDS.md).
-    const strainLabel = product.cannabis_type ? CANNABIS_TYPE_LABEL[product.cannabis_type] : null
+    const typeLabel = product.cannabis_type
+        ? CANNABIS_TYPE_LABEL[product.cannabis_type]
+        : product.compliance_category
+            ? COMPLIANCE_CATEGORY_LABEL[product.compliance_category]
+            : product.sub_type || null
     const thcLabel     = formatThc(firstVariant?.lab?.thc_percent)
     const weightLabel  = formatWeight(firstVariant?.weight_value, firstVariant?.weight_unit)
     const stats = [
         thcLabel && { label: 'THC', value: thcLabel.replace('% THC', '%') },
-        strainLabel && { label: 'TYPE', value: strainLabel },
+        typeLabel && { label: 'TYPE', value: typeLabel },
         weightLabel && { label: 'SIZE', value: weightLabel },
     ].filter((s): s is { label: string; value: string } => Boolean(s)).slice(0, 3)
 
@@ -48,8 +65,11 @@ export const ProductCard = memo(function ProductCard({ product, className, prior
                 className,
             )}
         >
-            {/* lid tab — the recurring "jar label" signature */}
-            <span className="absolute -top-[9px] left-1/2 h-[18px] w-12 -translate-x-1/2 rounded-full bg-gradient-to-b from-hc-amber-light to-hc-amber" />
+            {discountLabel && (
+                <span className="absolute -top-3 left-1/2 z-20 -translate-x-1/2 whitespace-nowrap rounded-full bg-gradient-to-b from-hc-amber-light to-hc-amber px-3 py-1 font-hc-mono text-[10px] font-bold tracking-wide text-hc-canopy-2 shadow-sm">
+                    {discountLabel}
+                </span>
+            )}
 
             <Link href={`/shop/products/${product.slug}`} className="block">
                 <div className="relative aspect-square overflow-hidden rounded-2xl bg-white">
@@ -76,7 +96,9 @@ export const ProductCard = memo(function ProductCard({ product, className, prior
                             onClick={(e) => {
                                 e.preventDefault();
                                 e.stopPropagation();
-                                router.push(`/shop/products?category=${category.slug}`);
+                                router.push(category.is_key
+                                    ? `/shop/categories/${category.slug}`
+                                    : `/shop/collections/${category.slug}`);
                             }}
                             className="absolute left-2.5 top-2.5 flex min-h-6 items-center rounded-full z-10 bg-hc-canopy/90 px-2.5 py-1.5 font-hc-mono text-[10px] tracking-wide text-hc-sage backdrop-blur-sm"
                         >
@@ -112,9 +134,14 @@ export const ProductCard = memo(function ProductCard({ product, className, prior
                 <div className="my-3.5 h-px bg-hc-ink/10" />
 
                 <div className="flex items-center justify-between">
-                    <p className="font-hc-mono text-sm font-medium text-hc-amber-dim">
+                    <p className="flex flex-wrap items-baseline gap-1.5 font-hc-mono text-sm font-medium text-hc-amber-dim">
                         {hasMultiplePrices && <span className="text-hc-ink-soft font-normal mr-1">from</span>}
-                        {displayPrice}
+                        {importedOriginalPrice > regularPrice ? displayPrice : discountedPrice !== null ? formatPrice(discountedPrice) : displayPrice}
+                        {(importedOriginalPrice > regularPrice || discountedPrice !== null) && (
+                            <span className="text-xs font-normal text-hc-ink-soft line-through">
+                                {formatPrice(importedOriginalPrice > regularPrice ? importedOriginalPrice : regularPrice)}
+                            </span>
+                        )}
                     </p>
                     {product.variants?.length > 1 && (
                         <span className="font-hc-mono text-[10.5px] tracking-wide text-hc-ink-soft">{product.variants.length} OPTIONS</span>

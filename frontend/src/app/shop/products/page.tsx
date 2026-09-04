@@ -16,6 +16,7 @@ interface SearchParams {
     effect?: string
     min_thc?: string
     in_stock?: string
+    on_discount?: string
 }
 
 interface PageProps {
@@ -31,6 +32,7 @@ function buildFilters(params: SearchParams): ProductFilterParams {
     const effect       = params.effect ?? ''
     const minThc       = params.min_thc ?? ''
     const inStock      = params.in_stock === 'true'
+    const onDiscount   = params.on_discount === 'true'
     const page         = Number(params.page ?? '1')
 
     return {
@@ -40,6 +42,7 @@ function buildFilters(params: SearchParams): ProductFilterParams {
         ...(effect && { effect }),
         ...(minThc && { min_thc: Number(minThc) }),
         ...(inStock && { in_stock: true }),
+        ...(onDiscount && { on_discount: true }),
         ordering,
         ...(search && { search }),
         page,
@@ -62,6 +65,7 @@ function humanize(slug: string): string {
 export async function generateMetadata({ searchParams }: PageProps): Promise<Metadata> {
     const params       = await searchParams
     const categorySlug = params.category ?? ''
+    const brandSlug = params.brand ?? ''
 
     let categoryName = ''
     if (categorySlug) {
@@ -76,8 +80,10 @@ export async function generateMetadata({ searchParams }: PageProps): Promise<Met
     // consolidate onto one URL per category instead of splitting across
     // every filter/sort combination.
     const canonical = categorySlug
-        ? `/shop/products?category=${encodeURIComponent(categorySlug)}`
-        : '/shop/products'
+        ? `/shop/categories/${encodeURIComponent(categorySlug)}`
+        : brandSlug
+            ? `/shop/brands/${encodeURIComponent(brandSlug)}`
+            : '/shop/products'
 
     return {
         title:       categoryName ? `${categoryName} Products` : 'All Products',
@@ -95,7 +101,10 @@ export default async function ProductsPage({ searchParams }: PageProps) {
     const [, categories] = await Promise.all([
         queryClient.prefetchQuery({
             queryKey: qk.products(filters),
-            queryFn:  () => getProducts(filters, { revalidate: 60 }),
+            // The hydrated client query talks to the live API. Keep the SSR
+            // snapshot live too, otherwise a cached response can differ during
+            // hydration and React has to discard the product-card tree.
+            queryFn:  () => getProducts(filters, { revalidate: false }),
         }),
         queryClient.fetchQuery({ queryKey: qk.categories(), queryFn: getCategories }),
         queryClient.prefetchQuery({ queryKey: qk.brands(),  queryFn: getBrands }),

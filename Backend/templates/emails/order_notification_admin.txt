@@ -6,6 +6,7 @@ New order placed
 Order #{{ order.id }}, placed {{ order.created_at|date:"M j, Y" }}.
 
 Customer email: {{ order.user.email }}
+Chosen payment method: {{ order.payment_method.name }}
 
 Shipping to:
 {{ order.address.line1 }}{% if order.address.line2 %}, {{ order.address.line2 }}{% endif %}
@@ -20,7 +21,7 @@ Subtotal: ${{ order.subtotal }}
 {% endif %}Shipping: ${{ order.shipping_cost }}
 Total: ${{ order.total }}
 
-Payment hasn't been collected yet — reach out to the customer to arrange it.
+Payment hasn't been collected yet — follow up using {{ order.payment_method.name }}.
 
 View order: {{ store_url }}/admin/orders/{{ order.id }}
 {% endblock %}

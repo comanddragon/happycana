@@ -3,27 +3,36 @@ import Image from 'next/image'
 import { mediaUrl } from '@/lib/utils'
 import type { Category } from '@/types'
 
+// Category uploads are optional. Use real catalogue photography from the
+// existing Imgix CDN as a storefront fallback instead of showing an empty
+// gradient when a category has no image in the CMS yet.
+const CATEGORY_CDN_IMAGES: Record<string, string> = {
+    accessories: 'https://imgix.dispenseapp.com/145c714690909516_1743981167275-681704378-86768548.png',
+    beverages: 'https://imgix.dispenseapp.com/145c714690909516_1778180667077-195172706-shhfshgsg.webp',
+    'cbd-products': 'https://imgix.dispenseapp.com/145c714690909516_1768928274214-858001206-Vape_Specs.png',
+    concentrates: 'https://imgix.dispenseapp.com/145c714690909516_1777388397629-785352325-4352345.jpg',
+    edibles: 'https://imgix.dispenseapp.com/145c714690909516_1779201340005-919424689-35345345.avif',
+    flower: 'https://imgix.dispenseapp.com/145c714690909516_1781719195742-35570527-54325234.png',
+    'gift-cards': 'https://imgix.dispenseapp.com/145c714690909516_1765203152550-533809155-IMG_4037.jpg',
+}
+
 function CategoryTile({ cat }: { cat: Category }) {
+    const imageUrl = mediaUrl(cat.image_url || CATEGORY_CDN_IMAGES[cat.slug])
+
     return (
         <Link
-            href={`/shop/products?category=${cat.slug}`}
+            href={`/shop/categories/${cat.slug}`}
             className="group relative flex aspect-square flex-col items-center justify-end overflow-hidden rounded-2xl bg-white px-4 py-5 text-center transition-all duration-200 hover:-translate-y-1 hover:border-hc-amber hover:shadow-[0_16px_30px_-14px_rgba(23,20,15,0.25)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-hc-amber focus-visible:ring-offset-2"
         >
-            {cat.image_url && (
-                // <Image
-                //     src={mediaUrl(cat.image_url)!}
-                //     alt=""
-                //     fill
-                //     quality={65}
-                //     sizes="(max-width: 640px) 50vw, (max-width: 1024px) 25vw, 200px"
-                //     className="object-cover transition-transform duration-300 group-hover:scale-105"
-                // />
-                <img
-                    src={mediaUrl(cat.image_url)!}
+            {imageUrl && (
+                <Image
+                    src={imageUrl}
                     alt={cat.name}
-                    className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                    fill
+                    quality={65}
+                    sizes="(max-width: 640px) 50vw, (max-width: 1024px) 25vw, 200px"
+                    className="object-cover transition-transform duration-300 group-hover:scale-105"
                 />
-
             )}
             <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent" />
             <div className="relative">

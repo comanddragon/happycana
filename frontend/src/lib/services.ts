@@ -6,7 +6,7 @@ import type { ChatRoom, ChatMessage } from '@/types'
 import type {
     User, Address, LoginResponse, RegisterResponse,
     Category, Product, ProductVariant, PaginatedResponse,
-    Cart, CartItem, Order, Payment, ShippingMethod, Shipment,
+    Cart, CartItem, Order, Payment, PaymentMethod, ShippingMethod, Shipment,
     CouponValidationResult, Notification, CheckoutPayload, CheckoutResult,
     Brand, Effect, ProductFilterParams,
 } from '@/types'
@@ -200,6 +200,11 @@ export const checkoutService = {
     async listShippingMethods(): Promise<ShippingMethod[]> {
         const { data } = await api.get('/shipping/methods/')
         return unwrapList<ShippingMethod>(data)
+    },
+
+    async listPaymentMethods(): Promise<PaymentMethod[]> {
+        const { data } = await api.get('/payments/methods/')
+        return unwrapList<PaymentMethod>(data)
     },
 }
 

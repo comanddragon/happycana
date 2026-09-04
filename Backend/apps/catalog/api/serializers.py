@@ -3,7 +3,9 @@ from apps.catalog.models import (
     Category, Product, ProductVariant, Brand, Effect, Lab,
     Attribute, AttributeType,
     ProductImage, ProductVideo, VariantImage, VariantVideo,
+    ProductDiscount,
 )
+from django.utils import timezone
 
 class CategorySerializer(serializers.ModelSerializer):
     children  = serializers.SerializerMethodField()
@@ -42,7 +44,28 @@ class CategorySerializer(serializers.ModelSerializer):
 class CategoryMinimalSerializer(serializers.ModelSerializer):
     class Meta:
         model  = Category
-        fields = ["id", "name", "slug"]
+        fields = ["id", "name", "slug", "is_key"]
+
+
+class CollectionSerializer(serializers.ModelSerializer):
+    """Public representation of a non-key storefront category."""
+
+    image_url = serializers.SerializerMethodField()
+    product_count = serializers.IntegerField(read_only=True)
+
+    class Meta:
+        model = Category
+        fields = [
+            "id", "name", "slug", "description", "image_url",
+            "product_count", "meta_title", "meta_description",
+        ]
+        read_only_fields = fields
+
+    def get_image_url(self, obj):
+        request = self.context.get("request")
+        if not obj.image:
+            return None
+        return request.build_absolute_uri(obj.image.url) if request else obj.image.url
 
 
 class AttributeSerializer(serializers.ModelSerializer):
@@ -217,7 +240,7 @@ class ProductVariantWriteSerializer(serializers.ModelSerializer):
 class LabSummarySerializer(serializers.ModelSerializer):
     class Meta:
         model  = Lab
-        fields = ["potency", "thc_percent"]
+        fields = ["potency", "thc_percent", "terpenes", "coa_url"]
 
 
 class ProductVariantSummarySerializer(serializers.ModelSerializer):
@@ -228,12 +251,34 @@ class ProductVariantSummarySerializer(serializers.ModelSerializer):
 
     class Meta:
         model  = ProductVariant
-        fields = ["id", "price", "weight_value", "weight_unit", "lab", "in_stock"]
+        fields = ["id", "sku", "price", "weight_value", "weight_unit", "lab", "in_stock"]
         read_only_fields = ["id"]
 
     def get_in_stock(self, obj):
         # See ProductVariantSerializer.get_in_stock — same prefetch dependency.
         return any((sl.quantity - sl.reserved) > 0 for sl in obj.stock_levels.all())
+
+
+class ProductDiscountSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProductDiscount
+        fields = ["discount_type", "value"]
+
+
+def current_discount(product):
+    now = timezone.now()
+    weekday = (now.weekday() + 1) % 7  # Model convention: Sunday=0.
+    discounts = getattr(product, "_prefetched_discounts", None)
+    if discounts is None:
+        discounts = product.discounts.all()
+    valid = [
+        discount for discount in discounts
+        if discount.is_active
+        and (discount.starts_at is None or discount.starts_at <= now)
+        and (discount.ends_at is None or discount.ends_at >= now)
+        and (not discount.days_of_week or weekday in discount.days_of_week)
+    ]
+    return max(valid, key=lambda item: item.value) if valid else None
 
 
 class ProductListSerializer(serializers.ModelSerializer):
@@ -244,17 +289,22 @@ class ProductListSerializer(serializers.ModelSerializer):
     primary_image = ProductImageSerializer(read_only=True)
     effects       = EffectSerializer(many=True, read_only=True)
     variants      = ProductVariantSummarySerializer(many=True, read_only=True)
+    active_discount = serializers.SerializerMethodField()
+
+    def get_active_discount(self, obj):
+        discount = current_discount(obj)
+        return ProductDiscountSerializer(discount).data if discount else None
 
     class Meta:
         model  = Product
         fields = [
             "id", "category", "name", "slug",
-            "base_price", "is_active", "created_at",
+            "base_price", "compare_at_price", "is_active", "created_at", "updated_at",
             "primary_image", "brand", "compliance_category",
             "cannabis_type", "sub_type", "is_featured", "is_new",
-            "effects", "variants",
+            "effects", "variants", "active_discount",
         ]
-        read_only_fields = ["id", "slug", "created_at"]
+        read_only_fields = ["id", "slug", "created_at", "updated_at"]
 
 
 class ProductSerializer(serializers.ModelSerializer):
@@ -266,17 +316,22 @@ class ProductSerializer(serializers.ModelSerializer):
     primary_video = ProductVideoSerializer(read_only=True)
     brand = BrandMinimalSerializer(read_only=True)
     effects = EffectSerializer(many=True, read_only=True)
+    active_discount = serializers.SerializerMethodField()
+
+    def get_active_discount(self, obj):
+        discount = current_discount(obj)
+        return ProductDiscountSerializer(discount).data if discount else None
 
     class Meta:
         model  = Product
         fields = [
             "id", "category", "name", "slug", "description",
             "meta_title", "meta_description",
-            "base_price", "is_active", "created_at",
+            "base_price", "compare_at_price", "is_active", "created_at",
             "primary_image", "primary_video",
             "images", "videos", "variants",
             "brand", "compliance_category", "cannabis_type", "sub_type",
-            "is_featured", "is_new", "effects"
+            "is_featured", "is_new", "effects", "active_discount"
         ]
         read_only_fields = ["id", "slug", "created_at"]
 
@@ -312,4 +367,3 @@ class LabResultSerializer(serializers.ModelSerializer):
         model  = ProductVariant
         fields = ["id", "sku", "weight_value", "weight_unit", "product", "lab"]
         read_only_fields = ["id"]
-

@@ -6,6 +6,7 @@ import { NAV_LINKS } from './constants'
 import { Logo } from '../Logo'
 import { useCategoriesMenuTree } from '@/hooks/useCategoriesMenuTree'
 import { NavMobileTreeItem } from '@/components/layout/navbar/NavMobileTreeItem'
+import { AMBER_BUTTON, AMBER_BUTTON_STYLE } from './constants'
 
 interface NavbarMobileMenuProps {
     open: boolean
@@ -13,6 +14,7 @@ interface NavbarMobileMenuProps {
     search: string
     setSearch: (value: string) => void
     onKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void
+    isAuthenticated: boolean
 }
 
 export function NavbarMobileMenu({
@@ -21,6 +23,7 @@ export function NavbarMobileMenu({
                                      search,
                                      setSearch,
                                      onKeyDown,
+                                     isAuthenticated,
                                  }: NavbarMobileMenuProps) {
     const { rootNodes } = useCategoriesMenuTree()
 
@@ -45,7 +48,7 @@ export function NavbarMobileMenu({
                 </SheetDescription>
 
                 <div className="flex items-center gap-2.5 p-4 border-b border-hc-paper/10">
-                    <Logo height={20} />
+                    <Logo height={36} priority />
                 </div>
 
                 <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-1">
@@ -80,6 +83,19 @@ export function NavbarMobileMenu({
                         )
                     })}
                 </div>
+
+                {!isAuthenticated && (
+                    <div className="mt-auto border-t border-hc-paper/10 p-4">
+                        <Link
+                            href="/login"
+                            onClick={() => setOpen(false)}
+                            className={`${AMBER_BUTTON} w-full`}
+                            style={AMBER_BUTTON_STYLE}
+                        >
+                            Sign in
+                        </Link>
+                    </div>
+                )}
             </SheetContent>
         </Sheet>
     )

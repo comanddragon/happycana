@@ -7,9 +7,16 @@ from django.conf import settings
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from apps.payments.models import Payment, Refund
+from apps.payments.models import Payment, PaymentMethod, Refund
 from apps.payments.gateways import GatewayFactory
-from .serializers import PaymentSerializer, RefundSerializer, WebhookSerializer
+from .serializers import PaymentMethodSerializer, PaymentSerializer, RefundSerializer, WebhookSerializer
+
+
+class PaymentMethodListView(generics.ListAPIView):
+    queryset = PaymentMethod.objects.filter(is_active=True)
+    serializer_class = PaymentMethodSerializer
+    permission_classes = [permissions.AllowAny]
+    pagination_class = None
 
 
 class PaymentListView(generics.ListAPIView):
@@ -124,4 +131,3 @@ class CapturePayPalPaymentView(APIView):
             return Response(PaymentSerializer(payment).data, status=status.HTTP_200_OK)
 
         return Response({"detail": "Payment capture failed."}, status=status.HTTP_402_PAYMENT_REQUIRED)
-

@@ -8,7 +8,6 @@ const LINKS = [
     { label: 'Flower', href: '#batch' },
     { label: 'Edibles', href: '#batch' },
     { label: 'Vapes', href: '#batch' },
-    { label: 'Shop by effect', href: '#effects' },
     { label: 'Lab results', href: '#lab' },
 ]
 

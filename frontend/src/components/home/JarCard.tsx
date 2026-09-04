@@ -10,6 +10,9 @@ export interface JarProduct {
     thc: string | null
     terpene: string | null
     effect: string | null
+    brand: string | null
+    category: string | null
+    weight: string | null
     sku: string
     coaUrl: string | null
     price?: string
@@ -35,7 +38,10 @@ export const JarCard = memo(function JarCard({ product, className, interactive =
             <span className="absolute -top-[11px] left-1/2 h-[22px] w-14 -translate-x-1/2 rounded-full bg-gradient-to-b from-hc-amber-light to-hc-amber" />
 
             <div className="mt-1.5 flex items-start justify-between gap-3">
-                <span className="font-hc-display text-xl font-medium">{product.name}</span>
+                <div className="min-w-0">
+                    {product.brand && <p className="mb-1 font-hc-mono text-[10px] uppercase tracking-[0.1em] text-hc-amber-dim">{product.brand}</p>}
+                    <span className="font-hc-display text-xl font-medium leading-tight">{product.name}</span>
+                </div>
                 {product.kind && (
                     <span className="shrink-0 rounded-full bg-hc-canopy px-2.5 py-1 font-hc-mono text-[10.5px] tracking-wide text-hc-sage">
                         {product.kind}
@@ -43,30 +49,24 @@ export const JarCard = memo(function JarCard({ product, className, interactive =
                 )}
             </div>
 
-            <div className="mt-3.5 flex gap-4 font-hc-mono text-xs text-hc-ink-soft">
-                <div><b className="block text-[15px] text-hc-ink">{product.thc ?? '—'}</b>THC</div>
-                <div><b className="block text-[15px] text-hc-ink">{product.terpene ?? '—'}</b>TERPENE</div>
-                <div><b className="block text-[15px] text-hc-ink">{product.effect ?? '—'}</b>EFFECT</div>
+            <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 font-hc-mono text-[10px] uppercase tracking-wide text-hc-ink-soft">
+                {product.category && <div><b className="block truncate text-sm normal-case tracking-normal text-hc-ink">{product.category}</b>Category</div>}
+                {product.weight && <div><b className="block text-sm normal-case tracking-normal text-hc-ink">{product.weight}</b>Size</div>}
+                {product.thc && <div><b className="block text-sm normal-case tracking-normal text-hc-ink">{product.thc}</b>Potency</div>}
+                {product.effect && <div><b className="block truncate text-sm normal-case tracking-normal text-hc-ink">{product.effect}</b>Effect</div>}
+                {product.terpene && <div><b className="block truncate text-sm normal-case tracking-normal text-hc-ink">{product.terpene}</b>Top terpene</div>}
             </div>
 
             <div className="my-4 h-px bg-hc-ink/10" />
-            <p className="font-hc-mono text-[10.5px] tracking-wide text-hc-ink-soft">
-                SKU {product.sku}
-            </p>
-
-            {product.coaUrl && (
-                <p className="mt-2 flex items-center gap-1.5 font-hc-mono text-[10.5px] tracking-wide text-hc-amber-dim">
+            <div className="flex items-center justify-between gap-3">
+                {product.price && <p className="font-hc-mono text-sm font-semibold text-hc-amber-dim">{product.price}</p>}
+                {product.coaUrl && (
+                <p className="flex items-center gap-1.5 font-hc-mono text-[10.5px] tracking-wide text-hc-amber-dim">
                     <FileText className="h-3 w-3" />
-                    Certificate of analysis available
+                    Lab report
                 </p>
-            )}
-
-            {product.price && (
-                <>
-                    <div className="my-4 h-px bg-hc-ink/10" />
-                    <p className="font-hc-mono text-sm font-medium text-hc-amber-dim">{product.price}</p>
-                </>
-            )}
+                )}
+            </div>
         </Link>
     )
 })

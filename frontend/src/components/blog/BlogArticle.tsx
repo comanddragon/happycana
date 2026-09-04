@@ -15,7 +15,7 @@ interface Props {
 export function BlogArticle({ post }: Props) {
     const jsonLd = {
         '@context': 'https://schema.org',
-        '@type': 'Article',
+        '@type': 'BlogPosting',
         headline: post.title,
         description: post.description,
         datePublished: post.published_at,
@@ -31,6 +31,16 @@ export function BlogArticle({ post }: Props) {
             }),
         },
         ...(post.author ? { author: { '@type': 'Person', name: post.author } } : {}),
+        mainEntityOfPage: `${process.env.NEXT_PUBLIC_FRONTEND_URL ?? ''}/blog/${post.slug}`,
+    }
+    const breadcrumbLd = {
+        '@context': 'https://schema.org',
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+            { '@type': 'ListItem', position: 1, name: 'Home', item: process.env.NEXT_PUBLIC_FRONTEND_URL },
+            { '@type': 'ListItem', position: 2, name: 'Blog', item: `${process.env.NEXT_PUBLIC_FRONTEND_URL}/blog` },
+            { '@type': 'ListItem', position: 3, name: post.title, item: `${process.env.NEXT_PUBLIC_FRONTEND_URL}/blog/${post.slug}` },
+        ],
     }
 
     return (
@@ -39,6 +49,7 @@ export function BlogArticle({ post }: Props) {
                 type="application/ld+json"
                 dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
             />
+            <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }} />
 
             <Link href="/blog" className="font-hc-mono text-xs tracking-wide text-hc-ink-soft hover:text-hc-amber-dim">
                 &larr; BLOG

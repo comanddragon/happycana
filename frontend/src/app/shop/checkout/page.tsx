@@ -6,7 +6,7 @@ import { ArrowLeft } from 'lucide-react'
 import { toast } from 'sonner'
 import {
     useCart, useAddresses, useShippingMethods,
-    useValidateCoupon, useCheckout, useCreateAddress,
+    useValidateCoupon, useCheckout, useCreateAddress, usePaymentMethods,
 } from '@/hooks/useApi'
 import { useAuthStore } from '@/store/auth'
 import { ensureGuestSession } from '@/lib/guestSession'
@@ -16,6 +16,7 @@ import { StepRail } from '@/components/checkout/StepRail'
 import { AddressStep } from '@/components/checkout/AddressStep'
 import { ShippingStep } from '@/components/checkout/ShippingStep'
 import { ContactStep } from '@/components/checkout/ContactStep'
+import { PaymentMethodStep } from '@/components/checkout/PaymentMethodStep'
 import { ThankYouOverlay } from '@/components/checkout/ThankYouOverlay'
 import { OrderSummary } from '@/components/checkout/OrderSummary'
 import { EmptyCartState } from '@/components/checkout/EmptyCartState'
@@ -34,12 +35,14 @@ export default function CheckoutPage() {
     const { data: cart }       = useCart()
     const { data: addresses }  = useAddresses()
     const { data: methods }    = useShippingMethods()
+    const { data: paymentMethods } = usePaymentMethods()
     const validateCoupon       = useValidateCoupon()
     const checkout              = useCheckout()
     const createAddress        = useCreateAddress()
 
     const [selectedAddress,  setSelectedAddress]  = useState<string>('')
     const [selectedShipping, setSelectedShipping] = useState<string>('')
+    const [selectedPayment,  setSelectedPayment]  = useState<number | null>(null)
     const [couponCode,       setCouponCode]        = useState('')
     const [couponResult,     setCouponResult]      = useState<CouponResult | null>(null)
     const [contactEmail,     setContactEmail]      = useState('')
@@ -64,7 +67,8 @@ export default function CheckoutPage() {
     // Step completion — purely derived, no new state.
     const addressDone  = !!selectedAddress
     const shippingDone = addressDone && !!selectedShipping
-    const contactDone  = shippingDone && (!isGuest || isValidEmail(contactEmail))
+    const paymentDone  = shippingDone && selectedPayment !== null
+    const contactDone  = paymentDone && (!isGuest || isValidEmail(contactEmail))
 
     const handleApplyCoupon = async () => {
         if (!couponCode.trim()) return
@@ -89,6 +93,7 @@ export default function CheckoutPage() {
     const handleCheckout = async () => {
         if (!selectedAddress) return toast.error('Please select a delivery address')
         if (!selectedShipping) return toast.error('Please select a shipping method')
+        if (selectedPayment === null) return toast.error('Please select a payment method')
         if (isGuest && !isValidEmail(contactEmail)) return toast.error('Please enter a valid email so we can reach you')
         if (!cart?.items.length) return toast.error('Your cart is empty')
 
@@ -101,6 +106,7 @@ export default function CheckoutPage() {
         const payload: CheckoutPayload = {
             address_id: selectedAddress,
             shipping_method_id: selectedShipping, // add this
+            payment_method_id: selectedPayment,
             coupon_code: couponResult ? couponCode : undefined,
         }
 
@@ -133,7 +139,7 @@ export default function CheckoutPage() {
                         </div>
                         <h1 className="font-hc-display text-3xl font-normal text-hc-ink sm:text-4xl">Checkout</h1>
                     </div>
-                    <StepRail addressDone={addressDone} shippingDone={shippingDone} paymentDone={contactDone} />
+                    <StepRail addressDone={addressDone} shippingDone={shippingDone} paymentDone={paymentDone} contactDone={contactDone} />
                 </div>
 
                 <div className="grid gap-6 lg:grid-cols-5 lg:gap-8">
@@ -161,19 +167,28 @@ export default function CheckoutPage() {
                         </Reveal>
 
                         <Reveal delay={160}>
+                            <PaymentMethodStep
+                                methods={paymentMethods}
+                                selectedMethod={selectedPayment}
+                                onSelect={setSelectedPayment}
+                                locked={!shippingDone}
+                            />
+                        </Reveal>
+
+                        <Reveal delay={240}>
                             <ContactStep
                                 isGuest={isGuest}
                                 knownEmail={user?.email}
                                 email={contactEmail}
                                 onEmailChange={setContactEmail}
-                                locked={!shippingDone}
+                                locked={!paymentDone}
                             />
                         </Reveal>
                     </div>
 
                     {/* Order summary */}
                     <div className="lg:col-span-2">
-                        <Reveal delay={240}>
+                        <Reveal delay={320}>
                             <OrderSummary
                                 cart={cart}
                                 subtotal={subtotal}

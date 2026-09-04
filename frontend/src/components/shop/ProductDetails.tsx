@@ -272,7 +272,9 @@ export function ProductDetails({ product }: { product: Product }) {
                         <Card className="divide-y overflow-hidden">
                             {variant.attributes.map((attr: Attribute) => (
                                 <div key={attr.id} className="flex justify-between px-4 py-3 text-sm">
-                                    <span className="text-muted-foreground">{attr.name}</span>
+                                    <span className="text-muted-foreground">
+                                        {attr.name === 'Option 1' ? 'Size' : attr.name}
+                                    </span>
                                     <span className="font-medium">{attr.value}</span>
                                 </div>
                             ))}

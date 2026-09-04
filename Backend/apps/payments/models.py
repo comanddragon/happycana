@@ -4,6 +4,22 @@ from apps.orders.models import Order
 from .managers import PaymentManager, RefundManager
 
 
+class PaymentMethod(models.Model):
+    name = models.CharField(max_length=100)
+    slug = models.SlugField(max_length=50, unique=True)
+    description = models.CharField(max_length=255, blank=True)
+    logo_url = models.CharField(max_length=255)
+    is_active = models.BooleanField(default=True)
+    sort_order = models.PositiveSmallIntegerField(default=0)
+
+    class Meta:
+        db_table = "payment_methods"
+        ordering = ["sort_order", "name"]
+
+    def __str__(self):
+        return self.name
+
+
 class Payment(models.Model):
     class Status(models.TextChoices):
         PENDING   = "pending",   "Pending"
@@ -47,4 +63,3 @@ class Refund(models.Model):
 
     def __str__(self):
         return f"Refund {self.id} — {self.status}"
-

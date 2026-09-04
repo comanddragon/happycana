@@ -5,7 +5,7 @@
 // etc.). Used from Server Components and route handlers only.
 
 import type {
-    Product, Effect, Category, Brand, PaginatedResponse, ProductFilterParams, LabResult,
+    Product, Effect, Category, Collection, Brand, PaginatedResponse, ProductFilterParams, LabResult,
 } from '@/types'
 
 const EMPTY_PRODUCTS: PaginatedResponse<Product> = {
@@ -61,7 +61,7 @@ export async function getEffects(): Promise<Effect[]> {
 
 export async function getCategories(): Promise<Category[]> {
     try {
-        const res = await fetch(`${process.env.API_URL}/catalog/categories/`, {
+        const res = await fetch(`${process.env.API_URL}/catalog/categories/?page_size=100`, {
             next: { revalidate: 3600 },
         })
         if (!res.ok) return []
@@ -69,6 +69,79 @@ export async function getCategories(): Promise<Category[]> {
         return Array.isArray(data) ? data : (data?.results ?? [])
     } catch {
         return []
+    }
+}
+
+export async function getFreshCategories(): Promise<Category[]> {
+    try {
+        const res = await fetch(`${process.env.API_URL}/catalog/categories/?page_size=100`, { cache: 'no-store' })
+        if (!res.ok) return []
+        const data = await res.json()
+        return Array.isArray(data) ? data : (data?.results ?? [])
+    } catch {
+        return []
+    }
+}
+
+export function flattenCategories(categories: Category[]): Category[] {
+    return categories.flatMap(category => [
+        category,
+        ...flattenCategories(category.children ?? []),
+    ])
+}
+
+export async function getCategory(slug: string): Promise<Category | null> {
+    try {
+        const res = await fetch(`${process.env.API_URL}/catalog/categories/${encodeURIComponent(slug)}/`, {
+            next: { revalidate: 3600 },
+        })
+        if (!res.ok) return null
+        return await res.json()
+    } catch {
+        return null
+    }
+}
+
+export async function getCollections(): Promise<Collection[]> {
+    try {
+        const res = await fetch(`${process.env.API_URL}/catalog/collections/`, {
+            next: { revalidate: 3600 },
+        })
+        if (!res.ok) return []
+        const data = await res.json()
+        return Array.isArray(data) ? data : (data?.results ?? [])
+    } catch {
+        return []
+    }
+}
+
+export async function getCollection(slug: string): Promise<Collection | null> {
+    try {
+        const res = await fetch(`${process.env.API_URL}/catalog/collections/${encodeURIComponent(slug)}/`, {
+            next: { revalidate: 3600 },
+        })
+        if (!res.ok) return null
+        return await res.json()
+    } catch {
+        return null
+    }
+}
+
+export async function getCollectionProducts(
+    slug: string,
+    params?: Omit<ProductFilterParams, 'category'>,
+    { revalidate = 3600 }: { revalidate?: number | false } = {},
+): Promise<PaginatedResponse<Product>> {
+    try {
+        const res = await fetch(
+            `${process.env.API_URL}/catalog/collections/${encodeURIComponent(slug)}/products/${buildQuery(params)}`,
+            revalidate === false ? { cache: 'no-store' } : { next: { revalidate } },
+        )
+        if (!res.ok) return EMPTY_PRODUCTS
+        const data = await res.json()
+        return Array.isArray(data?.results) ? data : EMPTY_PRODUCTS
+    } catch {
+        return EMPTY_PRODUCTS
     }
 }
 
@@ -82,6 +155,18 @@ export async function getBrands(): Promise<Brand[]> {
         return Array.isArray(data) ? data : (data?.results ?? [])
     } catch {
         return []
+    }
+}
+
+export async function getBrand(slug: string): Promise<Brand | null> {
+    try {
+        const res = await fetch(`${process.env.API_URL}/catalog/brands/${encodeURIComponent(slug)}/`, {
+            next: { revalidate: 3600 },
+        })
+        if (!res.ok) return null
+        return await res.json()
+    } catch {
+        return null
     }
 }
 

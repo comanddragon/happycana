@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 56" role="img" aria-labelledby="title">
+  <title id="title">Direct Bank Transfer</title>
+  <rect width="180" height="56" rx="10" fill="#F5F1E8"/>
+  <path d="M18 25 34 15l16 10H18Zm3 3h5v12h-5V28Zm10 0h6v12h-6V28Zm11 0h5v12h-5V28ZM18 43h32v4H18v-4Z" fill="#244C3A"/>
+  <text x="59" y="26" font-family="Arial,sans-serif" font-size="12" font-weight="700" fill="#244C3A">DIRECT BANK</text>
+  <text x="59" y="41" font-family="Arial,sans-serif" font-size="10" fill="#66756D">TRANSFER</text>
+</svg>

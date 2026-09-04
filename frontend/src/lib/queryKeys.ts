@@ -19,4 +19,5 @@ export const qk = {
     me:            ()                => ['me'],
     addresses:     ()                => ['addresses'],
     shipping:      ()                => ['shipping-methods'],
+    paymentMethods: ()               => ['payment-methods'],
 } as const

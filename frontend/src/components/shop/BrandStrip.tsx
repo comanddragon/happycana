@@ -113,7 +113,7 @@ export function BrandStrip({ brands }: { brands: Brand[] }) {
                 {track.map((brand, i) => (
                     <Link
                         key={`${brand.id}-${i}`}
-                        href={`/shop/products?brand=${brand.slug}`}
+                        href={`/shop/brands/${brand.slug}`}
                         draggable={false}
                         onClick={(e) => { if (draggedRef.current) e.preventDefault() }}
                         className="group flex pt-2 h-24 w-32 shrink-0 flex-col items-center justify-center gap-2 rounded-2xl border border-hc-ink/[0.08] bg-white px-3 transition-all duration-200 hover:-translate-y-1 hover:border-hc-amber hover:shadow-[0_16px_30px_-14px_rgba(23,20,15,0.25)]"

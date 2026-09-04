@@ -30,15 +30,15 @@ class CartAdmin(admin.ModelAdmin):
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
     inlines         = [OrderItemInline]
-    list_display    = ["id", "user", "status", "total", "created_at"]
-    list_filter     = ["status", "created_at"]
+    list_display    = ["id", "user", "payment_method", "status", "total", "created_at"]
+    list_filter     = ["payment_method", "status", "created_at"]
     search_fields   = ["user__email", "id"]
     readonly_fields = ["subtotal", "discount_amount", "shipping_cost", "total", "created_at", "updated_at"]
     raw_id_fields   = ["user", "address", "coupon"]
 
     # Admins can update the order status directly from the change view
     fieldsets = (
-        ("Order Info",  {"fields": ("user", "address", "coupon", "status")}),
+        ("Order Info",  {"fields": ("user", "address", "coupon", "payment_method", "status")}),
         ("Financials",  {"fields": ("subtotal", "discount_amount", "shipping_cost", "total")}),
         ("Timestamps",  {"fields": ("created_at", "updated_at")}),
     )
@@ -60,4 +60,3 @@ class OrderAdmin(admin.ModelAdmin):
     @admin.action(description="Mark selected orders as Cancelled")
     def mark_cancelled(self, request, queryset):
         queryset.update(status=Order.Status.CANCELLED)
-

@@ -125,7 +125,9 @@ export default async function ProductPage({ params }: PageProps) {
                     '@type': 'ListItem',
                     position: 2,
                     name: category.name,
-                    item: `${siteUrl}/shop/products?category=${category.slug}`,
+                    item: category.is_key
+                        ? `${siteUrl}/shop/categories/${category.slug}`
+                        : `${siteUrl}/shop/collections/${category.slug}`,
                 }]
                 : []),
             {

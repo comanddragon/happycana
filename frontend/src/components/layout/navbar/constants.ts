@@ -8,7 +8,6 @@ export const NAV_LINKS: NavLink[] = [
     { href: '/shop', label: 'Shop' },
     { href: '/shop/products', label: 'Products' },
     { label: 'Categories', dynamic: true },
-    { href: '/#effects', label: 'Shop by effect' },
     { href: '/blog', label: 'Blog' },
 ]
 

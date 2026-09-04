@@ -20,9 +20,11 @@ export function NavbarUserMenu({ mounted, isAuthenticated, user, onLogout }: Nav
 
     if (!isAuthenticated) {
         return (
-            <Button asChild size="sm" className={AMBER_BUTTON} style={AMBER_BUTTON_STYLE}>
-                <Link href="/login">Sign in</Link>
-            </Button>
+            <div className="hidden md:block">
+                <Button asChild size="sm" className={AMBER_BUTTON} style={AMBER_BUTTON_STYLE}>
+                    <Link href="/login">Sign in</Link>
+                </Button>
+            </div>
         )
     }
 

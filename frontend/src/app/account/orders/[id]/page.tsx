@@ -139,6 +139,10 @@ export default function OrderDetailPage() {
                             <span className="text-muted-foreground">Shipping</span>
                             <span>{formatPrice(order.shipping_cost)}</span>
                         </div>
+                        <div className="flex justify-between">
+                            <span className="text-muted-foreground">Payment method</span>
+                            <span>{order.payment_method.name}</span>
+                        </div>
                         <Separator />
                         <div className="flex justify-between font-semibold text-base">
                             <span>Total</span>

@@ -9,7 +9,10 @@ const STATS = [
 ]
 
 export async function Hero() {
-    const { results } = await getProducts({ ordering: '-created_at', page_size: 1 })
+    const { results } = await getProducts(
+        { ordering: '-created_at', page_size: 1, min_thc: 0.01 },
+        { revalidate: false },
+    )
     const heroJar = results[0] ? toJarProduct(results[0]) : null
 
     return (

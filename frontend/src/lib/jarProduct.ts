@@ -23,6 +23,9 @@ export function toJarProduct(product: Product): JarProduct {
         thc: formatThc(lab?.thc_percent),
         terpene: topTerpene,
         effect: product.effects?.[0]?.name ?? null,
+        brand: product.brand?.name ?? null,
+        category: product.category?.[0]?.name ?? null,
+        weight: formatWeight(variant?.weight_value, variant?.weight_unit),
         sku: variant?.sku ?? product.slug,
         coaUrl: lab?.coa_url || null,
         price: variant

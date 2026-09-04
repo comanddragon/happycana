@@ -41,6 +41,11 @@
   <tr><td style="padding:12px 0 0;font-size:16px;color:#141413;font-weight:700;">Total</td><td align="right" style="padding:12px 0 0;font-size:16px;color:#141413;font-weight:700;">${{ order.total }}</td></tr>
 </table>
 
+<p style="margin:0 0 24px;font-size:14px;line-height:20px;color:#141413;">
+  <strong>Payment method:</strong> {{ order.payment_method.name }}<br>
+  <span style="color:#6E6C66;">{{ order.payment_method.description }}</span>
+</p>
+
 <h3 style="margin:0 0 8px;font-family:Georgia,'Times New Roman',serif;font-size:16px;font-weight:400;color:#141413;">Shipping to</h3>
 <p style="margin:0 0 32px;font-size:14px;line-height:20px;color:#6E6C66;">
   {{ order.address.line1 }}{% if order.address.line2 %}, {{ order.address.line2 }}{% endif %}<br>

@@ -25,7 +25,7 @@ class CheckoutService:
 
     @classmethod
     @transaction.atomic
-    def create_order(cls, user, address_id, shipping_method_id, coupon_code=None):
+    def create_order(cls, user, address_id, shipping_method_id, payment_method_id, coupon_code=None):
         """
         Full checkout pipeline:
           1. Validate cart is not empty
@@ -75,6 +75,7 @@ class CheckoutService:
             user            = user,
             address_id      = address_id,
             shipping_method_id = shipping_method_id,
+            payment_method_id  = payment_method_id,
             coupon          = coupon,
             status          = Order.Status.PENDING,
             subtotal        = subtotal,

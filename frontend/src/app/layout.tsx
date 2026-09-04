@@ -35,13 +35,20 @@ const ibmPlexMono = IBM_Plex_Mono({
     display: 'swap',
 })
 
+const SITE_URL = process.env.NEXT_PUBLIC_FRONTEND_URL || 'http://localhost:3000'
+
 export const metadata: Metadata = {
-    metadataBase: new URL(`${process.env.NEXT_PUBLIC_FRONTEND_URL}`),
+    metadataBase: new URL(SITE_URL),
+    applicationName: 'HappyCana',
     title: {
         default: 'HappyCana — Modern Dispensary',
         template: '%s | HappyCana',
     },
     description: 'Flower, edibles, and concentrates from small-batch growers, third-party tested and delivered same-day.',
+    keywords: ['cannabis dispensary', 'flower', 'edibles', 'vapes', 'concentrates', 'CBD products'],
+    creator: 'HappyCana',
+    publisher: 'HappyCana',
+    alternates: { canonical: '/' },
     openGraph: {
         type: 'website',
         siteName: 'HappyCana',
@@ -72,6 +79,27 @@ export const metadata: Metadata = {
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+    const organizationLd = {
+        '@context': 'https://schema.org',
+        '@type': 'Organization',
+        '@id': `${SITE_URL}/#organization`,
+        name: 'HappyCana',
+        url: SITE_URL,
+        logo: `${SITE_URL}/brand/logo-lockup-light-bg.png`,
+    }
+    const websiteLd = {
+        '@context': 'https://schema.org',
+        '@type': 'WebSite',
+        '@id': `${SITE_URL}/#website`,
+        name: 'HappyCana',
+        url: SITE_URL,
+        publisher: { '@id': `${SITE_URL}/#organization` },
+        potentialAction: {
+            '@type': 'SearchAction',
+            target: `${SITE_URL}/shop/products?search={search_term_string}`,
+            'query-input': 'required name=search_term_string',
+        },
+    }
     return (
         <html
             lang="en"
@@ -79,6 +107,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             className={`${fraunces.variable} ${spaceGrotesk.variable} ${ibmPlexMono.variable}`}
         >
         <body className="font-hc-body bg-hc-paper">
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationLd) }} />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteLd) }} />
         <Analytics />
         <Providers>
             <AgeGate />

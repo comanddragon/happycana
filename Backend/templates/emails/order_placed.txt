@@ -14,6 +14,9 @@ Subtotal: ${{ order.subtotal }}
 {% endif %}Shipping: ${{ order.shipping_cost }}
 Total: ${{ order.total }}
 
+Payment method: {{ order.payment_method.name }}
+{{ order.payment_method.description }}
+
 Shipping to:
 {{ order.address.line1 }}{% if order.address.line2 %}, {{ order.address.line2 }}{% endif %}
 {{ order.address.city }}, {{ order.address.state }} {{ order.address.postal_code }}

@@ -62,7 +62,19 @@ export interface Category {
     image: string
     image_url: string
     is_active: boolean
+    is_key: boolean
     children?: Category[]
+    meta_title?: string
+    meta_description?: string
+}
+
+export interface Collection {
+    id: string
+    name: string
+    slug: string
+    description: string
+    image_url: string | null
+    product_count: number
     meta_title?: string
     meta_description?: string
 }
@@ -252,6 +264,7 @@ export interface Product {
     meta_title?: string
     meta_description?: string
     base_price: string
+    compare_at_price: string | null
     compliance_category: ComplianceCategory | ''
     cannabis_type: CannabisType | ''
     sub_type: string
@@ -266,6 +279,10 @@ export interface Product {
     videos: ProductVideo[]
     primary_image: ProductImage | null
     primary_video: ProductVideo | null
+    active_discount: {
+        discount_type: 'percent' | 'fixed'
+        value: string
+    } | null
 }
 
 // Query params accepted by GET /catalog/products/ — see backend_patch/api_patch.py
@@ -347,6 +364,7 @@ export interface Order {
     id: string
     user: string
     address: Address
+    payment_method: PaymentMethod
     status: OrderStatus
     items: OrderItem[]
     subtotal: string
@@ -364,6 +382,14 @@ export interface Order {
 
 export type PaymentStatus = 'pending' | 'paid' | 'failed' | 'refunded' | 'partially_refunded'
 export type PaymentGateway = 'stripe' | 'paypal'
+
+export interface PaymentMethod {
+    id: number
+    name: string
+    slug: 'direct-bank' | 'paypal' | 'venmo' | 'card' | 'apple-pay' | 'google-pay' | 'cash-app-pay' | 'zelle'
+    description: string
+    logo_url: string
+}
 
 export interface Payment {
     id: string
@@ -456,6 +482,7 @@ export interface ApiError {
 export interface CheckoutPayload {
     address_id: string
     shipping_method_id: string
+    payment_method_id: number
     coupon_code?: string
 }
 

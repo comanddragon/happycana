@@ -28,6 +28,7 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings.development")
 django.setup()
 
 from django.conf import settings  # noqa: E402
+from django.db import transaction  # noqa: E402
 from django.utils.dateparse import parse_datetime  # noqa: E402
 from django.utils import timezone  # noqa: E402
 from slugify import slugify  # noqa: E402
@@ -81,6 +82,7 @@ def verify_database_target(allow_remote: bool) -> None:
         )
 
 
+@transaction.atomic
 def main():
     parser = argparse.ArgumentParser(description="Seed BlogPost rows from the cleaned blogs CSV.")
     parser.add_argument("--file", default=str(DEFAULT_PATH), help=f"Path to blogs.csv (default: {DEFAULT_PATH})")

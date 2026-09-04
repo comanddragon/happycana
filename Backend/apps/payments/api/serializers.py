@@ -3,7 +3,14 @@
 # apps/payments/api/serializers.py
 # =============================================================================
 from rest_framework import serializers
-from apps.payments.models import Payment, Refund
+from apps.payments.models import Payment, PaymentMethod, Refund
+
+
+class PaymentMethodSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PaymentMethod
+        fields = ["id", "name", "slug", "description", "logo_url"]
+        read_only_fields = fields
 
 
 class PaymentSerializer(serializers.ModelSerializer):
@@ -34,4 +41,3 @@ class WebhookSerializer(serializers.Serializer):
     gateway    = serializers.CharField()
     event_type = serializers.CharField()
     payload    = serializers.JSONField()
-
