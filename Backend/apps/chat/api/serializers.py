@@ -49,7 +49,15 @@ class ChatRoomSerializer(serializers.ModelSerializer):
         read_only_fields = ["id", "customer", "created_at", "updated_at"]
 
     def get_latest_message(self, obj):
-        msg = obj.messages.last()
+        # `_latest_message_list` is populated by ChatRoomViewSet.get_queryset's
+        # Prefetch(to_attr=...); obj.messages.last() would bypass that cache
+        # and issue a fresh query per room. Fall back for any code path that
+        # serializes a room fetched outside that queryset.
+        latest = getattr(obj, "_latest_message_list", None)
+        if latest is None:
+            msg = obj.messages.order_by("-created_at").first()
+        else:
+            msg = latest[0] if latest else None
         if msg:
             return {"body": msg.body, "created_at": msg.created_at.isoformat(), "type": msg.message_type}
         return None
@@ -58,6 +66,10 @@ class ChatRoomSerializer(serializers.ModelSerializer):
         request = self.context.get("request")
         if not request:
             return 0
+        # Same prefetch-cache reasoning as get_latest_message above.
+        unread = getattr(obj, "_unread_messages", None)
+        if unread is not None:
+            return len(unread)
         return obj.messages.filter(is_read=False).exclude(sender=request.user).count()
 
 

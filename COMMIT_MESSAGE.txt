@@ -1,21 +1,4 @@
-commit 0549aeaea6d6fe113aced39ef2f13be9a560a117
-Author: Claude <claude@anthropic.com>
-Commit: Claude <claude@anthropic.com>
-
-    Add production readiness audit (AUDIT.md)
-    
-    Point-in-time review of the backend and frontend covering config,
-    dependency hygiene, auth/payment handling, and test coverage.
-    
-    Blockers found:
-    - django-ratelimit is listed as a dependency for 'rate limiting on
-      sensitive endpoints' but never actually applied anywhere.
-    - Backend requirements are almost entirely unpinned (2 of 42 lines
-      in base.txt use ==).
-    - Zero frontend test coverage (no test files, no test script).
-    - No idempotency key on Stripe payment intent creation.
-    
-    Also notes what's already solid (env-gated settings, security
-    headers, verified webhook signatures, no committed secrets, strict
-    TS, backend test coverage) and two minor items (no CI config found
-    in-repo, wildcard HTTPS image remote pattern).
+fix(chat): eliminate N+1 in ChatRoomSerializer latest_message/unread_count
+fix(orders): fix cart/order N+1 on ProductVariantSerializer relations
+perf(checkout): drop dead prefetch in CheckoutService._get_cart
+perf: add missing composite indexes (Order.status, Product.is_active, Notification.user/is_read)

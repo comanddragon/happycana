@@ -5,7 +5,7 @@ from rest_framework import generics, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
-from django.db.models import Q
+from django.db.models import Prefetch, Q
 from apps.chat.models import ChatRoom, ChatMessage
 from .serializers import (
     ChatRoomSerializer, CreateChatRoomSerializer,
@@ -46,7 +46,23 @@ class ChatRoomViewSet(ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        qs = ChatRoom.objects.select_related("customer", "agent", "order").prefetch_related("messages")
+        # Prefetch exactly what ChatRoomSerializer.get_latest_message /
+        # get_unread_count need, via to_attr, so those methods can read from
+        # the cache instead of each issuing a fresh query per room
+        # (.last()/.filter() on a related manager bypass prefetch_related's
+        # cache and re-hit the DB otherwise).
+        qs = ChatRoom.objects.select_related("customer", "agent", "order").prefetch_related(
+            Prefetch(
+                "messages",
+                queryset=ChatMessage.objects.order_by("-created_at"),
+                to_attr="_latest_message_list",
+            ),
+            Prefetch(
+                "messages",
+                queryset=ChatMessage.objects.filter(is_read=False).exclude(sender=user),
+                to_attr="_unread_messages",
+            ),
+        )
         if user.is_staff:
             status_filter = self.request.query_params.get("status")
             if status_filter:

@@ -211,6 +211,9 @@ class Product(TimestampedModel):
     class Meta:
         db_table = "products"
         ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["is_active", "-created_at"]),
+        ]
 
     def __str__(self):
         return self.name

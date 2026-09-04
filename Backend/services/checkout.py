@@ -141,10 +141,13 @@ class CheckoutService:
 
     @staticmethod
     def _get_cart(user):
+        # No prefetch here: create_order immediately re-queries
+        # cart.items.select_related("variant") itself, and _reserve_stock
+        # below deliberately re-queries stock fresh under select_for_update
+        # (a prefetched snapshot would be stale for the lock anyway). A
+        # prefetch on this fetch would run and never be read.
         try:
-            return Cart.objects.prefetch_related(
-                "items__variant__stock_levels__warehouse"
-            ).get(user=user)
+            return Cart.objects.get(user=user)
         except Cart.DoesNotExist:
             raise CheckoutError("No active cart found.")
 
