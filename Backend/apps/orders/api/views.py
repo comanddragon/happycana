@@ -2,6 +2,8 @@
 # apps/orders/api/views.py
 # =============================================================================
 from django.db.models import Prefetch
+from django.utils.decorators import method_decorator
+from django_ratelimit.decorators import ratelimit
 from rest_framework import generics, permissions, status, filters
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -111,6 +113,7 @@ class OrderDetailView(generics.RetrieveAPIView):
         return Order.objects.select_related("address", "coupon", "payment_method").prefetch_related(_order_items_prefetch())
 
 
+@method_decorator(ratelimit(key="user_or_ip", rate="20/m", method="POST", block=True), name="dispatch")
 class OrderCreateView(APIView):
     """Delegates to CheckoutService — cart → order → stock reservation."""
     def post(self, request):

@@ -1,9 +1,10 @@
-
 # =============================================================================
 # apps/payments/api/views.py
 # =============================================================================
 import hmac, hashlib
 from django.conf import settings
+from django.utils.decorators import method_decorator
+from django_ratelimit.decorators import ratelimit
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -33,6 +34,7 @@ class PaymentDetailView(generics.RetrieveAPIView):
     permission_classes = [permissions.IsAdminUser]
 
 
+@method_decorator(ratelimit(key="user_or_ip", rate="20/m", method="POST", block=True), name="dispatch")
 class InitiatePaymentView(APIView):
     """Creates a payment intent via the gateway and returns a client secret."""
     def post(self, request, order_pk):
@@ -61,6 +63,7 @@ class RefundCreateView(generics.CreateAPIView):
         process_refund.enqueue(refund_id=str(refund.id))
 
 
+@method_decorator(ratelimit(key="ip", rate="60/m", method="POST", block=True), name="dispatch")
 class StripeWebhookView(APIView):
     """Receives and verifies Stripe webhook events."""
     permission_classes     = [permissions.AllowAny]
@@ -80,6 +83,7 @@ class StripeWebhookView(APIView):
         return Response({"received": True})
 
 
+@method_decorator(ratelimit(key="ip", rate="60/m", method="POST", block=True), name="dispatch")
 class PayPalWebhookView(APIView):
     """Receives and verifies PayPal webhook events."""
     permission_classes     = [permissions.AllowAny]
@@ -100,6 +104,7 @@ class PayPalWebhookView(APIView):
         return Response({"received": True})
 
 
+@method_decorator(ratelimit(key="user_or_ip", rate="20/m", method="POST", block=True), name="dispatch")
 class CapturePayPalPaymentView(APIView):
     """
     Called after the user returns from PayPal's approval URL.

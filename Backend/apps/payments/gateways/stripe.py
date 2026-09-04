@@ -1,4 +1,3 @@
-
 # =============================================================================
 # apps/payments/gateways/stripe.py
 # =============================================================================
@@ -44,6 +43,7 @@ class StripeGateway(BaseGateway):
                 },
                 # Automatically confirm when the frontend provides payment method
                 automatic_payment_methods = {"enabled": True},
+                idempotency_key = f"payment-intent-{order.id}",
             )
             logger.info("Stripe PaymentIntent created: %s for order %s", intent.id, order.id)
             return PaymentIntent(
@@ -147,4 +147,3 @@ class StripeGateway(BaseGateway):
             metadata = {"user_id": str(user.id)},
         )
         return customer.id
-

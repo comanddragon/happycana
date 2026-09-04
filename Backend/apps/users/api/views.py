@@ -1,6 +1,8 @@
 # =============================================================================
 # apps/users/api/views.py
 # =============================================================================
+from django.utils.decorators import method_decorator
+from django_ratelimit.decorators import ratelimit
 from rest_framework import generics, status, permissions
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -14,10 +16,13 @@ from .serializers import (
 )
 
 
+@method_decorator(ratelimit(key="ip", rate="5/m", method="POST", block=True), name="dispatch")
 class LoginView(TokenObtainPairView):
+    """Rate-limited to blunt credential-stuffing / brute-force attempts."""
     serializer_class = CustomTokenObtainPairSerializer
 
 
+@method_decorator(ratelimit(key="ip", rate="10/h", method="POST", block=True), name="dispatch")
 class RegisterView(generics.CreateAPIView):
     serializer_class   = RegisterSerializer
     permission_classes = [permissions.AllowAny]
@@ -35,6 +40,7 @@ class RegisterView(generics.CreateAPIView):
         }, status=status.HTTP_201_CREATED)
 
 
+@method_decorator(ratelimit(key="ip", rate="30/m", method="POST", block=True), name="dispatch")
 class GuestSessionView(APIView):
     """
     Issues a passwordless guest identity so unauthenticated visitors can hit
