@@ -3,6 +3,7 @@
 import { usePathname } from 'next/navigation'
 import { Navbar } from './navbar/Navbar'
 import { Footer } from './Footer'
+import React from "react";
 
 const hiddenRoutes = [
     '/shop/checkout',

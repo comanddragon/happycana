@@ -117,6 +117,30 @@ export function NeutralEffectIcon(props: IconProps) {
     )
 }
 
+// Distinct badge background + icon color per effect so each mood reads
+// as its own color at a glance (e.g. "Sleepy" reads violet, "Energized"
+// reads coral) instead of every card sharing the same canopy/amber pair.
+// `bg`/`icon` are for a solid-color badge (white icon on a saturated
+// fill, used on the home page cards); `pillText` is a saturated color
+// meant to sit directly on a white background (used for the shop page
+// filter pills, which have no colored badge of their own).
+// Unrecognized slugs fall back to the original neutral canopy/amber combo.
+export const EFFECT_ACCENTS: Record<string, { bg: string; icon: string; pillText: string }> = {
+    happy:     { bg: 'bg-[#d69e2e]', icon: 'text-white', pillText: 'text-[#b8860b]' },
+    relaxed:   { bg: 'bg-[#4a9463]', icon: 'text-white', pillText: 'text-[#3f7d52]' },
+    sleepy:    { bg: 'bg-[#8b5cf6]', icon: 'text-white', pillText: 'text-[#7c3aed]' },
+    energized: { bg: 'bg-[#f0562b]', icon: 'text-white', pillText: 'text-[#e0451c]' },
+    creative:  { bg: 'bg-[#e0357a]', icon: 'text-white', pillText: 'text-[#d6336c]' },
+    inspired:  { bg: 'bg-[#2f9de0]', icon: 'text-white', pillText: 'text-[#2489cc]' },
+    hungry:    { bg: 'bg-[#e08a1f]', icon: 'text-white', pillText: 'text-[#cf7c15]' },
+}
+
+const DEFAULT_EFFECT_ACCENT = { bg: 'bg-hc-canopy', icon: 'text-hc-amber-light', pillText: 'text-hc-ink-soft' }
+
+export function effectAccent(slug: string): { bg: string; icon: string; pillText: string } {
+    return EFFECT_ACCENTS[slug] ?? DEFAULT_EFFECT_ACCENT
+}
+
 const EFFECT_ICONS: Record<string, (props: IconProps) => ReactElement> = {
     happy: HappyEffectIcon,
     relaxed: RelaxedEffectIcon,

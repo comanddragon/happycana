@@ -12,7 +12,7 @@
 //   handled by JWTAuthMiddleware — connections without a valid token
 //   are rejected with close code 4001.
 
-import { useEffect, useRef, useCallback, useState } from 'react'
+import React, { useEffect, useRef, useCallback } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import Cookies from 'js-cookie'
 import { toast } from 'sonner'

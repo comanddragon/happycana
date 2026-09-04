@@ -46,7 +46,7 @@ export default async function BlogIndexPage({ searchParams }: PageProps) {
             <p className="font-hc-mono text-xs tracking-wide text-hc-ink-soft">BLOG</p>
             <h1 className="mt-2 font-hc-display text-4xl font-medium text-hc-ink">HappyCana Blog</h1>
             <p className="mt-3 max-w-2xl text-hc-ink-soft leading-relaxed">
-                Straight talk on gear, rolling technique, and the small habits that make a session better \u2014
+                Straight talk on gear, rolling technique, and the small habits that make a session better —
                 written by the people who stock the shelves, not the people trying to fill them.
             </p>
 

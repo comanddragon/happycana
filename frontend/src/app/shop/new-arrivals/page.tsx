@@ -63,7 +63,7 @@ export default async function NewArrivalsPage({ searchParams }: PageProps) {
                     </h1>
                     <p className="mt-4 max-w-lg text-[16px] leading-relaxed text-hc-sage">
                         The newest lots to hit the menu, newest first. Every batch is third-party tested before
-                        it&rsquo;s listed \u2014 nothing goes up without a lab result behind it.
+                        it&rsquo;s listed — nothing goes up without a lab result behind it.
                     </p>
                 </div>
             </section>

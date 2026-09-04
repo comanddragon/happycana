@@ -156,10 +156,10 @@ export function useChatRoomWS(roomId: string | null): ChatWsState {
 
         closedRef.current = false
         retriesRef.current = 0
-        setAuthError(false)
 
         function connect() {
             if (closedRef.current) return
+            setAuthError(false)
             const url = `${WS_BASE}/chat/${roomId}/?token=${token}`
             const ws  = new WebSocket(url)
             wsRef.current = ws

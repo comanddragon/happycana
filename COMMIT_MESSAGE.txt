@@ -1,9 +1,19 @@
-Restyle google-pay.svg to match the badge+wordmark pattern (like venmo.svg/apple-pay.svg)
+commit 88bfdc1d0a06af786071d1129e5b5076788a9b29
+Author: Claude <claude@anthropic.com>
+Commit: Claude <claude@anthropic.com>
 
-The provided icon paths had the 'Pay' wordmark baked into the badge
-glyph alongside the G mark, which duplicated the outer text label and
-overflowed the badge bounds. Keeps only the four-color G logo, scales
-and centers it in the 36x36 badge the same way apple-pay.svg's glyph
-is centered, and matches its wordmark font-size (23) and title casing
-('Google Pay') for visual consistency across the two.
-
+    Fix literal \\u2014 escape rendering as raw text in JSX
+    
+    Three spots had a \u2014 unicode escape sitting directly in JSX text
+    content instead of inside a string literal. JS unicode escapes only
+    resolve inside string/template literals — as bare JSX children they
+    render as the literal 8-character sequence '\u2014' instead of an
+    em dash. Swapped each for the actual — character:
+    
+    - app/blog/page.tsx: hero subhead
+    - app/shop/new-arrivals/page.tsx: hero subhead
+    - app/shop/best-sellers/page.tsx: hero subhead
+    
+    Everywhere else \u2014/\u2019 appear (metadata strings, FAQ arrays,
+    guides.ts, blog.ts data) they're inside actual string literals, so
+    JS already resolves them correctly at runtime — left those as-is.

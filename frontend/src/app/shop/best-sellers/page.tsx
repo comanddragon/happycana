@@ -62,7 +62,7 @@ export default async function BestSellersPage({ searchParams }: PageProps) {
                         Best Sellers
                     </h1>
                     <p className="mt-4 max-w-lg text-[16px] leading-relaxed text-hc-sage">
-                        The products customers reorder most, ranked by real sales \u2014 not sponsored placement.
+                        The products customers reorder most, ranked by real sales — not sponsored placement.
                         A safe starting point if you&rsquo;re not sure where to begin.
                     </p>
                 </div>

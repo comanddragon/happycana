@@ -92,7 +92,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         }))
 
         return [...staticEntries, ...categoryEntries, ...collectionEntries, ...brandEntries, ...blogEntries, ...products]
-    } catch (e) {
+    } catch {
         return [...staticEntries, ...blogEntries]
     }
 }
