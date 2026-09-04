@@ -47,7 +47,7 @@ function getToken() {
 function createReconnectingWS(
     url: string,
     onMessage: (msg: WSMessage) => void,
-    wsRef: React.MutableRefObject<WebSocket | null>,
+    wsRef: React.RefObject<WebSocket | null>,
     maxRetries = 5,
 ): () => void {
     let retries = 0

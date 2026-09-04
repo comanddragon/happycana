@@ -61,7 +61,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
             const res = await timedFetch(`${process.env.API_URL}/catalog/products/?page=${page}&page_size=100`, {
                 next: { revalidate: 3600 },
             })
-            if (!res.ok) throw new Error(`Failed to fetch products: ${res.status}`)
+            if (!res.ok) return [...staticEntries, ...blogEntries]
             const data = await res.json()
             productRows.push(...data.results)
             if (!data.next) break

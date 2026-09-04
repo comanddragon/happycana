@@ -1,19 +1,13 @@
-commit 88bfdc1d0a06af786071d1129e5b5076788a9b29
+commit 5819f98e91f392c2271b1f0048d2a81d8b2abf9b
 Author: Claude <claude@anthropic.com>
 Commit: Claude <claude@anthropic.com>
 
-    Fix literal \\u2014 escape rendering as raw text in JSX
+    sitemap.ts: replace locally-caught throw with a direct return
     
-    Three spots had a \u2014 unicode escape sitting directly in JSX text
-    content instead of inside a string literal. JS unicode escapes only
-    resolve inside string/template literals — as bare JSX children they
-    render as the literal 8-character sequence '\u2014' instead of an
-    em dash. Swapped each for the actual — character:
-    
-    - app/blog/page.tsx: hero subhead
-    - app/shop/new-arrivals/page.tsx: hero subhead
-    - app/shop/best-sellers/page.tsx: hero subhead
-    
-    Everywhere else \u2014/\u2019 appear (metadata strings, FAQ arrays,
-    guides.ts, blog.ts data) they're inside actual string literals, so
-    JS already resolves them correctly at runtime — left those as-is.
+    IntelliJ flagged 'throw of exception caught locally' on the product
+    pagination loop's throw new Error(...) — it's thrown and caught within
+    the same try/catch in this one function, so it was just an indirect
+    way of returning early. Return the fallback (static + blog entries)
+    directly instead. The other throw in getAllBrandsForSitemap() is left
+    as-is since it legitimately crosses a function boundary into this
+    function's catch block.

@@ -1,5 +1,6 @@
 'use client'
 
+import React from 'react'
 import { useState } from 'react'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -14,7 +15,7 @@ export function ContactForm() {
     const [subject, setSubject] = useState('')
     const [message, setMessage] = useState('')
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = (e: React.SubmitEvent) => {
         e.preventDefault()
         const body = `${message}\n\n— ${name} (${email})`
         window.location.href =

@@ -4,6 +4,7 @@
 // standard way to attach page-level metadata (here: noindex, since a login
 // form has no unique content worth surfacing in search results).
 import type { Metadata } from 'next'
+import React from "react";
 
 export const metadata: Metadata = {
     title: 'Sign In',

@@ -36,7 +36,7 @@ interface Props {
     initialPage?: number
     initialBrand?: string
     /** Route filter/sort/pagination changes push to. Lets landing pages like
-     *  /shop/new-arrivals or /shop/best-sellers reuse this grid without
+     *  /shop/new-arrivals or /shop/bestsellers reuse this grid without
      *  navigating the user away to /shop/products on the first interaction. */
     basePath?: string
     showCategoryFilter?: boolean

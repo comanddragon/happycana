@@ -1,4 +1,6 @@
 // lib/api.ts
+// noinspection JSUnusedGlobalSymbols
+
 import axios, { AxiosError, AxiosInstance, InternalAxiosRequestConfig } from 'axios'
 import Cookies from 'js-cookie'
 
@@ -100,6 +102,7 @@ export function clearTokens() {
     Cookies.remove('access_token')
     Cookies.remove('refresh_token')
 }
+
 
 export function getAccessToken() {
     return Cookies.get('access_token')

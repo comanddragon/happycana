@@ -4,6 +4,7 @@
 // All the interactive nav/UI lives in AccountLayoutClient.
 import type { Metadata } from 'next'
 import AccountLayoutClient from './AccountLayoutClient'
+import React from "react";
 
 export const metadata: Metadata = {
     robots: { index: false, follow: false },

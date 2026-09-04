@@ -8,7 +8,7 @@ import type { ProductFilterParams } from '@/types'
 
 interface Props {
     heading?: string
-    /** Passed straight through to getProducts; defaults to best sellers. */
+    /** Passed straight through to getProducts; defaults to bestsellers. */
     filters?: ProductFilterParams
     count?: number
 }

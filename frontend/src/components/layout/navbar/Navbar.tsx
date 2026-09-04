@@ -2,7 +2,7 @@
 
 'use client'
 
-import { useState, useSyncExternalStore } from 'react'
+import React, { useState, useSyncExternalStore } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { useCartStore } from '@/store/cart'
 import { useAuthStore } from '@/store/auth'

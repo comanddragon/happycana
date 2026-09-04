@@ -7,6 +7,7 @@ import { Logo } from '../Logo'
 import { useCategoriesMenuTree } from '@/hooks/useCategoriesMenuTree'
 import { NavMobileTreeItem } from '@/components/layout/navbar/NavMobileTreeItem'
 import { AMBER_BUTTON, AMBER_BUTTON_STYLE } from './constants'
+import React from "react";
 
 interface NavbarMobileMenuProps {
     open: boolean

@@ -1,5 +1,6 @@
 // app/(shop)/shop/checkout/layout.tsx
 import type { Metadata } from 'next'
+import React from "react";
 
 // Checkout is a cart-state-dependent, no-unique-content page — nested here
 // so it overrides just `robots` on top of the parent shop layout's
