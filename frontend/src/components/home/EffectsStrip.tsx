@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { Reveal } from '@/components/home/Reveal'
+import { EffectIcon } from '@/components/icons/EffectIcons'
 import { useEffects } from '@/hooks/useApi'
 
 // The Effect model only carries name/slug — no description field — so we
@@ -33,12 +34,12 @@ export function EffectsStrip() {
                     </h2>
                 </Reveal>
 
-                <Reveal className="grid grid-cols-2 gap-3.5 sm:grid-cols-5">
+                <Reveal className="flex flex-wrap justify-center gap-3.5">
                     {isLoading
                         ? Array.from({ length: 5 }).map((_, i) => (
                             <div
                                 key={i}
-                                className="animate-pulse rounded-2xl border border-hc-ink/[0.08] bg-white px-4 py-5 text-center"
+                                className="w-[calc(50%-7px)] animate-pulse rounded-2xl border border-hc-ink/[0.08] bg-white px-4 py-5 text-center sm:w-[calc(20%-11.2px)]"
                             >
                                 <div className="mx-auto mb-3 h-8.5 w-8.5 rounded-full bg-hc-ink/[0.06]" />
                                 <div className="mx-auto h-3.5 w-16 rounded bg-hc-ink/[0.06]" />
@@ -49,10 +50,10 @@ export function EffectsStrip() {
                             <Link
                                 key={effect.id}
                                 href={`/shop/products?effect=${effect.slug}`}
-                                className="rounded-2xl border border-hc-ink/[0.08] bg-white px-4 py-5 text-center transition-all duration-200 hover:-translate-y-1 hover:border-hc-amber hover:shadow-[0_16px_30px_-14px_rgba(23,20,15,0.25)]"
+                                className="w-[calc(50%-7px)] rounded-2xl border border-hc-ink/[0.08] bg-white px-4 py-5 text-center transition-all duration-200 hover:-translate-y-1 hover:border-hc-amber hover:shadow-[0_16px_30px_-14px_rgba(23,20,15,0.25)] sm:w-[calc(20%-11.2px)]"
                             >
                                 <div className="mx-auto mb-3 flex h-8.5 w-8.5 items-center justify-center rounded-full bg-hc-canopy">
-                                    <span className="h-2 w-2 rounded-full bg-hc-amber-light" />
+                                    <EffectIcon slug={effect.slug} className="h-5 w-5 text-hc-amber-light" />
                                 </div>
                                 <h3 className="text-[15px] font-semibold text-hc-ink capitalize">{effect.name}</h3>
                                 {EFFECT_COPY[effect.slug] && (
