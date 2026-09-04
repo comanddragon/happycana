@@ -3,6 +3,7 @@
 // `process.env.API_URL`, same pattern as lib/catalog.server.ts. Used from
 // Server Components and route handlers only.
 
+import { timedFetch } from './timedFetch.server'
 import type { BlogPostSummary, BlogPostDetail, PaginatedResponse } from '@/types'
 
 const EMPTY_POSTS: PaginatedResponse<BlogPostSummary> = {
@@ -15,7 +16,7 @@ export async function getBlogPosts(
     try {
         const params = new URLSearchParams({ page: String(page) })
         if (page_size) params.set('page_size', String(page_size))
-        const res = await fetch(`${process.env.API_URL}/blog/posts/?${params.toString()}`, {
+        const res = await timedFetch(`${process.env.API_URL}/blog/posts/?${params.toString()}`, {
             ...(revalidate === false ? { cache: 'no-store' } : { next: { revalidate } }),
         })
         if (!res.ok) return EMPTY_POSTS
@@ -47,7 +48,7 @@ export async function getAllBlogPosts(
 
 export async function getBlogPost(slug: string): Promise<BlogPostDetail | null> {
     try {
-        const res = await fetch(`${process.env.API_URL}/blog/posts/${slug}/`, {
+        const res = await timedFetch(`${process.env.API_URL}/blog/posts/${slug}/`, {
             next: { revalidate: 3600 },
         })
         if (!res.ok) return null

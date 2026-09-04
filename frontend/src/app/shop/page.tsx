@@ -8,6 +8,7 @@ import { BrandStrip, BrandStripSkeleton } from '@/components/shop/BrandStrip'
 import { Reveal } from '@/components/home/Reveal'
 import { CtaBand } from '@/components/home/CtaBand'
 import { flattenCategories, getProducts, getEffects, getCategories, getBrands, getCollections, getCollectionProducts } from '@/lib/catalog.server'
+import { EffectIcon } from '@/components/icons/EffectIcons'
 import { Product, Effect } from "@/types"
 import type { Metadata } from "next"
 
@@ -60,8 +61,9 @@ async function EffectsSection() {
                     <Link
                         key={effect.id}
                         href={`/shop/products?effect=${effect.slug}`}
-                        className="rounded-full border border-hc-ink/[0.08] bg-white px-4.5 py-2.5 font-hc-mono text-xs uppercase tracking-wide text-hc-ink-soft transition-colors hover:border-hc-amber hover:bg-hc-amber-light/15 hover:text-hc-amber-dim"
+                        className="inline-flex items-center gap-1.5 rounded-full border border-hc-ink/[0.08] bg-white px-4.5 py-2.5 font-hc-mono text-xs uppercase tracking-wide text-hc-ink-soft transition-colors hover:border-hc-amber hover:bg-hc-amber-light/15 hover:text-hc-amber-dim"
                     >
+                        <EffectIcon slug={effect.slug} className="h-3.5 w-3.5" />
                         {effect.name}
                     </Link>
                 ))}

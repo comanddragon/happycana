@@ -21,6 +21,9 @@ class CoreConfig(AppConfig):
         # warning, not crash the app.
         self._check_redis_connection()
 
+        from core.timing import patch_json_renderer
+        patch_json_renderer()
+
     def _check_redis_connection(self):
         from django.core.cache import cache
 

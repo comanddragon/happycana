@@ -3,12 +3,13 @@ import type { MetadataRoute } from 'next'
 import type { Product } from '@/types'
 import { getAllBlogPosts } from "@/lib/blog.server";
 import { getCategories, getCollections } from '@/lib/catalog.server'
+import { timedFetch } from '@/lib/timedFetch.server'
 
 async function getAllBrandsForSitemap() {
     const brands = []
     let page = 1
     while (true) {
-        const response = await fetch(`${process.env.API_URL}/catalog/brands/?page=${page}&page_size=100`, {
+        const response = await timedFetch(`${process.env.API_URL}/catalog/brands/?page=${page}&page_size=100`, {
             next: { revalidate: 3600 },
         })
         if (!response.ok) throw new Error(`Failed to fetch brands: ${response.status}`)
@@ -57,7 +58,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         const productRows: Product[] = []
         let page = 1
         while (true) {
-            const res = await fetch(`${process.env.API_URL}/catalog/products/?page=${page}&page_size=100`, {
+            const res = await timedFetch(`${process.env.API_URL}/catalog/products/?page=${page}&page_size=100`, {
                 next: { revalidate: 3600 },
             })
             if (!res.ok) throw new Error(`Failed to fetch products: ${res.status}`)

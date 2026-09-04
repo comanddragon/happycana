@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation'
 import { ProductDetails } from '@/components/shop/ProductDetails' // client component
 import type { Product, ProductVariant } from '@/types'
 import { stripHtml } from '@/lib/utils'
+import { timedFetch } from '@/lib/timedFetch.server'
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -14,7 +15,7 @@ interface PageProps {
 // ── Data fetching ──────────────────────────────────────────────────────────
 
 async function getProduct(slug: string): Promise<Product> {
-    const res = await fetch(`${process.env.API_URL}/catalog/products/${slug}/`, {
+    const res = await timedFetch(`${process.env.API_URL}/catalog/products/${slug}/`, {
         next: { revalidate: 60 },
     })
     if (res.status === 404) notFound()

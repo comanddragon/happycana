@@ -4,6 +4,7 @@
 // lib/api.ts, which is wired for the browser — auth cookies, 401 refresh,
 // etc.). Used from Server Components and route handlers only.
 
+import { timedFetch } from './timedFetch.server'
 import type {
     Product, Effect, Category, Collection, Brand, PaginatedResponse, ProductFilterParams, LabResult,
 } from '@/types'
@@ -35,7 +36,7 @@ export async function getProducts(
     { revalidate = 3600 }: { revalidate?: number | false } = {},
 ): Promise<PaginatedResponse<Product>> {
     try {
-        const res = await fetch(`${process.env.API_URL}/catalog/products/${buildQuery(params)}`, {
+        const res = await timedFetch(`${process.env.API_URL}/catalog/products/${buildQuery(params)}`, {
             ...(revalidate === false ? { cache: 'no-store' } : { next: { revalidate } }),
         })
         if (!res.ok) return EMPTY_PRODUCTS
@@ -48,7 +49,7 @@ export async function getProducts(
 
 export async function getEffects(): Promise<Effect[]> {
     try {
-        const res = await fetch(`${process.env.API_URL}/catalog/effects/`, {
+        const res = await timedFetch(`${process.env.API_URL}/catalog/effects/`, {
             next: { revalidate: 3600 },
         })
         if (!res.ok) return []
@@ -61,7 +62,7 @@ export async function getEffects(): Promise<Effect[]> {
 
 export async function getCategories(): Promise<Category[]> {
     try {
-        const res = await fetch(`${process.env.API_URL}/catalog/categories/?page_size=100`, {
+        const res = await timedFetch(`${process.env.API_URL}/catalog/categories/?page_size=100`, {
             next: { revalidate: 3600 },
         })
         if (!res.ok) return []
@@ -74,7 +75,7 @@ export async function getCategories(): Promise<Category[]> {
 
 export async function getFreshCategories(): Promise<Category[]> {
     try {
-        const res = await fetch(`${process.env.API_URL}/catalog/categories/?page_size=100`, { cache: 'no-store' })
+        const res = await timedFetch(`${process.env.API_URL}/catalog/categories/?page_size=100`, { cache: 'no-store' })
         if (!res.ok) return []
         const data = await res.json()
         return Array.isArray(data) ? data : (data?.results ?? [])
@@ -92,7 +93,7 @@ export function flattenCategories(categories: Category[]): Category[] {
 
 export async function getCategory(slug: string): Promise<Category | null> {
     try {
-        const res = await fetch(`${process.env.API_URL}/catalog/categories/${encodeURIComponent(slug)}/`, {
+        const res = await timedFetch(`${process.env.API_URL}/catalog/categories/${encodeURIComponent(slug)}/`, {
             next: { revalidate: 3600 },
         })
         if (!res.ok) return null
@@ -104,7 +105,7 @@ export async function getCategory(slug: string): Promise<Category | null> {
 
 export async function getCollections(): Promise<Collection[]> {
     try {
-        const res = await fetch(`${process.env.API_URL}/catalog/collections/`, {
+        const res = await timedFetch(`${process.env.API_URL}/catalog/collections/`, {
             next: { revalidate: 3600 },
         })
         if (!res.ok) return []
@@ -117,7 +118,7 @@ export async function getCollections(): Promise<Collection[]> {
 
 export async function getCollection(slug: string): Promise<Collection | null> {
     try {
-        const res = await fetch(`${process.env.API_URL}/catalog/collections/${encodeURIComponent(slug)}/`, {
+        const res = await timedFetch(`${process.env.API_URL}/catalog/collections/${encodeURIComponent(slug)}/`, {
             next: { revalidate: 3600 },
         })
         if (!res.ok) return null
@@ -133,7 +134,7 @@ export async function getCollectionProducts(
     { revalidate = 3600 }: { revalidate?: number | false } = {},
 ): Promise<PaginatedResponse<Product>> {
     try {
-        const res = await fetch(
+        const res = await timedFetch(
             `${process.env.API_URL}/catalog/collections/${encodeURIComponent(slug)}/products/${buildQuery(params)}`,
             revalidate === false ? { cache: 'no-store' } : { next: { revalidate } },
         )
@@ -147,7 +148,7 @@ export async function getCollectionProducts(
 
 export async function getBrands(): Promise<Brand[]> {
     try {
-        const res = await fetch(`${process.env.API_URL}/catalog/brands/?page_size=200`, {
+        const res = await timedFetch(`${process.env.API_URL}/catalog/brands/?page_size=200`, {
             next: { revalidate: 3600 },
         })
         if (!res.ok) return []
@@ -160,7 +161,7 @@ export async function getBrands(): Promise<Brand[]> {
 
 export async function getBrand(slug: string): Promise<Brand | null> {
     try {
-        const res = await fetch(`${process.env.API_URL}/catalog/brands/${encodeURIComponent(slug)}/`, {
+        const res = await timedFetch(`${process.env.API_URL}/catalog/brands/${encodeURIComponent(slug)}/`, {
             next: { revalidate: 3600 },
         })
         if (!res.ok) return null
@@ -178,7 +179,7 @@ const EMPTY_LAB_RESULTS: PaginatedResponse<LabResult> = {
 export async function getLabResults(page?: number): Promise<PaginatedResponse<LabResult>> {
     try {
         const qs = page ? `?page=${page}` : ''
-        const res = await fetch(`${process.env.API_URL}/catalog/labs/${qs}`, {
+        const res = await timedFetch(`${process.env.API_URL}/catalog/labs/${qs}`, {
             next: { revalidate: 3600 },
         })
         if (!res.ok) return EMPTY_LAB_RESULTS
