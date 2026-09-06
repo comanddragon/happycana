@@ -151,6 +151,14 @@ def seed(storefront, rows, stock_quantity):
             )
             categories.append(category)
         product.categories.set(categories)
+        category_label = labels[0] if labels else "Research Peptides"
+        concentration = row.get("concentration", "").strip()
+        form = row.get("form", "").strip()
+        meta_title = f"{row['name'].strip()} {concentration}".strip()[:60] if concentration else row["name"].strip()[:60]
+        meta_description = (
+            f"{row['name'].strip()}{f' ({form})' if form else ''} — {category_label} for research use only. "
+            "Source documentation available."
+        )[:160]
         listing, _ = Listing.objects.update_or_create(
             storefront=storefront,
             product=product,
@@ -159,8 +167,8 @@ def seed(storefront, rows, stock_quantity):
                 "title": product.name,
                 "is_active": True,
                 "is_featured": product.is_featured,
-                "meta_title": product.name[:60],
-                "meta_description": "Research-use-only compound with source documentation.",
+                "meta_title": meta_title,
+                "meta_description": meta_description,
             },
         )
         listing.categories.set(categories)
