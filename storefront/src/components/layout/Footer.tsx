@@ -5,7 +5,7 @@ import { Logo } from './Logo'
 import { useStorefront } from '@/storefront/StorefrontProvider'
 import { brandingString } from '@/storefront/config'
 
-const COLUMNS: Record<string, { label: string; href: string }[]> = {
+const CANNABIS_COLUMNS: Record<string, { label: string; href: string }[]> = {
     Shop: [
         { label: 'Flower', href: '/shop/products?category=flower' },
         { label: 'Edibles', href: '/shop/products?category=edibles' },
@@ -28,10 +28,25 @@ const COLUMNS: Record<string, { label: string; href: string }[]> = {
     ],
 }
 
+const PEPTIDE_COLUMNS: Record<string, { label: string; href: string }[]> = {
+    Catalog: [
+        { label: 'All compounds', href: '/shop/products' },
+        { label: 'New arrivals', href: '/shop/new-arrivals' },
+        { label: 'Research blends', href: '/shop/products?category=peptide-peptide-blends' },
+    ],
+    Resources: [
+        { label: 'Documentation', href: '/lab-results' },
+        { label: 'Research notes', href: '/blog' },
+    ],
+    Account: CANNABIS_COLUMNS.Account,
+    Support: CANNABIS_COLUMNS.Support,
+}
+
 export function Footer() {
     const { storefront, features } = useStorefront()
     const description = brandingString(storefront, 'description') || `Quality products and dependable service from ${storefront.name}.`
     const license = brandingString(storefront, 'license_number')
+    const columns = features.peptideCatalog ? PEPTIDE_COLUMNS : CANNABIS_COLUMNS
     return (
         <footer className="bg-hc-canopy-2 px-7 pb-8 pt-16 text-hc-sage">
             <div className="mx-auto max-w-[1180px]">
@@ -44,7 +59,7 @@ export function Footer() {
                         </p>
                     </div>
 
-                    {Object.entries(COLUMNS).map(([title, links]) => (
+                    {Object.entries(columns).map(([title, links]) => (
                         <div key={title}>
                             <h3 className="mb-4 font-hc-mono text-[11.5px] uppercase tracking-[0.08em] text-hc-paper">{title}</h3>
                             <ul className="space-y-0">
@@ -69,6 +84,10 @@ export function Footer() {
                         by adults 21+, in states where cannabis is legal. This product has not been evaluated by the FDA and is
                         not intended to diagnose, treat, cure, or prevent any disease. Please consume responsibly and do not
                         operate a vehicle or machinery after use.
+                    </p>}
+                    {features.peptideCatalog && <p className="max-w-[640px] text-xs leading-relaxed text-hc-sage">
+                        For laboratory research and educational use only. Not for human consumption. No product information
+                        on this site is intended to diagnose, treat, cure, or prevent disease.
                     </p>}
                     <div className="flex flex-col items-start gap-2 sm:items-end">
                         <p className="font-hc-mono text-[11.5px] text-hc-sage">

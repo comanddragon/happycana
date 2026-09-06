@@ -11,6 +11,13 @@ export const NAV_LINKS: NavLink[] = [
     { href: '/blog', label: 'Blog' },
 ]
 
+export const PEPTIDE_NAV_LINKS: NavLink[] = [
+    { href: '/shop', label: 'Catalog' },
+    { href: '/shop/products', label: 'All compounds' },
+    { label: 'Research areas', dynamic: true },
+    { href: '/blog', label: 'Research notes' },
+]
+
 export const AMBER_DOT = {
     background: 'radial-gradient(circle at 32% 28%, var(--color-hc-amber-light), var(--color-hc-amber) 60%, var(--color-hc-amber-dim))',
 }

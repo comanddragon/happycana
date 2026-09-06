@@ -54,8 +54,7 @@ api.interceptors.response.use(
             const refresh = Cookies.get('refresh_token')
 
             if (!refresh) {
-                clearTokens()
-                redirectToLogin()
+                expireSession()
                 return Promise.reject(error)
             }
 
@@ -67,8 +66,7 @@ api.interceptors.response.use(
                 return api(original)
             } catch (err) {
                 processQueue(err, null)
-                clearTokens()
-                redirectToLogin()
+                expireSession()
                 return Promise.reject(err)
             } finally {
                 isRefreshing = false
@@ -85,10 +83,15 @@ api.interceptors.response.use(
 // an infinite reload loop. Guard against that by never redirecting from a
 // page that's already the login page, and use client-side nav so we don't
 // force a full reload in the first place.
-function redirectToLogin() {
+function expireSession() {
+    clearTokens()
     if (typeof window === 'undefined') return
-    if (window.location.pathname.startsWith('/login')) return
-    window.location.href = '/login'
+    window.localStorage.removeItem('auth-store')
+    window.dispatchEvent(new Event('auth-session-expired'))
+    const requiresAccount = window.location.pathname.startsWith('/account')
+    if (requiresAccount && !window.location.pathname.startsWith('/login')) {
+        window.location.assign('/login')
+    }
 }
 
 // ─── Token helpers ────────────────────────────────────────────────────────────
@@ -106,6 +109,10 @@ export function clearTokens() {
 
 export function getAccessToken() {
     return Cookies.get('access_token')
+}
+
+export function getRefreshToken() {
+    return Cookies.get('refresh_token')
 }
 
 // ─── Typed error extraction ───────────────────────────────────────────────────

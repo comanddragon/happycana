@@ -2,12 +2,13 @@ import Link from 'next/link'
 import { Menu, X } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetDescription } from '@/components/ui/sheet'
-import { NAV_LINKS } from './constants'
+import { NAV_LINKS, PEPTIDE_NAV_LINKS } from './constants'
 import { Logo } from '../Logo'
 import { useCategoriesMenuTree } from '@/hooks/useCategoriesMenuTree'
 import { NavMobileTreeItem } from '@/components/layout/navbar/NavMobileTreeItem'
 import { AMBER_BUTTON, AMBER_BUTTON_STYLE } from './constants'
 import React from "react";
+import { useStorefront } from '@/storefront/StorefrontProvider'
 
 interface NavbarMobileMenuProps {
     open: boolean
@@ -27,6 +28,8 @@ export function NavbarMobileMenu({
                                      isAuthenticated,
                                  }: NavbarMobileMenuProps) {
     const { rootNodes } = useCategoriesMenuTree()
+    const { features } = useStorefront()
+    const navLinks = features.peptideCatalog ? PEPTIDE_NAV_LINKS : NAV_LINKS
 
     return (
         <Sheet open={open} onOpenChange={setOpen}>
@@ -61,7 +64,7 @@ export function NavbarMobileMenu({
                         onKeyDown={onKeyDown}
                     />
 
-                    {NAV_LINKS.map((item) => {
+                    {navLinks.map((item) => {
                         if (item.dynamic) {
                             return (
                                 <NavMobileTreeItem

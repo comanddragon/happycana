@@ -5,7 +5,7 @@
 from decimal import Decimal
 import logging
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import F, Q
 from apps.orders.models import Cart, Order, OrderItem
 from apps.shipping.models import ShippingMethod
 from apps.payments.models import PaymentMethod
@@ -221,7 +221,7 @@ class CheckoutService:
                 warehouse_scope |= Q(warehouse__storefront=storefront)
             stock = (
                 item.variant.stock_levels.select_for_update()  # row-level DB lock
-                .filter(warehouse_scope, quantity__gt=0)
+                .filter(warehouse_scope, quantity__gt=F("reserved"))
                 .order_by("warehouse__storefront_id", "id")
                 .first()
             )

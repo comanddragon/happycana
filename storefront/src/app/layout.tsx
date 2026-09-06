@@ -70,10 +70,9 @@ export async function generateMetadata(): Promise<Metadata> {
         images: [ogImage],
     },
     robots: { index: true, follow: true },
-    icons: {
-        icon: '/favicon.ico',
-        apple: '/apple-touch-icon.png',
-    },
+    icons: storefront.kind === 'peptides'
+        ? { icon: '/peptide-icon.svg', apple: '/peptide-icon.svg' }
+        : { icon: '/dispensary-favicon.ico', apple: '/apple-touch-icon.png' },
     // Search Console (and other engine) ownership verification. Values are
     // read from env so nothing is committed here; unset keys are simply
     // omitted from the rendered <meta> tags by Next.

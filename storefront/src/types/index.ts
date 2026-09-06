@@ -295,6 +295,19 @@ export interface Product {
         discount_type: 'percent' | 'fixed'
         value: string
     } | null
+    vertical_profile?: {
+        kind: 'peptide' | 'cannabis' | 'footwear'
+        data: {
+            sequence?: string
+            molecular_weight?: string | null
+            purity_percent?: string | null
+            form?: string
+            concentration?: string
+            storage_requirements?: string
+            documentation_url?: string
+            [key: string]: unknown
+        }
+    } | null
 }
 
 export interface Listing {

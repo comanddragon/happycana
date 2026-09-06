@@ -54,6 +54,7 @@ def invalidate_category(category_id, storefront_id=None):
 # previously cached keys unreachable; they then simply expire off of
 # CATEGORY_TTL instead of being actively deleted.
 CATEGORY_TREE_VERSION_KEY = "category:tree:version"
+CATEGORY_TREE_SCHEMA_VERSION = 2
 
 
 def get_category_tree_version():
@@ -73,7 +74,10 @@ def bump_category_tree_version():
 
 
 def get_category_tree_cache_key(request_path, storefront_id=None):
-    return f"storefront:{_storefront_namespace(storefront_id)}:category:tree:v{get_category_tree_version()}:{request_path}"
+    return (
+        f"storefront:{_storefront_namespace(storefront_id)}:category:tree:"
+        f"schema{CATEGORY_TREE_SCHEMA_VERSION}:v{get_category_tree_version()}:{request_path}"
+    )
 
 
 def cache_category_tree_response(request_path, data, storefront_id=None):
@@ -120,4 +124,3 @@ def cache_blog_response(request_path, data):
 
 def get_cached_blog_response(request_path):
     return cache.get(get_blog_cache_key(request_path))
-

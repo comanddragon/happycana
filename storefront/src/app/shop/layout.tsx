@@ -5,13 +5,20 @@ import { QueryClient, dehydrate, HydrationBoundary } from '@tanstack/react-query
 import { getCategories, getBrands, getEffects } from '@/lib/catalog.server'
 import { qk } from '@/lib/queryKeys'
 import { DEFAULT_STOREFRONT_NAME } from '@/lib/storefront'
+import { getStorefront } from '@/lib/storefront.server'
 
-export const metadata: Metadata = {
-    title: {
-        default: `${DEFAULT_STOREFRONT_NAME} — Shop the Menu`,
-        template: `%s | ${DEFAULT_STOREFRONT_NAME}`,
-    },
-    description: 'Shop Flower, edibles, and concentrates from small-batch growers, third-party tested and delivered same-day.',
+export async function generateMetadata(): Promise<Metadata> {
+    const storefront = await getStorefront()
+    const peptides = storefront.kind === 'peptides'
+    return {
+        title: {
+            default: peptides ? `${storefront.name} — Research Catalog` : `${DEFAULT_STOREFRONT_NAME} — Shop the Menu`,
+            template: `%s | ${storefront.name || DEFAULT_STOREFRONT_NAME}`,
+        },
+        description: peptides
+            ? 'Browse source-traceable research compounds by concentration and format.'
+            : 'Shop Flower, edibles, and concentrates from small-batch growers, third-party tested and delivered same-day.',
+    }
 }
 
 export default async function ShopLayout({ children }: { children: React.ReactNode }) {

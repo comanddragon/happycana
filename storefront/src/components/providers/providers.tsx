@@ -2,9 +2,10 @@
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import axios from 'axios'
 import { Toaster } from 'sonner'
+import { useAuthStore } from '@/store/auth'
 
 export function Providers({ children }: { children: React.ReactNode }) {
     const [queryClient] = useState(
@@ -25,6 +26,16 @@ export function Providers({ children }: { children: React.ReactNode }) {
                 },
             })
     )
+
+    useEffect(() => {
+        const expire = () => {
+            useAuthStore.getState().setUser(null)
+            queryClient.removeQueries({ queryKey: ['cart'] })
+            queryClient.removeQueries({ queryKey: ['notifications'] })
+        }
+        window.addEventListener('auth-session-expired', expire)
+        return () => window.removeEventListener('auth-session-expired', expire)
+    }, [queryClient])
 
 
     return (

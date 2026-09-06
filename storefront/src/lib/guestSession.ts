@@ -6,6 +6,7 @@
 
 import { authService } from './services'
 import { useAuthStore } from '@/store/auth'
+import { getAccessToken, getRefreshToken } from '@/lib/api'
 
 /**
  * Ensures the visitor has a JWT session, creating a guest one if needed.
@@ -14,7 +15,7 @@ import { useAuthStore } from '@/store/auth'
 export async function ensureGuestSession(email?: string) {
     const { isAuthenticated, user, setUser } = useAuthStore.getState()
 
-    if (isAuthenticated && user) {
+    if (isAuthenticated && user && (getAccessToken() || getRefreshToken())) {
         // Already a real or guest session — nothing to do unless we're
         // attaching an email to an existing guest for the first time.
         if (user.is_guest && email && user.email !== email) {
@@ -24,6 +25,8 @@ export async function ensureGuestSession(email?: string) {
         }
         return user
     }
+
+    if (isAuthenticated || user) setUser(null)
 
     const { user: guestUser } = await authService.guestSession(email)
     setUser(guestUser)

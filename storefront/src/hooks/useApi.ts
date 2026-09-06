@@ -255,10 +255,11 @@ export function useDeleteAddress() {
 
 export function useNotifications() {
     const isAuthenticated = useAuthStore(s => s.isAuthenticated)
+    const isGuest = useAuthStore(s => s.isGuest)
     return useQuery({
         queryKey: qk.notifications(),
         queryFn:  notificationService.list,
-        enabled: isAuthenticated,
+        enabled: isAuthenticated && !isGuest,
         refetchInterval: 30_000,
     })
 }

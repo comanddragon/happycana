@@ -10,6 +10,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 SECRET_KEY = os.environ["DJANGO_SECRET_KEY"]
 
 INSTALLED_APPS = [
+    # First so core's management commands can intentionally override
+    # commands supplied by server integrations such as Daphne.
+    "core",
     # Django core
     'daphne',
     "django.contrib.admin",
@@ -29,7 +32,6 @@ INSTALLED_APPS = [
     "drf_spectacular",          # OpenAPI schema generation
 
     # Local apps
-    "core",
     "apps.users",
     "apps.catalog",
     "apps.inventory",

@@ -50,9 +50,7 @@ export async function getProducts(
 
 export async function getEffects(): Promise<Effect[]> {
     try {
-        const res = await timedFetch(`${process.env.API_URL}/catalog/effects/`, {
-            next: { revalidate: 3600 },
-        })
+        const res = await timedFetch(`${process.env.API_URL}/catalog/effects/`, { cache: 'no-store' })
         if (!res.ok) return []
         const data = await res.json()
         return Array.isArray(data) ? data : (data?.results ?? [])
@@ -63,9 +61,7 @@ export async function getEffects(): Promise<Effect[]> {
 
 export async function getCategories(): Promise<Category[]> {
     try {
-        const res = await timedFetch(`${process.env.API_URL}/catalog/categories/?page_size=100`, {
-            next: { revalidate: 3600 },
-        })
+        const res = await timedFetch(`${process.env.API_URL}/catalog/categories/?page_size=100`, { cache: 'no-store' })
         if (!res.ok) return []
         const data = await res.json()
         return Array.isArray(data) ? data : (data?.results ?? [])
@@ -106,9 +102,7 @@ export async function getCategory(slug: string): Promise<Category | null> {
 
 export async function getCollections(): Promise<Collection[]> {
     try {
-        const res = await timedFetch(`${process.env.API_URL}/catalog/collections/`, {
-            next: { revalidate: 3600 },
-        })
+        const res = await timedFetch(`${process.env.API_URL}/catalog/collections/`, { cache: 'no-store' })
         if (!res.ok) return []
         const data = await res.json()
         return Array.isArray(data) ? data : (data?.results ?? [])
@@ -153,9 +147,7 @@ export async function getCollectionProducts(
 
 export async function getBrands(): Promise<Brand[]> {
     try {
-        const res = await timedFetch(`${process.env.API_URL}/catalog/brands/?page_size=200`, {
-            next: { revalidate: 3600 },
-        })
+        const res = await timedFetch(`${process.env.API_URL}/catalog/brands/?page_size=200`, { cache: 'no-store' })
         if (!res.ok) return []
         const data = await res.json()
         return Array.isArray(data) ? data : (data?.results ?? [])

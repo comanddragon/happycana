@@ -12,17 +12,23 @@ import { EffectIcon, effectAccent } from '@/components/icons/EffectIcons'
 import { Product, Effect } from "@/types"
 import type { Metadata } from "next"
 import { DEFAULT_STOREFRONT_NAME } from '@/lib/storefront'
+import { getStorefront } from '@/lib/storefront.server'
 
 const getNewArrivals = () => getProducts({ ordering: '-created_at', page_size: 4 })
 const getBestSellers = () => getProducts({ ordering: '-units_sold_hint', page_size: 4 })
 
-export const metadata: Metadata = {
-    title: 'Shop the Menu',
-    description: 'Flower, edibles, vapes, and concentrates from small-batch growers, third-party tested and ready for same-day pickup or delivery.',
-    alternates: { canonical: '/shop' },
-    openGraph: {
-        title: `Shop the Menu | ${DEFAULT_STOREFRONT_NAME}`,
-        description: 'Flower, edibles, vapes, and concentrates — every lot lab-tested twice.',
+export async function generateMetadata(): Promise<Metadata> {
+    const storefront = await getStorefront()
+    const peptides = storefront.kind === 'peptides'
+    const title = peptides ? 'Research Compound Catalog' : 'Shop the Menu'
+    const description = peptides
+        ? `Browse research-use-only peptides by format and concentration from ${storefront.name}.`
+        : 'Flower, edibles, vapes, and concentrates from small-batch growers, third-party tested and ready for same-day pickup or delivery.'
+    return {
+        title,
+        description,
+        alternates: { canonical: '/shop' },
+        openGraph: { title: `${title} | ${storefront.name || DEFAULT_STOREFRONT_NAME}`, description },
     }
 }
 
@@ -256,7 +262,9 @@ async function NewArrivalsSection() {
     )
 }
 
-export default function ShopPage() {
+export default async function ShopPage() {
+    const storefront = await getStorefront()
+    const peptides = storefront.kind === 'peptides'
     return (
         <div className="bg-hc-paper">
 
@@ -269,13 +277,15 @@ export default function ShopPage() {
                 />
                 <div className="relative mx-auto max-w-[1180px]">
                     <div className="mb-4 inline-flex items-center gap-2 font-hc-mono text-xs uppercase tracking-[0.12em] text-hc-amber-light before:h-px before:w-3.5 before:bg-current before:opacity-50">
-                        Today&rsquo;s menu
+                        {peptides ? 'Research compound catalog' : 'Today’s menu'}
                     </div>
                     <h1 className="font-hc-display text-[34px] font-normal leading-[1.08] tracking-tight sm:text-5xl">
-                        Shop by category
+                        {peptides ? 'Browse by research area' : 'Shop by category'}
                     </h1>
                     <p className="mt-4 max-w-lg text-[16px] leading-relaxed text-hc-sage">
-                        Explore our full range of flower, edibles, vapes, and concentrates — every batch third-party tested before it reaches you.
+                        {peptides
+                            ? 'Explore compounds by format and concentration, with source documentation retained for every catalog record.'
+                            : 'Explore our full range of flower, edibles, vapes, and concentrates — every batch third-party tested before it reaches you.'}
                     </p>
                 </div>
             </section>
@@ -293,19 +303,17 @@ export default function ShopPage() {
                 </Suspense>
 
                 {/* Shop by effect */}
-                <Suspense fallback={null}>
-                    <EffectsSection />
-                </Suspense>
+                {!peptides && <Suspense fallback={null}><EffectsSection /></Suspense>}
 
                 {/* Shop by brand */}
-                <Suspense fallback={
+                {!peptides && <Suspense fallback={
                     <>
                         <SectionHeading eyebrow="Brands" title="Shop by Brand" />
                         <BrandStripSkeleton />
                     </>
                 }>
                     <BrandStripSection />
-                </Suspense>
+                </Suspense>}
 
                 {/* Active discounts */}
                 <Suspense fallback={<ProductGridSkeleton />}>
@@ -332,12 +340,17 @@ export default function ShopPage() {
             {/* Trust band */}
             <div className="border-y border-hc-ink/[0.06] bg-hc-paper-2">
                 <div className="mx-auto max-w-[1180px] px-7 py-12 grid grid-cols-2 gap-6 sm:grid-cols-4">
-                    {[
+                    {(peptides ? [
+                        { icon: FlaskConical, title: 'Research use only', text: 'Clearly labeled materials' },
+                        { icon: ShieldCheck, title: 'Source traceability', text: 'Original record retained' },
+                        { icon: RotateCcw, title: 'Catalog clarity', text: 'Format and concentration' },
+                        { icon: Truck, title: 'Stock visibility', text: 'Availability shown live' },
+                    ] : [
                         { icon: FlaskConical, title: '12-panel lab tested', text: 'Every batch, twice' },
-                        { icon: Truck,        title: 'Same-day pickup',     text: 'Ready in ~20 min' },
-                        { icon: RotateCcw,    title: '30-day returns',      text: 'No questions asked' },
-                        { icon: ShieldCheck,  title: 'Licensed retailer',   text: 'State-compliant, always' },
-                    ].map(({ icon: Icon, title, text }) => (
+                        { icon: Truck, title: 'Same-day pickup', text: 'Ready in ~20 min' },
+                        { icon: RotateCcw, title: '30-day returns', text: 'No questions asked' },
+                        { icon: ShieldCheck, title: 'Licensed retailer', text: 'State-compliant, always' },
+                    ]).map(({ icon: Icon, title, text }) => (
                         <div key={title} className="flex flex-col items-center gap-2 text-center">
                             <div className="flex h-11 w-11 items-center justify-center rounded-full bg-hc-canopy">
                                 <Icon className="h-4.5 w-4.5 text-hc-amber-light" />
@@ -350,10 +363,10 @@ export default function ShopPage() {
             </div>
 
             <CtaBand
-                heading="Can’t decide? We’ll walk you through it."
-                subheading="Same-day pickup, next-day delivery, every lot tested twice."
+                heading={peptides ? 'Need a specific research format?' : 'Can’t decide? We’ll walk you through it.'}
+                subheading={peptides ? 'Compare compounds by concentration, form, and source documentation.' : 'Same-day pickup, next-day delivery, every lot tested twice.'}
                 href="/shop/products"
-                label="Browse all products"
+                label={peptides ? 'Browse all compounds' : 'Browse all products'}
             />
         </div>
     )

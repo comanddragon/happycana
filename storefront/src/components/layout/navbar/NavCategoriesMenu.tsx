@@ -3,16 +3,18 @@
 import { ChevronDown } from 'lucide-react'
 import { useCategoriesMenuTree } from '@/hooks/useCategoriesMenuTree'
 import { NavFlyoutItem } from '@/components/layout/navbar/NavFlyoutItem'
+import { useStorefront } from '@/storefront/StorefrontProvider'
 
 export function NavCategoriesMenu() {
     const { rootNodes } = useCategoriesMenuTree()
+    const { features } = useStorefront()
 
     return (
         <div className="relative group">
             <button
                 className="flex items-center gap-1 text-sm font-medium text-hc-sage transition-colors hover:text-hc-paper"
             >
-                Categories
+                {features.peptideCatalog ? 'Research areas' : 'Categories'}
                 <ChevronDown className="h-4 w-4 transition-transform group-hover:rotate-180" />
             </button>
 

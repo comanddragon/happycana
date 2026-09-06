@@ -19,7 +19,7 @@ class CategoryManager(db_models.Manager):
         # Keeping with_children() here just bought a second, wasted query.
         return self.get_queryset().active().root()
 
-    def attach_full_tree(self, objs):
+    def attach_full_tree(self, objs, queryset=None):
         """
         CategorySerializer.get_children() recurses through the category
         tree, and `with_children()` only prefetches one level deep — so
@@ -33,7 +33,8 @@ class CategoryManager(db_models.Manager):
         """
         objs = list(objs)
         by_parent = {}
-        for cat in self.get_queryset().active().order_by("name", "id"):
+        source = queryset if queryset is not None else self.get_queryset().active()
+        for cat in source.order_by("name", "id"):
             by_parent.setdefault(cat.parent_id, []).append(cat)
 
         def link(cat):

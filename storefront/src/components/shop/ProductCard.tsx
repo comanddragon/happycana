@@ -52,11 +52,18 @@ export const ProductCard = memo(function ProductCard({ product, className, prior
             : product.sub_type || null
     const thcLabel     = formatThc(firstVariant?.lab?.thc_percent)
     const weightLabel  = formatWeight(firstVariant?.weight_value, firstVariant?.weight_unit)
-    const stats = [
+    const peptide = product.vertical_profile?.kind === 'peptide'
+        ? product.vertical_profile.data
+        : null
+    const stats = (peptide ? [
+        peptide.purity_percent && { label: 'PURITY', value: `${Number(peptide.purity_percent).toFixed(1)}%` },
+        peptide.concentration && { label: 'FORMAT', value: peptide.concentration },
+        peptide.form && { label: 'FORM', value: peptide.form.replace('Lyophilized ', '') },
+    ] : [
         thcLabel && { label: 'THC', value: thcLabel.replace('% THC', '%') },
         typeLabel && { label: 'TYPE', value: typeLabel },
         weightLabel && { label: 'SIZE', value: weightLabel },
-    ].filter((s): s is { label: string; value: string } => Boolean(s)).slice(0, 3)
+    ]).filter((s): s is { label: string; value: string } => Boolean(s)).slice(0, 3)
 
     return (
         <div

@@ -206,6 +206,7 @@ class ProductImage(UUIDModel, MediaMixin):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="images")
     image   = models.ImageField(upload_to="products/images/", blank=True, null=True)
     source_url = models.URLField(
+        max_length=1000,
         blank=True, help_text="Passed through as-is from the source — not downloaded/re-hosted."
     )
     alt_text = models.CharField(max_length=255, blank=True)

@@ -41,6 +41,16 @@ class EffectListView(generics.ListAPIView):
     serializer_class = EffectSerializer
     permission_classes = [IsAdminOrReadOnly]
 
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        storefront = getattr(self.request, "storefront", None)
+        if storefront is not None:
+            queryset = queryset.filter(
+                cannabis_profiles__product__listings__storefront=storefront,
+                cannabis_profiles__product__listings__is_active=True,
+            ).distinct()
+        return queryset
+
 class CategoryListView(generics.ListCreateAPIView):
     permission_classes = [IsAdminOrReadOnly]
     filter_backends    = [DjangoFilterBackend]
@@ -49,7 +59,14 @@ class CategoryListView(generics.ListCreateAPIView):
 
 
     def get_queryset(self):
-        return Category.objects.root_categories()
+        queryset = Category.objects.root_categories()
+        storefront = getattr(self.request, "storefront", None)
+        if storefront is not None:
+            queryset = queryset.filter(
+                listings__storefront=storefront,
+                listings__is_active=True,
+            ).distinct()
+        return queryset
 
     def get_serializer_class(self):
         return CategorySerializer
@@ -71,7 +88,13 @@ class CategoryListView(generics.ListCreateAPIView):
         # See CategoryManager.attach_full_tree: without this, the
         # recursive serializer issues one query per category at every
         # depth below root->children.
-        Category.objects.attach_full_tree(objs)
+        tree_queryset = Category.objects.active()
+        if storefront_id is not None:
+            tree_queryset = tree_queryset.filter(
+                listings__storefront_id=storefront_id,
+                listings__is_active=True,
+            ).distinct()
+        Category.objects.attach_full_tree(objs, queryset=tree_queryset)
         serializer = self.get_serializer(objs, many=True)
         response_data = self.get_paginated_response(serializer.data).data if page is not None else serializer.data
         cache_category_tree_response(cache_key, response_data, storefront_id)
@@ -85,9 +108,26 @@ class CategoryDetailView(generics.RetrieveUpdateDestroyAPIView):
     parser_classes     = [MultiPartParser, FormParser]
     lookup_field = "slug"
 
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        storefront = getattr(self.request, "storefront", None)
+        if storefront is not None:
+            queryset = queryset.filter(
+                listings__storefront=storefront,
+                listings__is_active=True,
+            ).distinct()
+        return queryset
+
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
-        Category.objects.attach_full_tree([instance])
+        storefront = getattr(request, "storefront", None)
+        tree_queryset = Category.objects.active()
+        if storefront is not None:
+            tree_queryset = tree_queryset.filter(
+                listings__storefront=storefront,
+                listings__is_active=True,
+            ).distinct()
+        Category.objects.attach_full_tree([instance], queryset=tree_queryset)
         serializer = self.get_serializer(instance)
         return Response(serializer.data)
 
@@ -96,7 +136,7 @@ class CollectionQuerysetMixin:
     """Collections are active, root-level categories not marked as key."""
 
     def get_queryset(self):
-        return (
+        queryset = (
             Category.objects.filter(is_active=True, is_key=False, parent__isnull=True)
             .annotate(
                 product_count=Count(
@@ -107,6 +147,13 @@ class CollectionQuerysetMixin:
             )
             .order_by("name", "id")
         )
+        storefront = getattr(self.request, "storefront", None)
+        if storefront is not None:
+            queryset = queryset.filter(
+                listings__storefront=storefront,
+                listings__is_active=True,
+            ).distinct()
+        return queryset
 
 
 class CollectionListView(CollectionQuerysetMixin, generics.ListAPIView):
@@ -330,11 +377,31 @@ class BrandListView(generics.ListAPIView):
   serializer_class = BrandSerializer
   permission_classes = [IsAdminOrReadOnly]
 
+  def get_queryset(self):
+      queryset = super().get_queryset()
+      storefront = getattr(self.request, "storefront", None)
+      if storefront is not None:
+          queryset = queryset.filter(
+              products__listings__storefront=storefront,
+              products__listings__is_active=True,
+          ).distinct()
+      return queryset
+
 class BrandDetailView(generics.RetrieveAPIView):
   queryset = Brand.objects.filter(is_active=True)
   serializer_class = BrandSerializer
   permission_classes = [IsAdminOrReadOnly]
   lookup_field = "slug"
+
+  def get_queryset(self):
+      queryset = super().get_queryset()
+      storefront = getattr(self.request, "storefront", None)
+      if storefront is not None:
+          queryset = queryset.filter(
+              products__listings__storefront=storefront,
+              products__listings__is_active=True,
+          ).distinct()
+      return queryset
 
 
 class LabResultListView(generics.ListAPIView):
@@ -349,8 +416,15 @@ class LabResultListView(generics.ListAPIView):
     ordering            = ["product__name"]
 
     def get_queryset(self):
-        return (
+        queryset = (
             ProductVariant.objects.with_coa()
             .select_related("product", "product__brand", "lab")
             .prefetch_related("product__images")
         )
+        storefront = getattr(self.request, "storefront", None)
+        if storefront is not None:
+            queryset = queryset.filter(
+                product__listings__storefront=storefront,
+                product__listings__is_active=True,
+            ).distinct()
+        return queryset

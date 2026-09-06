@@ -1,14 +1,19 @@
+'use client'
+
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
-import { NAV_LINKS } from './constants'
+import { NAV_LINKS, PEPTIDE_NAV_LINKS } from './constants'
 import { NavCategoriesMenu } from '@/components/layout/navbar/NavCategoriesMenu'
+import { useStorefront } from '@/storefront/StorefrontProvider'
 
 export function NavbarDesktopLinks({ pathname }: { pathname: string }) {
+    const { features } = useStorefront()
+    const navLinks = features.peptideCatalog ? PEPTIDE_NAV_LINKS : NAV_LINKS
     // Pick the single most specific (longest) matching href instead of
     // highlighting every link whose href is a prefix of the current path.
     // e.g. on /shop/products/some-slug, only "Products" should light up,
     // not "Shop" too.
-    const matchingHrefs = NAV_LINKS
+    const matchingHrefs = navLinks
         .map((item) => item.href?.split('?')[0].split('#')[0])
         .filter((href): href is string => !!href && href.startsWith('/shop') && pathname.startsWith(href))
 
@@ -16,7 +21,7 @@ export function NavbarDesktopLinks({ pathname }: { pathname: string }) {
 
     return (
         <nav className="hidden md:flex items-center gap-8">
-            {NAV_LINKS.map((item) => {
+            {navLinks.map((item) => {
                 const itemHref = item.href?.split('?')[0].split('#')[0]
                 const isActive = !!itemHref && itemHref === bestMatch
 

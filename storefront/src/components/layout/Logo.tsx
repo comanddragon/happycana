@@ -28,6 +28,14 @@ export function Logo({
 }) {
     const { storefront } = useStorefront()
     const fallback = VARIANTS[variant]
+    if (storefront.kind === 'peptides' && !storefront.logo_url) {
+        return (
+            <Link href={href} className="flex shrink-0 items-center gap-2.5 text-hc-paper">
+                <span className="flex h-8 w-8 items-center justify-center rounded-full border border-[#9ee8ce]/40 bg-[#9ee8ce]/10 font-hc-mono text-sm font-semibold text-[#9ee8ce]">A</span>
+                <span className="font-hc-display text-lg font-medium tracking-tight">{storefront.name}</span>
+            </Link>
+        )
+    }
     const src = storefront.logo_url || fallback.src
     const aspect = storefront.logo_url ? 560 / 150 : fallback.aspect
 
