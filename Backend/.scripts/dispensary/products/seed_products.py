@@ -23,7 +23,7 @@ from dotenv import load_dotenv
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 BACKEND_DIR = SCRIPT_DIR.parent.parent
-DEFAULT_DATA_DIR = BACKEND_DIR / ".output" / "products"
+DEFAULT_DATA_DIR = BACKEND_DIR / ".output" / "dispensary" / "products"
 
 load_dotenv(BACKEND_DIR / ".env")
 load_dotenv()

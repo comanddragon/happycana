@@ -1,9 +1,12 @@
+import runpy
 from decimal import Decimal
+from pathlib import Path
 
-from apps.catalog_peptides.management.commands.import_peptide_catalog import (
-    infer_profile,
-    parse_catalog_page,
-)
+
+SCRIPT = Path(__file__).resolve().parents[3] / ".scripts" / "peptides" / "products" / "scrape_products.py"
+SCRAPER = runpy.run_path(SCRIPT)
+infer_profile = SCRAPER["infer_profile"]
+parse_catalog_page = SCRAPER["parse_catalog_page"]
 
 
 def test_parse_woocommerce_catalog_cards():

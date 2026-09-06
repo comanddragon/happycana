@@ -16,7 +16,7 @@ BASE_URL = "https://9realms.eu"
 BLOG_URL = f"{BASE_URL}/blogs/news"
 
 # Save here:
-OUTPUT_DIR = Path(__file__).resolve().parents[2] / ".output" / "blogs"
+OUTPUT_DIR = Path(__file__).resolve().parents[2] / ".output" / "dispensary" / "blogs"
 OUTPUT_FILE = OUTPUT_DIR / "blogs.csv"
 FIELDS = [
     "title", "url", "source_url", "published_at", "author", "description",

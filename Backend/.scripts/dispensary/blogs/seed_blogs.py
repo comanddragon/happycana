@@ -35,7 +35,7 @@ from slugify import slugify  # noqa: E402
 
 from apps.blog.models import BlogPost  # noqa: E402
 
-DEFAULT_PATH = BACKEND_DIR / ".output" / "blogs" / "blogs.csv"
+DEFAULT_PATH = BACKEND_DIR / ".output" / "dispensary" / "blogs" / "blogs.csv"
 LOCAL_DATABASE_HOSTS = {"", "localhost", "127.0.0.1", "::1"}
 
 # Strips <script>/<style> blocks out of scraped HTML before it's stored —
