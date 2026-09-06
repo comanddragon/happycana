@@ -2,6 +2,7 @@
 # apps/orders/api/serializers.py
 # =============================================================================
 from rest_framework import serializers
+from django.db.models import Q
 from apps.orders.models import Cart, CartItem, Order, OrderItem
 from apps.catalog.api.serializers import ProductVariantSerializer
 from apps.users.api.serializers import AddressSerializer
@@ -77,6 +78,7 @@ class OrderSerializer(serializers.ModelSerializer):
     address = AddressSerializer(read_only=True)
     coupon = CouponSerializer(read_only=True)
     payment_method = serializers.SerializerMethodField()
+    storefront = serializers.SerializerMethodField()
 
     def get_payment_method(self, obj):
         method = obj.payment_method
@@ -88,10 +90,21 @@ class OrderSerializer(serializers.ModelSerializer):
             "logo_url": method.logo_url,
         }
 
+    def get_storefront(self, obj):
+        if not obj.storefront:
+            return None
+        return {
+            "id": obj.storefront.id,
+            "slug": obj.storefront.slug,
+            "name": obj.storefront.name,
+            "currency": obj.storefront.currency,
+        }
+
     class Meta:
         model = Order
         fields = [
             "id",
+            "storefront",
             "status",
             "address",
             "coupon",
@@ -137,7 +150,9 @@ class OrderCreateSerializer(serializers.Serializer):
 
         storefront = getattr(self.context["request"], "storefront", None)
         if not ShippingMethod.objects.filter(
-            id=value, is_active=True, storefront=storefront
+            Q(is_global=True) | Q(storefronts=storefront),
+            id=value,
+            is_active=True,
         ).exists():
             raise serializers.ValidationError("Shipping method not found.")
         return value
@@ -147,7 +162,9 @@ class OrderCreateSerializer(serializers.Serializer):
 
         storefront = getattr(self.context["request"], "storefront", None)
         if not PaymentMethod.objects.filter(
-            id=value, is_active=True, storefront=storefront
+            Q(is_global=True) | Q(storefronts=storefront),
+            id=value,
+            is_active=True,
         ).exists():
             raise serializers.ValidationError("Payment method not found.")
         return value

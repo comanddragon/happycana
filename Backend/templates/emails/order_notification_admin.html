@@ -1,7 +1,7 @@
 {% extends "emails/base_email.html" %}
 
 {% block title %}New Order #{{ order.id }}{% endblock %}
-{% block preheader %}New order #{{ order.id }} — ${{ order.total }}{% endblock %}
+{% block preheader %}New order #{{ order.id }} — {{ currency }} {{ order.total }}{% endblock %}
 
 {% block content %}
 <h1 style="margin:0 0 8px;font-family:Georgia,'Times New Roman',serif;font-size:34px;line-height:40px;
@@ -38,18 +38,18 @@
       {{ item.variant.sku }}
     </td>
     <td align="center" style="padding:14px 0;border-bottom:1px solid #EDECE7;font-size:14px;color:#141413;">{{ item.quantity }}</td>
-    <td align="right" style="padding:14px 0;border-bottom:1px solid #EDECE7;font-size:14px;color:#141413;">${{ item.total_price }}</td>
+    <td align="right" style="padding:14px 0;border-bottom:1px solid #EDECE7;font-size:14px;color:#141413;">{{ currency }} {{ item.total_price }}</td>
   </tr>
   {% endfor %}
 </table>
 
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:32px;">
-  <tr><td style="padding:4px 0;font-size:14px;color:#6E6C66;">Subtotal</td><td align="right" style="padding:4px 0;font-size:14px;color:#141413;">${{ order.subtotal }}</td></tr>
+  <tr><td style="padding:4px 0;font-size:14px;color:#6E6C66;">Subtotal</td><td align="right" style="padding:4px 0;font-size:14px;color:#141413;">{{ currency }} {{ order.subtotal }}</td></tr>
   {% if order.discount_amount %}
-  <tr><td style="padding:4px 0;font-size:14px;color:#6E6C66;">Discount</td><td align="right" style="padding:4px 0;font-size:14px;color:#141413;">-${{ order.discount_amount }}</td></tr>
+  <tr><td style="padding:4px 0;font-size:14px;color:#6E6C66;">Discount</td><td align="right" style="padding:4px 0;font-size:14px;color:#141413;">-{{ currency }} {{ order.discount_amount }}</td></tr>
   {% endif %}
-  <tr><td style="padding:4px 0;font-size:14px;color:#6E6C66;">Shipping</td><td align="right" style="padding:4px 0;font-size:14px;color:#141413;">${{ order.shipping_cost }}</td></tr>
-  <tr><td style="padding:12px 0 0;font-size:16px;color:#141413;font-weight:700;">Total</td><td align="right" style="padding:12px 0 0;font-size:16px;color:#141413;font-weight:700;">${{ order.total }}</td></tr>
+  <tr><td style="padding:4px 0;font-size:14px;color:#6E6C66;">Shipping</td><td align="right" style="padding:4px 0;font-size:14px;color:#141413;">{{ currency }} {{ order.shipping_cost }}</td></tr>
+  <tr><td style="padding:12px 0 0;font-size:16px;color:#141413;font-weight:700;">Total</td><td align="right" style="padding:12px 0 0;font-size:16px;color:#141413;font-weight:700;">{{ currency }} {{ order.total }}</td></tr>
 </table>
 
 <p style="margin:0;font-size:14px;line-height:20px;color:#6E6C66;">
@@ -57,7 +57,7 @@
 </p>
 
 <div class="btn" style="margin-top:24px;">
-  <a href="{{ store_url }}/admin/orders/{{ order.id }}">View Order</a>
+  <a href="{{ backend_url }}/admin/orders/order/{{ order.id }}/change/">View Order</a>
 </div>
 {% endblock %}
 

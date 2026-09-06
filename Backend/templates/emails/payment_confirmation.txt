@@ -10,5 +10,5 @@ Method: {{ payment.gateway|capfirst }}
 Transaction ID: {{ payment.gateway_ref }}
 Date: {{ payment.created_at|date:"M j, Y" }}
 
-View your order: {{ store_url }}/orders/{{ payment.order.id }}
+View your order: {{ store_url }}/account/orders/{{ payment.order.id }}
 {% endblock %}

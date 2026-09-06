@@ -15,13 +15,11 @@ resend.api_key = settings.RESEND_API_KEY
 
 class EmailService:
 
-    FROM = settings.DEFAULT_FROM_EMAIL
-
     @classmethod
-    def send(cls, subject, body, recipients, html_body=None):
+    def send(cls, subject, body, recipients, html_body=None, from_email=None):
         """Send a plain-text (optionally HTML) email to one or more recipients via Resend."""
         payload = {
-            "from": cls.FROM,
+            "from": from_email or settings.DEFAULT_FROM_EMAIL,
             "to": recipients,
             "subject": subject,
             "text": body,
@@ -40,25 +38,29 @@ class EmailService:
             raise
 
     @classmethod
-    def send_template(cls, subject, template_name, context, recipients):
+    def send_template(cls, subject, template_name, context, recipients, storefront=None):
         """Render a Django template and send as HTML email."""
-        context = {**cls._base_context(), **context}
+        context = {**cls._base_context(storefront), **context}
         html_body = render_to_string(template_name, context)
         text_body = render_to_string(
             template_name.replace(".html", ".txt"), context
         )
-        cls.send(subject, text_body, recipients, html_body=html_body)
+        from_email = storefront.from_email if storefront and storefront.from_email else None
+        cls.send(subject, text_body, recipients, html_body=html_body, from_email=from_email)
 
     @classmethod
-    def _base_context(cls):
+    def _base_context(cls, storefront=None):
         """Branding vars used by every templates/emails/*.html template."""
+        store_url = storefront.frontend_url if storefront and storefront.frontend_url else settings.FRONTEND_URL
         return {
-            "store_name": settings.STORE_NAME,
-            "store_url": settings.FRONTEND_URL,
-            "logo_url": settings.STORE_LOGO_URL,
-            "support_email": settings.SUPPORT_EMAIL,
-            "store_address": settings.STORE_ADDRESS,
-            "unsubscribe_url": f"{settings.FRONTEND_URL}/account/notifications",
+            "store_name": storefront.name if storefront else settings.STORE_NAME,
+            "store_url": store_url,
+            "backend_url": settings.BACKEND_URL.rstrip("/"),
+            "logo_url": storefront.logo_url if storefront and storefront.logo_url else settings.STORE_LOGO_URL,
+            "support_email": storefront.support_email if storefront and storefront.support_email else settings.SUPPORT_EMAIL,
+            "store_address": storefront.postal_address if storefront and storefront.postal_address else settings.STORE_ADDRESS,
+            "currency": storefront.currency if storefront else "USD",
+            "unsubscribe_url": f"{store_url.rstrip('/')}/account/notifications",
         }
 
     # ------------------------------------------------------------------
@@ -66,12 +68,13 @@ class EmailService:
     # ------------------------------------------------------------------
 
     @classmethod
-    def send_welcome(cls, user):
+    def send_welcome(cls, user, storefront=None):
         cls.send_template(
             subject       = "Welcome to the store!",
             template_name = "emails/welcome.html",
             context       = {"user": user},
             recipients    = [user.email],
+            storefront    = storefront,
         )
 
     @classmethod
@@ -84,6 +87,7 @@ class EmailService:
             template_name = "emails/order_placed.html",
             context       = {"order": order, "items": order.items.all()},
             recipients    = [order.user.email],
+            storefront    = order.storefront,
         )
 
     @classmethod
@@ -93,6 +97,7 @@ class EmailService:
             template_name = "emails/order_confirmation.html",
             context       = {"order": order, "items": order.items.all()},
             recipients    = [order.user.email],
+            storefront    = order.storefront,
         )
 
     @classmethod
@@ -102,15 +107,17 @@ class EmailService:
             template_name = "emails/order_shipped.html",
             context       = {"order": order, "shipment": shipment},
             recipients    = [order.user.email],
+            storefront    = order.storefront,
         )
 
     @classmethod
-    def send_password_reset(cls, user, reset_url):
+    def send_password_reset(cls, user, reset_url, storefront=None):
         cls.send_template(
             subject       = "Reset your password",
             template_name = "emails/password_reset.html",
             context       = {"user": user, "reset_url": reset_url},
             recipients    = [user.email],
+            storefront    = storefront,
         )
 
     @classmethod
@@ -120,6 +127,7 @@ class EmailService:
             template_name = "emails/order_delivered.html",
             context       = {"order": order, "shipment": shipment},
             recipients    = [order.user.email],
+            storefront    = order.storefront,
         )
 
     @classmethod
@@ -130,6 +138,7 @@ class EmailService:
             template_name = "emails/payment_confirmation.html",
             context       = {"payment": payment},
             recipients    = [payment.order.user.email],
+            storefront    = payment.order.storefront,
         )
 
     @classmethod
@@ -139,6 +148,7 @@ class EmailService:
             template_name = "emails/coupon.html",
             context       = {"coupon": coupon},
             recipients    = recipients,
+            storefront    = coupon.storefront,
         )
 
     @classmethod
@@ -148,6 +158,7 @@ class EmailService:
             template_name = "emails/refund_processed.html",
             context       = {"refund": refund},
             recipients    = [refund.payment.order.user.email],
+            storefront    = refund.payment.order.storefront,
         )
 
     # ------------------------------------------------------------------
@@ -157,7 +168,12 @@ class EmailService:
     @classmethod
     def send_order_notification_to_admin(cls, order):
         """Notifies the store owner that an order was placed, so they can follow up manually about payment."""
-        admin_email = settings.ADMIN_NOTIFICATION_EMAIL
+        storefront = order.storefront
+        admin_email = (
+            storefront.order_notification_email
+            if storefront and storefront.order_notification_email
+            else settings.ADMIN_NOTIFICATION_EMAIL
+        )
         if not admin_email:
             logger.warning(
                 "Skipping order notification for %s — ADMIN_NOTIFICATION_EMAIL is not configured.",
@@ -166,8 +182,9 @@ class EmailService:
             return
 
         cls.send_template(
-            subject       = f"New order #{order.short_id} — ${order.total}",
+            subject       = f"New order #{order.short_id} — {(storefront.currency if storefront else 'USD')} {order.total}",
             template_name = "emails/order_notification_admin.html",
             context       = {"order": order, "items": order.items.select_related("variant").all()},
             recipients    = [admin_email],
+            storefront    = storefront,
         )

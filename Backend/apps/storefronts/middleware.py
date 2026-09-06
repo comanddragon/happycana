@@ -13,16 +13,15 @@ class StorefrontMiddleware:
     """
 
     header_name = "HTTP_X_STOREFRONT"
+    forwarded_host_header = "HTTP_X_STOREFRONT_HOST"
 
     def __init__(self, get_response):
         self.get_response = get_response
 
     def __call__(self, request):
         request.storefront = self.resolve(request)
-        if (
-            request.META.get(self.header_name, "").strip()
-            and request.storefront is None
-        ):
+        if (request.META.get(self.header_name, "").strip() or
+                request.META.get(self.forwarded_host_header, "").strip()) and request.storefront is None:
             return JsonResponse({"detail": "Storefront not found."}, status=404)
         return self.get_response(request)
 
@@ -31,6 +30,21 @@ class StorefrontMiddleware:
         slug = request.META.get(cls.header_name, "").strip()
         if slug:
             return Storefront.objects.filter(slug=slug, is_active=True).first()
+
+        # Next.js forwards the original public hostname while proxying `/api`
+        # to a shared backend. This header selects a tenant; authorization is
+        # still enforced by each private endpoint.
+        forwarded_host = request.META.get(cls.forwarded_host_header, "").split(",", 1)[0].strip()
+        if forwarded_host:
+            host = urlsplit(f"//{forwarded_host}").hostname
+            if host:
+                match = (
+                    StorefrontDomain.objects.select_related("storefront")
+                    .filter(domain=host.lower(), storefront__is_active=True)
+                    .first()
+                )
+                if match:
+                    return match.storefront
 
         origin = request.META.get("HTTP_ORIGIN", "").rstrip("/")
         if origin:

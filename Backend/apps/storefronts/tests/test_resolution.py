@@ -26,6 +26,17 @@ def test_resolves_storefront_from_browser_origin():
 
 
 @pytest.mark.django_db
+def test_resolves_storefront_from_forwarded_frontend_host():
+    store = Storefront.objects.create(slug="peptides", name="Peptides")
+    StorefrontDomain.objects.create(storefront=store, domain="peptides.example.com")
+    request = RequestFactory().get(
+        "/api/storefront/", HTTP_X_STOREFRONT_HOST="peptides.example.com:443"
+    )
+
+    assert StorefrontMiddleware.resolve(request) == store
+
+
+@pytest.mark.django_db
 @override_settings(ALLOWED_HOSTS=["api.dispensary.example.com"])
 def test_resolves_storefront_from_api_domain():
     store = Storefront.objects.create(slug="dispensary", name="Dispensary")

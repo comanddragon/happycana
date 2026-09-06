@@ -8,7 +8,9 @@ from apps.payments.models import Payment, PaymentMethod, Refund
 
 @admin.register(PaymentMethod)
 class PaymentMethodAdmin(admin.ModelAdmin):
-    list_display = ["name", "slug", "is_active", "sort_order"]
+    list_display = ["name", "slug", "is_global", "is_active", "sort_order"]
+    list_filter = ["is_global", "storefronts", "is_active"]
+    filter_horizontal = ["storefronts"]
     list_editable = ["is_active", "sort_order"]
 
 

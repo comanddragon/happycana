@@ -18,6 +18,10 @@ class Storefront(models.Model):
     currency = models.CharField(max_length=3, default="USD")
     frontend_url = models.URLField(blank=True)
     support_email = models.EmailField(blank=True)
+    from_email = models.EmailField(blank=True)
+    order_notification_email = models.EmailField(blank=True)
+    logo_url = models.URLField(blank=True)
+    postal_address = models.TextField(blank=True)
     branding = models.JSONField(default=dict, blank=True)
     settings = models.JSONField(default=dict, blank=True)
     is_active = models.BooleanField(default=True)
@@ -30,6 +34,10 @@ class Storefront(models.Model):
 
     def __str__(self):
         return self.name
+
+    def setting(self, key, fallback=""):
+        value = self.settings.get(key) if isinstance(self.settings, dict) else None
+        return value if value not in (None, "") else fallback
 
 
 class StorefrontDomain(models.Model):

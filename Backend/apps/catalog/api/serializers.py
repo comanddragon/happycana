@@ -239,9 +239,11 @@ class VariantVideoSerializer(serializers.ModelSerializer):
         return obj.external_url
 
 class ProductMinimalSerializer(serializers.ModelSerializer):
+    primary_image = ProductImageSerializer(read_only=True)
+
     class Meta:
         model = Product
-        fields = ["id", "name", "slug"]
+        fields = ["id", "name", "slug", "primary_image"]
 
 class ProductVariantSerializer(serializers.ModelSerializer):
     attributes    = AttributeSerializer(many=True, read_only=True)
@@ -432,12 +434,13 @@ class ProductSerializer(serializers.ModelSerializer):
             "id", "category", "name", "slug", "description",
             "meta_title", "meta_description",
             "base_price", "compare_at_price", "is_active", "created_at",
+            "updated_at",
             "primary_image", "primary_video",
             "images", "videos", "variants",
             "brand", "compliance_category", "cannabis_type", "sub_type",
             "is_featured", "is_new", "effects", "active_discount", "vertical_profile"
         ]
-        read_only_fields = ["id", "slug", "created_at"]
+        read_only_fields = ["id", "slug", "created_at", "updated_at"]
 
 
 class ProductWriteSerializer(serializers.ModelSerializer):
@@ -486,9 +489,15 @@ class ListingSerializer(serializers.ModelSerializer):
         fields = [
             "id", "slug", "display_name", "effective_price",
             "compare_at_price_override", "is_featured", "meta_title",
-            "meta_description", "categories", "product",
+            "meta_description", "categories", "product", "updated_at",
         ]
         read_only_fields = fields
+
+
+class ListingDetailSerializer(ListingSerializer):
+    """A public listing with the complete product payload used by its detail page."""
+
+    product = ProductSerializer(read_only=True)
 
 
 class LabResultProductSerializer(serializers.ModelSerializer):

@@ -11,6 +11,7 @@ class StorefrontSerializer(serializers.ModelSerializer):
         model = Storefront
         fields = [
             "id", "slug", "name", "kind", "currency", "frontend_url",
-            "support_email", "branding", "settings", "domains", "origins",
+            "support_email", "from_email", "order_notification_email", "logo_url",
+            "postal_address", "branding", "settings", "domains", "origins",
         ]
         read_only_fields = fields

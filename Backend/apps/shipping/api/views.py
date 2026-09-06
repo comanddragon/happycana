@@ -5,7 +5,7 @@ from rest_framework import generics, permissions
 from rest_framework.exceptions import PermissionDenied, NotFound
 from core.permissions import IsOwnerOrAdmin
 from apps.shipping.models import Shipment, ShippingMethod, TrackingEvent
-from apps.storefronts.querysets import for_request
+from apps.storefronts.querysets import for_request, options_for_request
 from .serializers import (
     ShipmentSerializer,
     ShipmentUpdateSerializer,
@@ -31,7 +31,7 @@ class ShippingMethodListView(generics.ListCreateAPIView):
         return [permissions.AllowAny()]
 
     def get_queryset(self):
-        qs = for_request(ShippingMethod.objects.all(), self.request)
+        qs = options_for_request(ShippingMethod.objects.all(), self.request)
         # Non-admins only see active methods
         if not (self.request.user and self.request.user.is_staff):
             qs = qs.filter(is_active=True)
@@ -50,7 +50,7 @@ class ShippingMethodDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = ShippingMethodSerializer
 
     def get_queryset(self):
-        return for_request(ShippingMethod.objects.all(), self.request)
+        return options_for_request(ShippingMethod.objects.all(), self.request)
 
     def get_permissions(self):
         if self.request.method == "GET":

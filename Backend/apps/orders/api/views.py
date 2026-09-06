@@ -39,6 +39,7 @@ def _cart_items_prefetch():
             "variant__images",
             "variant__videos",
             "variant__stock_levels",
+            "variant__product__images",
         ),
     )
 
@@ -62,6 +63,7 @@ def _order_items_prefetch():
             "variant__images",
             "variant__videos",
             "variant__stock_levels",
+            "variant__product__images",
         ),
     )
 
@@ -124,7 +126,7 @@ class OrderListView(generics.ListAPIView):
     def get_queryset(self):
         user = self.request.user
         qs = Order.objects.select_related(
-            "address", "coupon", "payment_method"
+            "address", "coupon", "payment_method", "storefront"
         ).prefetch_related(_order_items_prefetch())
         qs = for_request(qs, self.request)
         return qs if user.is_staff else qs.filter(user=user)
@@ -136,7 +138,7 @@ class OrderDetailView(generics.RetrieveAPIView):
 
     def get_queryset(self):
         qs = Order.objects.select_related(
-            "address", "coupon", "payment_method"
+            "address", "coupon", "payment_method", "storefront"
         ).prefetch_related(_order_items_prefetch())
         return for_request(qs, self.request)
 

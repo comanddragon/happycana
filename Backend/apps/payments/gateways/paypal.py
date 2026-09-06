@@ -38,18 +38,27 @@ class PayPalGateway(BaseGateway):
         After approval PayPal redirects back to your PAYPAL_RETURN_URL.
         """
         try:
+            storefront = order.storefront
+            currency = storefront.currency if storefront else "USD"
+            frontend_url = (
+                storefront.frontend_url.rstrip("/")
+                if storefront and storefront.frontend_url
+                else ""
+            )
+            return_url = f"{frontend_url}/shop/checkout/paypal/return" if frontend_url else settings.PAYPAL_RETURN_URL
+            cancel_url = f"{frontend_url}/shop/checkout" if frontend_url else settings.PAYPAL_CANCEL_URL
             response = self._post("/v2/checkout/orders", {
                 "intent": "CAPTURE",
                 "purchase_units": [{
                     "reference_id": str(order.id),
                     "amount": {
-                        "currency_code": "USD",
+                        "currency_code": currency,
                         "value": str(order.total),
                     },
                 }],
                 "application_context": {
-                    "return_url": settings.PAYPAL_RETURN_URL,
-                    "cancel_url": settings.PAYPAL_CANCEL_URL,
+                    "return_url": return_url,
+                    "cancel_url": cancel_url,
                 },
             })
             approval_url = next(
@@ -62,7 +71,7 @@ class PayPalGateway(BaseGateway):
                 client_secret = None,
                 approval_url  = approval_url,
                 amount        = order.total,
-                currency      = "USD",
+                currency      = currency,
                 status        = response["status"],
                 raw           = response,
             )

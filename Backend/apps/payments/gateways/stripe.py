@@ -34,12 +34,14 @@ class StripeGateway(BaseGateway):
         """
         try:
             amount_cents = int(order.total * 100)   # Stripe works in pence/cents
+            currency = order.storefront.currency if order.storefront else "USD"
             intent = self._stripe.PaymentIntent.create(
                 amount   = amount_cents,
-                currency = "usd",
+                currency = currency.lower(),
                 metadata = {
                     "order_id": str(order.id),
                     "user_id":  str(order.user.id),
+                    "storefront_id": str(order.storefront_id or ""),
                 },
                 # Automatically confirm when the frontend provides payment method
                 automatic_payment_methods = {"enabled": True},
@@ -51,7 +53,7 @@ class StripeGateway(BaseGateway):
                 client_secret = intent.client_secret,
                 approval_url  = None,
                 amount        = order.total,
-                currency      = "USD",
+                currency      = currency,
                 status        = intent.status,
                 raw           = dict(intent),
             )

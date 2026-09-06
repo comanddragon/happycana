@@ -40,7 +40,8 @@ class RegisterView(generics.CreateAPIView):
         s = self.get_serializer(data=request.data)
         s.is_valid(raise_exception=True)
         user = s.save()
-        send_welcome_email.enqueue(str(user.id))
+        storefront = getattr(request, "storefront", None)
+        send_welcome_email.enqueue(str(user.id), str(storefront.id) if storefront else None)
         token = RefreshToken.for_user(user)
         return Response(
             {
