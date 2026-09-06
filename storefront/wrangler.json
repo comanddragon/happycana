@@ -1,0 +1,38 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "storefront",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2026-09-01",
+  "compatibility_flags": [
+    "nodejs_compat",
+    "global_fetch_strictly_public"
+  ],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "vars": {
+    "API_URL": "https://happycana.onrender.com/api",
+    "BACKEND_ORIGIN": "https://happycana.onrender.com",
+    "NEXT_PUBLIC_API_URL": "/api",
+    "NEXT_PUBLIC_STOREFRONT_NAME": "Storefront",
+    "NEXT_PUBLIC_STOREFRONT_DESCRIPTION": "Online storefront",
+    "NEXT_PUBLIC_FRONTEND_URL": "https://happycana.zico15880.workers.dev",
+    "NEXT_PUBLIC_SMARTSUPP_KEY": "cd7a00945ddf5d6953df09f7c3ff39c9f8b61853"
+  },
+  "observability": {
+    "enabled": false,
+    "head_sampling_rate": 1,
+    "logs": {
+      "enabled": true,
+      "head_sampling_rate": 1,
+      "persist": true,
+      "invocation_logs": true
+    },
+    "traces": {
+      "enabled": false,
+      "persist": true,
+      "head_sampling_rate": 1
+    }
+  }
+}

@@ -47,28 +47,47 @@ def test_order_list_does_not_cross_storefront_boundary():
 @pytest.mark.django_db
 def test_checkout_configuration_is_scoped_to_storefront():
     peptides = baker.make("storefronts.Storefront", slug="peptides")
+    hash_store = baker.make("storefronts.Storefront", slug="hash")
     footwear = baker.make("storefronts.Storefront", slug="footwear")
     peptide_payment = baker.make(
-        "payments.PaymentMethod", storefront=peptides, slug="card", is_active=True
+        "payments.PaymentMethod", is_global=False, slug="card", is_active=True
     )
-    baker.make(
-        "payments.PaymentMethod", storefront=footwear, slug="card", is_active=True
+    peptide_payment.storefronts.add(peptides, hash_store)
+    global_payment = baker.make(
+        "payments.PaymentMethod", is_global=True, slug="bank", is_active=True
     )
+    footwear_payment = baker.make(
+        "payments.PaymentMethod", is_global=False, slug="card", is_active=True
+    )
+    footwear_payment.storefronts.add(footwear)
     peptide_shipping = baker.make(
-        "shipping.ShippingMethod", storefront=peptides, is_active=True
+        "shipping.ShippingMethod", is_global=False, is_active=True
     )
-    baker.make("shipping.ShippingMethod", storefront=footwear, is_active=True)
+    peptide_shipping.storefronts.add(peptides, hash_store)
+    global_shipping = baker.make(
+        "shipping.ShippingMethod", is_global=True, is_active=True
+    )
+    footwear_shipping = baker.make("shipping.ShippingMethod", is_global=False, is_active=True)
+    footwear_shipping.storefronts.add(footwear)
     client = APIClient()
 
     payments = client.get("/api/payments/methods/", HTTP_X_STOREFRONT=peptides.slug)
     shipping = client.get("/api/shipping/methods/", HTTP_X_STOREFRONT=peptides.slug)
+    hash_payments = client.get("/api/payments/methods/", HTTP_X_STOREFRONT=hash_store.slug)
+    hash_shipping = client.get("/api/shipping/methods/", HTTP_X_STOREFRONT=hash_store.slug)
 
     assert payments.status_code == 200
-    assert [item["id"] for item in payments.data] == [peptide_payment.id]
+    payment_ids = {item["id"] for item in payments.data}
+    assert {peptide_payment.id, global_payment.id} <= payment_ids
+    assert footwear_payment.id not in payment_ids
+    assert peptide_payment.id in {item["id"] for item in hash_payments.data}
     assert shipping.status_code == 200
-    assert [item["id"] for item in shipping.data["results"]] == [
-        str(peptide_shipping.id)
-    ]
+    shipping_ids = {item["id"] for item in shipping.data["results"]}
+    assert {str(peptide_shipping.id), str(global_shipping.id)} <= shipping_ids
+    assert str(footwear_shipping.id) not in shipping_ids
+    assert str(peptide_shipping.id) in {
+        item["id"] for item in hash_shipping.data["results"]
+    }
 
 
 @pytest.mark.django_db
@@ -84,7 +103,13 @@ def test_storefront_checkout_records_store_and_exact_stock_source():
     user = baker.make("users.User")
     address = baker.make("users.Address", user=user)
     product = baker.make("catalog.Product", kind="peptide")
-    baker.make("catalog.Listing", storefront=storefront, product=product, is_active=True)
+    baker.make(
+        "catalog.Listing",
+        storefront=storefront,
+        product=product,
+        is_active=True,
+        price_override=Decimal("12.00"),
+    )
     variant = baker.make("catalog.ProductVariant", product=product, price=Decimal("15.00"))
     warehouse = baker.make("inventory.Warehouse", storefront=storefront)
     stock = baker.make(
@@ -93,9 +118,9 @@ def test_storefront_checkout_records_store_and_exact_stock_source():
     cart = baker.make("orders.Cart", user=user, storefront=storefront)
     baker.make("orders.CartItem", cart=cart, variant=variant, quantity=2)
     shipping = baker.make(
-        "shipping.ShippingMethod", storefront=storefront, is_active=True, price=Decimal("5.00")
+        "shipping.ShippingMethod", is_global=True, is_active=True, price=Decimal("5.00")
     )
-    payment = baker.make("payments.PaymentMethod", storefront=storefront, is_active=True)
+    payment = baker.make("payments.PaymentMethod", is_global=True, is_active=True)
 
     order = CheckoutService.create_order(
         user=user,
@@ -108,7 +133,8 @@ def test_storefront_checkout_records_store_and_exact_stock_source():
     stock.refresh_from_db()
     item = order.items.get()
     assert order.storefront == storefront
-    assert order.total == Decimal("35.00")
+    assert order.total == Decimal("29.00")
+    assert item.unit_price == Decimal("12.00")
     assert item.fulfillment_warehouse == warehouse
     assert stock.reserved == 2
     assert not cart.items.exists()

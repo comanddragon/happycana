@@ -7,12 +7,12 @@ Thanks{% if order.user.first_name %}, {{ order.user.first_name }}{% endif %} —
 Here's your receipt for order #{{ order.id }}, placed {{ order.created_at|date:"M j, Y" }}.
 
 Items:
-{% for item in items %}- {{ item.quantity }}x {{ item.variant.product.name }} ({{ item.variant.sku }}) — ${{ item.total_price }}
+{% for item in items %}- {{ item.quantity }}x {{ item.variant.product.name }} ({{ item.variant.sku }}) — {{ currency }} {{ item.total_price }}
 {% endfor %}
-Subtotal: ${{ order.subtotal }}
-{% if order.discount_amount %}Discount: -${{ order.discount_amount }}
-{% endif %}Shipping: ${{ order.shipping_cost }}
-Total: ${{ order.total }}
+Subtotal: {{ currency }} {{ order.subtotal }}
+{% if order.discount_amount %}Discount: -{{ currency }} {{ order.discount_amount }}
+{% endif %}Shipping: {{ currency }} {{ order.shipping_cost }}
+Total: {{ currency }} {{ order.total }}
 
 Payment method: {{ order.payment_method.name }}
 
@@ -21,5 +21,5 @@ Shipping to:
 {{ order.address.city }}, {{ order.address.state }} {{ order.address.postal_code }}
 {{ order.address.country }}
 
-View your order: {{ store_url }}/orders/{{ order.id }}
+View your order: {{ store_url }}/account/orders/{{ order.id }}
 {% endblock %}

@@ -24,6 +24,7 @@ from .serializers import (
     EffectSerializer,
     LabResultSerializer,
     ListingSerializer,
+    ListingDetailSerializer,
     ProductImageSerializer,
     ProductListSerializer,
     ProductSerializer,
@@ -217,7 +218,7 @@ class ListingListView(StorefrontListingQuerysetMixin, generics.ListAPIView):
 
 
 class ListingDetailView(StorefrontListingQuerysetMixin, generics.RetrieveAPIView):
-    serializer_class = ListingSerializer
+    serializer_class = ListingDetailSerializer
     permission_classes = [permissions.AllowAny]
     lookup_field = "slug"
 

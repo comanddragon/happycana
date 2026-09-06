@@ -14,16 +14,16 @@ Shipping to:
 {{ order.address.country }}
 
 Items:
-{% for item in items %}- {{ item.variant.sku }} x{{ item.quantity }} — ${{ item.total_price }}
+{% for item in items %}- {{ item.variant.sku }} x{{ item.quantity }} — {{ currency }} {{ item.total_price }}
 {% endfor %}
-Subtotal: ${{ order.subtotal }}
-{% if order.discount_amount %}Discount: -${{ order.discount_amount }}
-{% endif %}Shipping: ${{ order.shipping_cost }}
-Total: ${{ order.total }}
+Subtotal: {{ currency }} {{ order.subtotal }}
+{% if order.discount_amount %}Discount: -{{ currency }} {{ order.discount_amount }}
+{% endif %}Shipping: {{ currency }} {{ order.shipping_cost }}
+Total: {{ currency }} {{ order.total }}
 
 Payment hasn't been collected yet — follow up using {{ order.payment_method.name }}.
 
-View order: {{ store_url }}/admin/orders/{{ order.id }}
+View order: {{ backend_url }}/admin/orders/order/{{ order.id }}/change/
 {% endblock %}
 
 {% block unsubscribe %}{% endblock %}

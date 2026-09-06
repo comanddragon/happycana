@@ -15,7 +15,7 @@ class StorefrontOriginInline(admin.TabularInline):
 
 @admin.register(Storefront)
 class StorefrontAdmin(admin.ModelAdmin):
-    list_display = ("name", "slug", "kind", "currency", "is_active")
+    list_display = ("name", "slug", "kind", "currency", "from_email", "is_active")
     list_filter = ("kind", "is_active")
     search_fields = ("name", "slug")
     inlines = (StorefrontDomainInline, StorefrontOriginInline)

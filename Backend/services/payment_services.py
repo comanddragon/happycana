@@ -71,7 +71,11 @@ class PaymentService:
                 user=refund.payment.order.user,
                 type=Notification.Type.PAYMENT,
                 title="Refund Processed",
-                body=f"Your refund of ${refund.amount} has been processed.",
+                body=(
+                    f"Your refund of "
+                    f"{refund.payment.order.storefront.currency if refund.payment.order.storefront else 'USD'} "
+                    f"{refund.amount} has been processed."
+                ),
             )
             from services.email import EmailService
 

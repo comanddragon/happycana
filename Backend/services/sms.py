@@ -43,7 +43,8 @@ class SMSService:
         cls.send(
             to   = order.user.phone,
             body = (
-                f"Your order #{str(order.id)[:8]} has shipped! "
+                f"{order.storefront.name if order.storefront else 'Your order'} "
+                f"#{str(order.id)[:8]} has shipped! "
                 f"Track it with: {tracking_number}"
             ),
         )
@@ -61,6 +62,8 @@ class SMSService:
             return
         cls.send(
             to   = order.user.phone,
-            body = f"Your order #{str(order.id)[:8]} has been delivered. Thank you for shopping with us!",
+            body = (
+                f"Your order #{str(order.id)[:8]} from "
+                f"{order.storefront.name if order.storefront else 'our store'} has been delivered."
+            ),
         )
-

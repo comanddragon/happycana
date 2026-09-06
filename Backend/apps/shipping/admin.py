@@ -25,8 +25,9 @@ class ShipmentAdmin(admin.ModelAdmin):
 
 @admin.register(ShippingMethod)
 class ShippingMethodAdmin(admin.ModelAdmin):
-    list_display    = ["name", "carrier", "price", "estimated_days_min", "estimated_days_max"]
-    list_filter     = ["name", "carrier"]
+    list_display    = ["name", "carrier", "is_global", "price", "estimated_days_min", "estimated_days_max"]
+    list_filter     = ["is_global", "storefronts", "carrier", "is_active"]
+    filter_horizontal = ["storefronts"]
     search_fields   = ["name", "carrier"]
 
 @admin.register(TrackingEvent)

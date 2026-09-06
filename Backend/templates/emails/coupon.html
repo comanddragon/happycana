@@ -12,9 +12,9 @@
   {% if coupon.discount_type == "percentage" %}
     Save {{ coupon.discount_value|floatformat:0 }}% on your next order
   {% else %}
-    Save ${{ coupon.discount_value }} on your next order
+    Save {{ currency }} {{ coupon.discount_value }} on your next order
   {% endif %}
-  {% if coupon.min_order_value %} with a minimum order of ${{ coupon.min_order_value }}{% endif %}.
+  {% if coupon.min_order_value %} with a minimum order of {{ currency }} {{ coupon.min_order_value }}{% endif %}.
 </p>
 
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:28px;">

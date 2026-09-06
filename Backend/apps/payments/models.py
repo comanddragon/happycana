@@ -5,12 +5,15 @@ from .managers import PaymentManager, RefundManager
 
 
 class PaymentMethod(models.Model):
-    storefront = models.ForeignKey(
+    is_global = models.BooleanField(
+        default=True,
+        help_text="Make this method available to every storefront.",
+    )
+    storefronts = models.ManyToManyField(
         "storefronts.Storefront",
-        on_delete=models.PROTECT,
-        null=True,
         blank=True,
         related_name="payment_methods",
+        help_text="Used only when 'is global' is disabled.",
     )
     name = models.CharField(max_length=100)
     slug = models.SlugField(max_length=50)
@@ -22,18 +25,6 @@ class PaymentMethod(models.Model):
     class Meta:
         db_table = "payment_methods"
         ordering = ["sort_order", "name"]
-        constraints = [
-            models.UniqueConstraint(
-                fields=["storefront", "slug"],
-                condition=models.Q(storefront__isnull=False),
-                name="unique_storefront_payment_slug",
-            ),
-            models.UniqueConstraint(
-                fields=["slug"],
-                condition=models.Q(storefront__isnull=True),
-                name="unique_legacy_payment_slug",
-            ),
-        ]
 
     def __str__(self):
         return self.name

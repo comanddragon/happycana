@@ -5,8 +5,10 @@
 from decimal import Decimal
 import logging
 from django.db import transaction
+from django.db.models import Q
 from apps.orders.models import Cart, Order, OrderItem
 from apps.shipping.models import ShippingMethod
+from apps.payments.models import PaymentMethod
 from apps.promotions.models import Coupon
 from apps.notifications.models import Notification
 from services.email import EmailService
@@ -59,25 +61,43 @@ class CheckoutService:
         if storefront is not None:
             from apps.catalog.models import Listing
 
-            listed_product_ids = set(
-                Listing.objects.filter(
+            listings = {
+                listing.product_id: listing
+                for listing in Listing.objects.filter(
                     storefront=storefront,
                     product_id__in=[item.variant.product_id for item in items],
                     is_active=True,
-                ).values_list("product_id", flat=True)
-            )
-            if any(item.variant.product_id not in listed_product_ids for item in items):
+                )
+            }
+            if any(item.variant.product_id not in listings for item in items):
                 raise CheckoutError(
                     "Your cart contains a product not sold by this storefront."
                 )
+        else:
+            listings = {}
 
         stock_reservations = cls._reserve_stock(items, storefront)
 
         # 2. Resolve coupon & calculate totals via PromotionEngine
         from apps.promotions.engine import PromotionEngine, CartContext
 
-        subtotal = cls._calculate_subtotal(items)
+        unit_prices = {
+            item.id: (
+                listings[item.variant.product_id].price_override
+                if item.variant.product_id in listings
+                and listings[item.variant.product_id].price_override is not None
+                else item.variant.price
+            )
+            for item in items
+        }
+        subtotal = cls._calculate_subtotal(items, unit_prices)
         shipping_cost = cls._calculate_shipping(shipping_method_id, storefront)
+        if not PaymentMethod.objects.filter(
+            Q(is_global=True) | Q(storefronts=storefront),
+            id=payment_method_id,
+            is_active=True,
+        ).exists():
+            raise CheckoutError("Payment method not found.")
 
         if coupon_code:
             ctx = CartContext(subtotal=subtotal, item_count=len(items))
@@ -115,8 +135,8 @@ class CheckoutService:
                     variant=item.variant,
                     fulfillment_warehouse=stock.warehouse,
                     quantity=item.quantity,
-                    unit_price=item.variant.price,
-                    total_price=item.variant.price * item.quantity,
+                    unit_price=unit_prices[item.id],
+                    total_price=unit_prices[item.id] * item.quantity,
                 )
                 for item, (stock, _) in zip(items, stock_reservations)
             ]
@@ -138,7 +158,10 @@ class CheckoutService:
             user=user,
             type=Notification.Type.ORDER,
             title="Order Placed",
-            body=f"Your order #{order.id} has been placed successfully. Total: ${order.total}",
+            body=(
+                f"Your order #{order.id} has been placed successfully. Total: "
+                f"{storefront.currency if storefront else 'USD'} {order.total}"
+            ),
         )
 
         # 9. Email the admin the order details, and the customer their
@@ -214,14 +237,17 @@ class CheckoutService:
             stock.save(update_fields=["reserved"])
 
     @staticmethod
-    def _calculate_subtotal(items):
-        return sum(item.variant.price * item.quantity for item in items)
+    def _calculate_subtotal(items, unit_prices=None):
+        unit_prices = unit_prices or {item.id: item.variant.price for item in items}
+        return sum(unit_prices[item.id] * item.quantity for item in items)
 
     @staticmethod
     def _calculate_shipping(shipping_method_id, storefront=None):
         try:
             return ShippingMethod.objects.get(
-                id=shipping_method_id, is_active=True, storefront=storefront
+                Q(is_global=True) | Q(storefronts=storefront),
+                id=shipping_method_id,
+                is_active=True,
             ).price
         except ShippingMethod.DoesNotExist:
             raise CheckoutError("Shipping method not found.")

@@ -8,7 +8,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from apps.payments.models import Payment, PaymentMethod
 from apps.payments.gateways import GatewayFactory
-from apps.storefronts.querysets import for_request
+from apps.storefronts.querysets import for_request, options_for_request
 from .serializers import PaymentMethodSerializer, PaymentSerializer, RefundSerializer
 
 
@@ -18,7 +18,9 @@ class PaymentMethodListView(generics.ListAPIView):
     pagination_class = None
 
     def get_queryset(self):
-        return for_request(PaymentMethod.objects.filter(is_active=True), self.request)
+        return options_for_request(
+            PaymentMethod.objects.filter(is_active=True), self.request
+        )
 
 
 class PaymentListView(generics.ListAPIView):

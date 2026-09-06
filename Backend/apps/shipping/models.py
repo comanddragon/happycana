@@ -16,12 +16,15 @@ class ShippingMethod(models.Model):
     """
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    storefront = models.ForeignKey(
+    is_global = models.BooleanField(
+        default=True,
+        help_text="Make this method available to every storefront.",
+    )
+    storefronts = models.ManyToManyField(
         "storefronts.Storefront",
-        on_delete=models.PROTECT,
-        null=True,
         blank=True,
         related_name="shipping_methods",
+        help_text="Used only when 'is global' is disabled.",
     )
     name = models.CharField(max_length=100)  # "DHL Express"
     carrier = models.CharField(max_length=50)  # "dhl" | "fedex"
