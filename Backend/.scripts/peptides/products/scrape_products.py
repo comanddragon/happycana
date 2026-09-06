@@ -9,6 +9,7 @@ Examples:
 import argparse
 import csv
 import hashlib
+import random
 import re
 import time
 from dataclasses import asdict, dataclass, field
@@ -18,8 +19,6 @@ from urllib.parse import urljoin, urlparse
 
 import requests
 from bs4 import BeautifulSoup
-from requests.adapters import HTTPAdapter
-from urllib3.util.retry import Retry
 
 
 SCRIPT_DIR = Path(__file__).resolve().parent
@@ -27,6 +26,8 @@ BACKEND_DIR = SCRIPT_DIR.parents[2]
 DEFAULT_OUTPUT = BACKEND_DIR / ".output" / "peptides" / "products" / "products.csv"
 DEFAULT_SOURCE = "https://www.corepeptides.com/"
 USER_AGENT = "CatalogResearchBot/1.0 (+local catalog import; respects robots.txt)"
+MAX_RETRIES = 7
+BACKOFF_SECONDS = 2.0
 
 
 @dataclass
@@ -135,10 +136,9 @@ def fetch_categories(session, items, delay):
     total = len(items)
     for index, item in enumerate(items, 1):
         try:
-            response = session.get(item.source_url, timeout=25)
-            response.raise_for_status()
+            response = get(session, item.source_url)
             item.categories = parse_product_categories(response.text)
-        except requests.RequestException as exc:
+        except (requests.RequestException, RuntimeError) as exc:
             print(f"  [{index}/{total}] category fetch failed for {item.source_url}: {exc}")
         if index < total and delay:
             time.sleep(delay)
@@ -163,12 +163,36 @@ def infer_profile(name):
 
 
 def build_session():
-    retry = Retry(total=3, backoff_factor=1, status_forcelist=(429, 500, 502, 503, 504))
     session = requests.Session()
     session.headers.update({"User-Agent": USER_AGENT, "Accept": "text/html"})
-    session.mount("https://", HTTPAdapter(max_retries=retry))
-    session.mount("http://", HTTPAdapter(max_retries=retry))
     return session
+
+
+def get(session, url):
+    """Fetch a URL, respecting Retry-After and backing off on 429/5xx."""
+    for attempt in range(MAX_RETRIES + 1):
+        try:
+            response = session.get(url, timeout=25)
+            if response.status_code not in {429, 500, 502, 503, 504}:
+                response.raise_for_status()
+                return response
+            if attempt == MAX_RETRIES:
+                response.raise_for_status()
+            retry_after = response.headers.get("Retry-After", "")
+            try:
+                wait = float(retry_after)
+            except ValueError:
+                wait = BACKOFF_SECONDS * (2 ** attempt)
+            wait = min(wait, 120) + random.uniform(0.25, 1.25)
+            print(f"  HTTP {response.status_code}; retrying {url} in {wait:.1f}s ({attempt + 1}/{MAX_RETRIES})")
+            time.sleep(wait)
+        except (requests.Timeout, requests.ConnectionError) as exc:
+            if attempt == MAX_RETRIES:
+                raise
+            wait = min(BACKOFF_SECONDS * (2 ** attempt), 120) + random.uniform(0.25, 1.25)
+            print(f"  Network error on {url}: {exc}; retrying in {wait:.1f}s ({attempt + 1}/{MAX_RETRIES})")
+            time.sleep(wait)
+    raise RuntimeError(f"Unable to fetch {url}")
 
 
 def scrape(source_url, pages, delay):
@@ -178,8 +202,7 @@ def scrape(source_url, pages, delay):
     items = {}
     for page in range(1, max(1, pages) + 1):
         url = source_url if page == 1 else source_url.rstrip("/") + f"/page/{page}/"
-        response = session.get(url, timeout=25)
-        response.raise_for_status()
+        response = get(session, url)
         parsed = parse_catalog_page(response.text, url)
         print(f"Page {page}: {len(parsed)} products")
         for item in parsed:
