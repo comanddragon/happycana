@@ -2,17 +2,16 @@ from .base import *  # noqa
 import sentry_sdk
 from urllib.parse import parse_qsl, urlparse
 from sentry_sdk.integrations.redis import RedisIntegration
-from sentry_sdk.integrations.celery import CeleryIntegration
 from sentry_sdk.integrations.django import DjangoIntegration
 
 DEBUG = False
 
-ALLOWED_HOSTS = config["ALLOWED_HOSTS"].split(",")
+ALLOWED_HOSTS = config("ALLOWED_HOSTS").split(",")
 
 # ---------------------------------------------------------------------------
 # Database — Postgres with connection pooling
 # ---------------------------------------------------------------------------
-tmp_postgres = urlparse(config["DATABASE_URL"])
+tmp_postgres = urlparse(config("DATABASE_URL"))
 
 DATABASES = {
     "default": {
@@ -36,7 +35,7 @@ DATABASES = {
 # Security hardening
 # ---------------------------------------------------------------------------
 def _env_bool(name, default):
-    return config.get(name, str(default)).lower() in ("true", "1", "yes")
+    return config(name, default=default, cast=bool)
 
 SECURE_SSL_REDIRECT            = _env_bool("SECURE_SSL_REDIRECT", True)
 SECURE_HSTS_SECONDS            = 31536000
@@ -51,7 +50,7 @@ X_FRAME_OPTIONS                = "DENY"
 # ---------------------------------------------------------------------------
 # CORS
 # ---------------------------------------------------------------------------
-CORS_ALLOWED_ORIGINS = config["CORS_ALLOWED_ORIGINS"].split(",")
+CORS_ALLOWED_ORIGINS = config("CORS_ALLOWED_ORIGINS").split(",")
 CORS_ALLOW_CREDENTIALS = True
 
 # ---------------------------------------------------------------------------
@@ -67,11 +66,11 @@ STORAGES = {
     },
 }
 
-AWS_ACCESS_KEY_ID     = config["AWS_ACCESS_KEY_ID"]
-AWS_SECRET_ACCESS_KEY = config["AWS_SECRET_ACCESS_KEY"]
-AWS_STORAGE_BUCKET_NAME = config["AWS_STORAGE_BUCKET_NAME"]
-AWS_S3_REGION = config.get("AWS_S3_REGION", "us-east-1")
-AWS_S3_CUSTOM_DOMAIN  = config.get("AWS_CLOUDFRONT_DOMAIN", "")
+AWS_ACCESS_KEY_ID = config("AWS_ACCESS_KEY_ID")
+AWS_SECRET_ACCESS_KEY = config("AWS_SECRET_ACCESS_KEY")
+AWS_STORAGE_BUCKET_NAME = config("AWS_STORAGE_BUCKET_NAME")
+AWS_S3_REGION = config("AWS_S3_REGION", default="us-east-1")
+AWS_S3_CUSTOM_DOMAIN = config("AWS_CLOUDFRONT_DOMAIN", default="")
 AWS_DEFAULT_ACL       = "private"
 AWS_S3_FILE_OVERWRITE = False
 AWS_QUERYSTRING_AUTH  = False
@@ -80,8 +79,8 @@ AWS_QUERYSTRING_AUTH  = False
 # Sentry — error tracking
 # ---------------------------------------------------------------------------
 sentry_sdk.init(
-    dsn=config["SENTRY_DSN"],
-    integrations=[DjangoIntegration(),CeleryIntegration(),RedisIntegration()],
+    dsn=config("SENTRY_DSN"),
+    integrations=[DjangoIntegration(),RedisIntegration()],
     traces_sample_rate=0.2,
     send_default_pii=False,
 )

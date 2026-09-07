@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 load_dotenv()
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
-SECRET_KEY = config["DJANGO_SECRET_KEY"]
+SECRET_KEY = config("DJANGO_SECRET_KEY")
 
 INSTALLED_APPS = [
     "unfold",  # before django.contrib.admin
