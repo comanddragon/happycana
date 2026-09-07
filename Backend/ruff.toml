@@ -1,5 +1,3 @@
-[tool.ruff]
-
 # Exclude directories
 exclude = [".venv", ".output", ".scripts", "staticfiles"]
 
@@ -7,7 +5,7 @@ exclude = [".venv", ".output", ".scripts", "staticfiles"]
 target-version = "py313"
 
 # Configure rule sets
-[tool.ruff.lint]
+[lint]
 select = [
     "E",      # pycodestyle errors
     "W",      # pycodestyle warnings
@@ -15,33 +13,31 @@ select = [
     "I",      # isort
     "N",      # pep8-naming
     "UP",     # pyupgrade
-    "D",      # pydocstyle (optional)
-    "RUF",    # ruff-specific rules
+    "D",      # pydocstyle
+    "RUF",    # Ruff-specific rules
 ]
 
-# Disable problematic rules for Django
 ignore = [
-    "E501",   # Line too long (handled by formatter)
-    "D100",   # Missing module docstring
-    "D101",   # Missing class docstring
-    "D102",   # Missing method docstring
-    "D103",   # Missing function docstring
-    "D104",   # Missing package docstring
-    "D105",   # Missing magic method docstring
-    "N806",   # Variable in function should be lowercase
-    "RUF012", # Mutable class-level defaults (common in Django models/serializers)
-    "S110",   # try-except-pass (too strict for Django)
-    "BLE001", # Blind exception catching (common defensive pattern)
-    "TRY401", # Redundant exception object in logging (false positives with exc vars)
-    "TRY002", # Create own exception (overly strict)
+    "E501",
+    "D100",
+    "D101",
+    "D102",
+    "D103",
+    "D104",
+    "D105",
+    "N806",
+    "RUF012",
+    "S110",
+    "BLE001",
+    "TRY401",
+    "TRY002",
 ]
 
-# Per-file ignores
-[tool.ruff.lint.per-file-ignores]
+[lint.per-file-ignores]
 "*/migrations/*.py" = ["E501"]
-"*/tests/*.py" = ["S101"]  # Allow assertions in tests
-"*/settings/*.py" = ["F405"]  # Allow star imports in settings
-"manage.py" = ["E402"]  # Allow late imports
+"*/tests/*.py" = ["S101"]
+"*/settings/*.py" = ["F405"]
+"manage.py" = ["E402"]
 
-[tool.ruff.lint.pydocstyle]
+[lint.pydocstyle]
 convention = "google"
