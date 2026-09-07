@@ -1,8 +1,9 @@
-.PHONY: check check-dev check-prod lint migrations test schema format fix run
+.PHONY: check ci check-dev check-prod lint migrations test schema format fix run
 
 # Run all validation across both environments
 check: check-dev check-prod
 
+ci: check
 # Development / test environment checks
 check-dev: lint migrations test schema
 	DJANGO_SETTINGS_MODULE=config.settings.test python manage.py check
