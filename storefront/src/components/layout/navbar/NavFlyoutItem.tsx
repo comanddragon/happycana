@@ -5,9 +5,6 @@ import Link from 'next/link'
 import { ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
-// Generic tree node — a menu item that may itself contain a nested
-// flyout of further items. Works at any depth: Categories → Subcategory
-// → Sub-subcategory → ..., or Categories → Brands → a specific brand, etc.
 export interface MenuNode {
     label: string
     href?: string
