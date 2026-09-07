@@ -14,9 +14,6 @@ COPY . .
 
 ENV DJANGO_SETTINGS_MODULE=config.settings.production
 
-# These values exist only for collectstatic's settings import and are not
-# persisted in the image. Production must supply every required value at run
-# time; no placeholder credential can accidentally become a live fallback.
 RUN DJANGO_SECRET_KEY=collectstatic-only-not-a-runtime-secret-0000000000000000 \
     ALLOWED_HOSTS=localhost \
     DATABASE_URL=postgresql://build:build@localhost:5432/build \

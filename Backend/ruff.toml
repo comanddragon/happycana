@@ -1,5 +1,5 @@
 [lint]
-line-length = 88
+
 # Exclude directories
 exclude = [".venv", ".output", ".scripts", "staticfiles"]
 
