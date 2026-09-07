@@ -37,3 +37,4 @@ pillow-avif-plugin==1.6.0      # AVIF read/write support for Pillow
 stripe==14.4.0
 resend==2.42.0
 requests==2.32.5
+beautifulsoup4==4.15.0          # HTML parsing for catalog scraper scripts

@@ -1,14 +1,16 @@
-perf: make getProduct/getCollection dedup explicit with React cache()
+Distinguish gated/missing prices from invalid ones in seed_products.py
 
-generateMetadata and the page component both call getProduct(slug) (or
-getCollection(slug)); this only avoided a duplicate server-side fetch
-because Next.js's fetch-level request memoization happened to see
-identical timedFetch options at both call sites. That's
-correctness-by-convention — if either call site's options ever drifted,
-the dedup would silently break.
+scrape_products.py now legitimately writes many rows with an empty price
+for storefronts that gate pricing behind a login wall (BigCommerce B2B
+'research professional' pricing), which is expected -- not a data error.
+Previously every priceless row was logged as 'invalid price' and silently
+dropped.
 
-Wrap getProduct (app/shop/products/[slug]/page.tsx) and getCollection
-(lib/catalog.server.ts) in React's cache() so both call sites explicitly
-share one fetch per request instead.
-
-Addresses finding #3 in frontend_performance_audit.md.
+- Rows with a blank price are now reported as 'no price yet (needs manual
+  pricing)' and written to needs_pricing.csv (--pending-output) for
+  follow-up, instead of just being dropped.
+- Rows with a present-but-unparseable price value are still flagged
+  separately as likely data problems.
+- Final summary breaks the skip count down by reason.
+- --dry-run prints '(no price)' instead of a blank price column so it's
+  clear at a glance which rows will need manual pricing.
