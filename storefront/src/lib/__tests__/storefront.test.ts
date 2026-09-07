@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { safeJsonLd } from '@/lib/storefront'
 import { timedFetch } from '@/lib/timedFetch.server'
+import { storefrontTheme } from '@/storefront/theme'
 
 vi.mock('next/headers', () => ({
     headers: vi.fn(async () => new Headers({ host: 'peptides.example.com' })),
@@ -27,5 +28,10 @@ describe('storefront request and SEO helpers', () => {
 
         expect(encoded).not.toContain('<')
         expect(JSON.parse(encoded).name).toBe('</script><script>alert(1)</script>')
+    })
+
+    it('gives the hash storefront its own visual theme', () => {
+        expect(storefrontTheme('hash')).not.toBe(storefrontTheme('dispensary'))
+        expect(storefrontTheme('hash').colors.canopy).toBe('#1b1510')
     })
 })

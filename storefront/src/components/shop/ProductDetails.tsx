@@ -33,7 +33,7 @@ type MediaItem =
     | { kind: 'video'; data: ProductVideo | VariantVideo; variantId?: string }
 
 export function ProductDetails({ product }: { product: Product }) {
-    const { features } = useStorefront()
+    const { storefront, features } = useStorefront()
     const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(
         product.variants?.length === 1 ? product.variants[0] : null
     )
@@ -188,7 +188,7 @@ export function ProductDetails({ product }: { product: Product }) {
                         )}
                         <h1 className="font-hc-display text-3xl lg:text-4xl font-medium leading-tight text-hc-ink">{product.name}</h1>
                         <p className="mt-3 text-2xl font-bold">
-                            {variant ? formatPrice(variant.price) : formatPrice(product.base_price)}
+                            {variant ? formatPrice(variant.price, storefront.currency) : formatPrice(product.base_price, storefront.currency)}
                         </p>
                     </div>
 

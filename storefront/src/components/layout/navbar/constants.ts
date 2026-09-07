@@ -18,6 +18,13 @@ export const PEPTIDE_NAV_LINKS: NavLink[] = [
     { href: '/blog', label: 'Research notes' },
 ]
 
+export const HASH_NAV_LINKS: NavLink[] = [
+    { href: '/shop', label: 'Hash room' },
+    { href: '/shop/products', label: 'All hash' },
+    { label: 'Hash styles', dynamic: true },
+    { href: '/lab-results', label: 'Lab archive' },
+]
+
 export const AMBER_DOT = {
     background: 'radial-gradient(circle at 32% 28%, var(--color-hc-amber-light), var(--color-hc-amber) 60%, var(--color-hc-amber-dim))',
 }

@@ -28,7 +28,7 @@ export const ProductCard = memo(function ProductCard({ product, className, prior
         firstVariant?.primary_image?.image_url
     )
 
-    const displayPrice = firstVariant ? formatPrice(firstVariant.price) : formatPrice(product.base_price)
+    const displayPrice = firstVariant ? formatPrice(firstVariant.price, storefront.currency) : formatPrice(product.base_price, storefront.currency)
     const regularPrice = Number(firstVariant?.price ?? product.base_price)
     const discount = product.active_discount
     const importedOriginalPrice = Number(product.compare_at_price ?? 0)
@@ -40,7 +40,7 @@ export const ProductCard = memo(function ProductCard({ product, className, prior
     const discountLabel = discount
         ? discount.discount_type === 'percent'
             ? `${Number(discount.value).toLocaleString()}% OFF`
-            : `${formatPrice(discount.value)} OFF`
+            : `${formatPrice(discount.value, storefront.currency)} OFF`
         : null
     const hasMultiplePrices = product.variants?.length > 1 &&
         product.variants.some(v => v.price !== product.variants[0].price)
@@ -49,7 +49,9 @@ export const ProductCard = memo(function ProductCard({ product, className, prior
     // brand/classification/lab/weight fields rather than the old generic
     // EAV attributes (which are empty for the seeded catalog now that
     // those values live in their own columns; see MISSING_FIELDS.md).
-    const typeLabel = product.cannabis_type
+    const typeLabel = storefront.kind === 'hash'
+        ? product.sub_type || 'Hash'
+        : product.cannabis_type
         ? CANNABIS_TYPE_LABEL[product.cannabis_type]
         : product.compliance_category
             ? COMPLIANCE_CATEGORY_LABEL[product.compliance_category]
@@ -150,10 +152,10 @@ export const ProductCard = memo(function ProductCard({ product, className, prior
                 <div className="flex items-center justify-between">
                     <p className="flex flex-wrap items-baseline gap-1.5 font-hc-mono text-sm font-medium text-hc-amber-dim">
                         {hasMultiplePrices && <span className="text-hc-ink-soft font-normal mr-1">from</span>}
-                        {importedOriginalPrice > regularPrice ? displayPrice : discountedPrice !== null ? formatPrice(discountedPrice) : displayPrice}
+                        {importedOriginalPrice > regularPrice ? displayPrice : discountedPrice !== null ? formatPrice(discountedPrice, storefront.currency) : displayPrice}
                         {(importedOriginalPrice > regularPrice || discountedPrice !== null) && (
                             <span className="text-xs font-normal text-hc-ink-soft line-through">
-                                {formatPrice(importedOriginalPrice > regularPrice ? importedOriginalPrice : regularPrice)}
+                                {formatPrice(importedOriginalPrice > regularPrice ? importedOriginalPrice : regularPrice, storefront.currency)}
                             </span>
                         )}
                     </p>

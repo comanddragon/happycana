@@ -111,15 +111,17 @@ export function ProductsGrid({
 
     const clearFilters = () => {
         setSearchDraft('')
-        router.push(basePath)
+        // Fixed category/brand landing routes re-apply their initial filter when
+        // their query string is cleared. Move to the unfiltered catalog instead.
+        router.push('/shop/products')
     }
 
     const clearAdvancedFilters = () => {
-        setParams({ brand: '', cannabis_type: '', effect: '', min_thc: '', in_stock: '' })
+        setParams({ brand: '', cannabis_type: '', effect: '', min_thc: '', in_stock: '', on_discount: '' })
     }
 
     const hasFilters = Boolean(category || search || brand || cannabisType || effect || minThc || inStock || onDiscount)
-    const advancedFilterCount = [brand, cannabisType, effect, minThc, inStock ? '1' : ''].filter(Boolean).length
+    const advancedFilterCount = [brand, cannabisType, effect, minThc, inStock ? '1' : '', onDiscount ? '1' : ''].filter(Boolean).length
 
     const selectedThcPreset = useMemo(
         () => THC_PRESETS.find(p => String(p.min_thc ?? '') === minThc) ?? THC_PRESETS[0],

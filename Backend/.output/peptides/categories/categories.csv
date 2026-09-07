@@ -1,2 +1,13 @@
-name,url,platform,scraped_count,reported_count
-GH Peptides,https://peptidesdirect.com/shop?cat=GH+Peptides,peptidesdirect,0,
+name,url,scraped_count,reported_count
+GLP-1 & Metabolic,https://peptidesdirect.com/shop?cat=GLP-1%20%26%20Metabolic,12,22
+Recovery & Repair,https://peptidesdirect.com/shop?cat=Recovery%20%26%20Repair,5,5
+Growth Hormone,https://peptidesdirect.com/shop?cat=Growth%20Hormone,10,10
+Cognitive,https://peptidesdirect.com/shop?cat=Cognitive,10,10
+Longevity,https://peptidesdirect.com/shop?cat=Longevity,7,7
+Growth Factors,https://peptidesdirect.com/shop?cat=Growth%20Factors,6,6
+Reproductive,https://peptidesdirect.com/shop?cat=Reproductive,6,6
+Melanocortin,https://peptidesdirect.com/shop?cat=Melanocortin,3,3
+Immune,https://peptidesdirect.com/shop?cat=Immune,3,3
+Bioregulators,https://peptidesdirect.com/shop?cat=Bioregulators,12,13
+Specialty,https://peptidesdirect.com/shop?cat=Specialty,10,10
+GH Peptides,https://peptidesdirect.com/shop?cat=GH+Peptides,0,0

@@ -47,7 +47,25 @@ const DISPENSARY_THEME: StorefrontTheme = {
 export const STOREFRONT_THEMES: Record<StorefrontKind, StorefrontTheme> = {
     general: DISPENSARY_THEME,
     dispensary: DISPENSARY_THEME,
-    hash: DISPENSARY_THEME,
+    hash: {
+        colors: {
+            canopy: '#1b1510',
+            canopy2: '#0d0a08',
+            canopy3: '#38291b',
+            amber: '#d9962f',
+            amberLight: '#f3c86e',
+            amberDim: '#98601d',
+            sage: '#c9b99b',
+            sageDim: '#8d7b61',
+            paper: '#f5f0e6',
+            paper2: '#e8dcc5',
+            ink: '#21170d',
+            inkSoft: '#655746',
+        },
+        radius: '0.5rem',
+        fonts: { display: 'fraunces', body: 'spaceGrotesk', mono: 'ibmPlexMono' },
+        productCardVariant: 'organic',
+    },
     footwear: DISPENSARY_THEME,
     peptides: {
         colors: {

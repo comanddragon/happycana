@@ -30,10 +30,10 @@ import os
 import sys
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
+from urllib.parse import urlsplit
 
 import django
 from dotenv import load_dotenv
-
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 BACKEND_DIR = SCRIPT_DIR.parents[2]
@@ -47,14 +47,24 @@ sys.path.insert(0, str(BACKEND_DIR))
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings.development")
 django.setup()
 
-from django.conf import settings  # noqa: E402
-from django.db import transaction  # noqa: E402
-from django.utils.text import slugify  # noqa: E402
+from django.conf import settings
+from django.db import transaction
+from django.utils.text import slugify
 
-from apps.catalog.models import Category, Listing, Product, ProductImage, ProductVariant  # noqa: E402
-from apps.catalog_peptides.models import PeptideProfile  # noqa: E402
-from apps.inventory.models import Stock, Warehouse  # noqa: E402
-from apps.storefronts.models import Storefront  # noqa: E402
+from apps.catalog.models import (
+    Category,
+    Listing,
+    Product,
+    ProductImage,
+    ProductVariant,
+)
+from apps.catalog_peptides.models import PeptideProfile
+from apps.inventory.models import Stock, Warehouse
+from apps.storefronts.models import (
+    Storefront,
+    StorefrontDomain,
+    StorefrontOrigin,
+)
 
 
 def verify_database_target(allow_remote):
@@ -94,12 +104,14 @@ def as_decimal(value):
 
 
 def get_storefront(slug):
+    frontend_url = os.environ.get("PEPTIDE_STOREFRONT_URL", "http://peptides.localhost:3000").rstrip("/")
     storefront, _ = Storefront.objects.update_or_create(
         slug=slug,
         defaults={
             "name": "Axiom Peptides",
             "kind": Storefront.Kind.PEPTIDES,
             "currency": "USD",
+            "frontend_url": frontend_url,
             "is_active": True,
             "branding": {
                 "meta_title": "Axiom Peptides | Research Compounds",
@@ -108,6 +120,16 @@ def get_storefront(slug):
             },
             "settings": {"research_use_only": True},
         },
+    )
+    hostname = urlsplit(frontend_url).hostname
+    if hostname:
+        StorefrontDomain.objects.update_or_create(
+            domain=hostname,
+            defaults={"storefront": storefront, "is_primary": True},
+        )
+    StorefrontOrigin.objects.update_or_create(
+        origin=frontend_url,
+        defaults={"storefront": storefront},
     )
     return storefront
 

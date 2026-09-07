@@ -171,6 +171,22 @@ html[data-vertical="peptides"] {
     --radius: 0.375rem;
 }
 
+html[data-vertical="hash"] {
+    --color-hc-canopy:      #1b1510;
+    --color-hc-canopy-2:    #0d0a08;
+    --color-hc-canopy-3:    #38291b;
+    --color-hc-amber:       #d9962f;
+    --color-hc-amber-light: #f3c86e;
+    --color-hc-amber-dim:   #98601d;
+    --color-hc-sage:        #c9b99b;
+    --color-hc-sage-dim:    #8d7b61;
+    --color-hc-paper:       #f5f0e6;
+    --color-hc-paper-2:     #e8dcc5;
+    --color-hc-ink:         #21170d;
+    --color-hc-ink-soft:    #655746;
+    --radius: 0.5rem;
+}
+
 @keyframes hc-pulse {
     0%, 100% { opacity: .7; transform: translateX(-50%) scale(1); }
     50%      { opacity: 1;  transform: translateX(-50%) scale(1.08); }

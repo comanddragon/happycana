@@ -7,14 +7,14 @@ import { useStorefront } from '@/storefront/StorefrontProvider'
 
 export function NavCategoriesMenu() {
     const { rootNodes } = useCategoriesMenuTree()
-    const { features } = useStorefront()
+    const { storefront, features } = useStorefront()
 
     return (
         <div className="relative group">
             <button
                 className="flex items-center gap-1 text-sm font-medium text-hc-sage transition-colors hover:text-hc-paper"
             >
-                {features.peptideCatalog ? 'Research areas' : 'Categories'}
+                {storefront.kind === 'hash' ? 'Hash styles' : features.peptideCatalog ? 'Research areas' : 'Categories'}
                 <ChevronDown className="h-4 w-4 transition-transform group-hover:rotate-180" />
             </button>
 

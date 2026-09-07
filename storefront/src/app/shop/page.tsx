@@ -20,9 +20,11 @@ const getBestSellers = () => getProducts({ ordering: '-units_sold_hint', page_si
 export async function generateMetadata(): Promise<Metadata> {
     const storefront = await getStorefront()
     const peptides = storefront.kind === 'peptides'
-    const title = peptides ? 'Research Compound Catalog' : 'Shop the Menu'
+    const hash = storefront.kind === 'hash'
+    const title = peptides ? 'Research Compound Catalog' : hash ? 'The Hash Room' : 'Shop the Menu'
     const description = peptides
         ? `Browse research-use-only peptides by format and concentration from ${storefront.name}.`
+        : hash ? `Browse hash by extraction method, producer, weight, and availability from ${storefront.name}.`
         : 'Flower, edibles, vapes, and concentrates from small-batch growers, third-party tested and ready for same-day pickup or delivery.'
     return {
         title,
@@ -265,6 +267,7 @@ async function NewArrivalsSection() {
 export default async function ShopPage() {
     const storefront = await getStorefront()
     const peptides = storefront.kind === 'peptides'
+    const hash = storefront.kind === 'hash'
     return (
         <div className="bg-hc-paper">
 
@@ -277,14 +280,15 @@ export default async function ShopPage() {
                 />
                 <div className="relative mx-auto max-w-[1180px]">
                     <div className="mb-4 inline-flex items-center gap-2 font-hc-mono text-xs uppercase tracking-[0.12em] text-hc-amber-light before:h-px before:w-3.5 before:bg-current before:opacity-50">
-                        {peptides ? 'Research compound catalog' : 'Today’s menu'}
+                        {peptides ? 'Research compound catalog' : hash ? 'Resin craft catalog' : 'Today’s menu'}
                     </div>
                     <h1 className="font-hc-display text-[34px] font-normal leading-[1.08] tracking-tight sm:text-5xl">
-                        {peptides ? 'Browse by research area' : 'Shop by category'}
+                        {peptides ? 'Browse by research area' : hash ? 'Browse by hash style' : 'Shop by category'}
                     </h1>
                     <p className="mt-4 max-w-lg text-[16px] leading-relaxed text-hc-sage">
                         {peptides
                             ? 'Explore compounds by format and concentration, with source documentation retained for every catalog record.'
+                            : hash ? 'Explore dry sift, static sift, frozen sift, eggs, mousse, and traditional plates—organized by process.'
                             : 'Explore our full range of flower, edibles, vapes, and concentrates — every batch third-party tested before it reaches you.'}
                     </p>
                 </div>
@@ -303,7 +307,7 @@ export default async function ShopPage() {
                 </Suspense>
 
                 {/* Shop by effect */}
-                {!peptides && <Suspense fallback={null}><EffectsSection /></Suspense>}
+                {!peptides && !hash && <Suspense fallback={null}><EffectsSection /></Suspense>}
 
                 {/* Shop by brand */}
                 {!peptides && <Suspense fallback={
@@ -345,6 +349,11 @@ export default async function ShopPage() {
                         { icon: ShieldCheck, title: 'Source traceability', text: 'Original record retained' },
                         { icon: RotateCcw, title: 'Catalog clarity', text: 'Format and concentration' },
                         { icon: Truck, title: 'Stock visibility', text: 'Availability shown live' },
+                    ] : hash ? [
+                        { icon: FlaskConical, title: 'Method indexed', text: 'Process shown clearly' },
+                        { icon: ShieldCheck, title: 'Source retained', text: 'Original producer linked' },
+                        { icon: RotateCcw, title: 'Weight options', text: 'Variant pricing preserved' },
+                        { icon: Truck, title: 'Live availability', text: 'Current stock visibility' },
                     ] : [
                         { icon: FlaskConical, title: '12-panel lab tested', text: 'Every batch, twice' },
                         { icon: Truck, title: 'Same-day pickup', text: 'Ready in ~20 min' },
@@ -363,10 +372,10 @@ export default async function ShopPage() {
             </div>
 
             <CtaBand
-                heading={peptides ? 'Need a specific research format?' : 'Can’t decide? We’ll walk you through it.'}
-                subheading={peptides ? 'Compare compounds by concentration, form, and source documentation.' : 'Same-day pickup, next-day delivery, every lot tested twice.'}
+                heading={peptides ? 'Need a specific research format?' : hash ? 'Looking for a particular sift?' : 'Can’t decide? We’ll walk you through it.'}
+                subheading={peptides ? 'Compare compounds by concentration, form, and source documentation.' : hash ? 'Compare process, producer, weight, and live variant pricing.' : 'Same-day pickup, next-day delivery, every lot tested twice.'}
                 href="/shop/products"
-                label={peptides ? 'Browse all compounds' : 'Browse all products'}
+                label={peptides ? 'Browse all compounds' : hash ? 'Browse all hash' : 'Browse all products'}
             />
         </div>
     )

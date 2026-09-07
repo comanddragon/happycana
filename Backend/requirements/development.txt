@@ -16,3 +16,4 @@ model-bakery==1.24.0          # Quick model instance creation
 ruff==0.16.6
 
 playwright==1.62.0
+slugify==0.0.1

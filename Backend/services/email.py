@@ -3,10 +3,16 @@
 # Thin abstraction over Resend — swap providers in one place without
 # touching call sites.
 # =============================================================================
-from django.template.loader import render_to_string
-from django.conf import settings
+import base64
 import logging
+from functools import lru_cache
+from pathlib import PurePosixPath
+from urllib.parse import urlparse
+
+import requests
 import resend
+from django.conf import settings
+from django.template.loader import render_to_string
 
 logger = logging.getLogger(__name__)
 
@@ -15,8 +21,29 @@ resend.api_key = settings.RESEND_API_KEY
 
 class EmailService:
 
+    LOGO_CONTENT_ID = "store-logo"
+
+    @staticmethod
+    @lru_cache(maxsize=32)
+    def _download_logo(logo_url):
+        """Fetch and cache a logo so Resend receives the actual image content."""
+        response = requests.get(logo_url, timeout=10)
+        response.raise_for_status()
+        return (
+            base64.b64encode(response.content).decode("ascii"),
+            response.headers.get("Content-Type", "image/png").split(";", 1)[0],
+        )
+
     @classmethod
-    def send(cls, subject, body, recipients, html_body=None, from_email=None):
+    def send(
+        cls,
+        subject,
+        body,
+        recipients,
+        html_body=None,
+        from_email=None,
+        attachments=None,
+    ):
         """Send a plain-text (optionally HTML) email to one or more recipients via Resend."""
         payload = {
             "from": from_email or settings.DEFAULT_FROM_EMAIL,
@@ -26,6 +53,8 @@ class EmailService:
         }
         if html_body:
             payload["html"] = html_body
+        if attachments:
+            payload["attachments"] = attachments
         try:
             result = resend.Emails.send(payload)
             email_id = result.get("id") if isinstance(result, dict) else getattr(result, "id", None)
@@ -33,20 +62,45 @@ class EmailService:
                 "Email sent to %s — subject: %s — resend id: %s",
                 recipients, subject, email_id,
             )
-        except Exception as exc:
-            logger.exception("Failed to send email to %s: %s", recipients, exc)
+        except Exception:
+            logger.exception("Failed to send email to %s", recipients)
             raise
 
     @classmethod
     def send_template(cls, subject, template_name, context, recipients, storefront=None):
         """Render a Django template and send as HTML email."""
         context = {**cls._base_context(storefront), **context}
+        logo_url = context.get("logo_url")
+        attachments = None
+        if logo_url:
+            filename = PurePosixPath(urlparse(logo_url).path).name or "store-logo.png"
+            try:
+                logo_content, content_type = cls._download_logo(logo_url)
+            except requests.RequestException:
+                logger.warning("Could not embed email logo from %s", logo_url, exc_info=True)
+            else:
+                context["logo_url"] = f"cid:{cls.LOGO_CONTENT_ID}"
+                attachments = [
+                    {
+                        "content": logo_content,
+                        "filename": filename,
+                        "content_type": content_type,
+                        "content_id": cls.LOGO_CONTENT_ID,
+                    }
+                ]
         html_body = render_to_string(template_name, context)
         text_body = render_to_string(
             template_name.replace(".html", ".txt"), context
         )
         from_email = storefront.from_email if storefront and storefront.from_email else None
-        cls.send(subject, text_body, recipients, html_body=html_body, from_email=from_email)
+        cls.send(
+            subject,
+            text_body,
+            recipients,
+            html_body=html_body,
+            from_email=from_email,
+            attachments=attachments,
+        )
 
     @classmethod
     def _base_context(cls, storefront=None):

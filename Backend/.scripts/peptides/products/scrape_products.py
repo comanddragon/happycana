@@ -524,15 +524,34 @@ def parse_product_detail(html, product):
         product.meta_description = normalize_text(
             description.get("content", "")
         )
-    # OpenGraph image is often more reliable than the product-card image.
+    # Prefer the actual product image. This storefront uses the same
+    # og-share-wide.png social card on every detail page, so treating og:image
+    # as product media makes the entire imported catalog look identical.
+    product_image = None
+    for image in soup.select("img"):
+        candidate = (
+            image.get("src")
+            or image.get("data-src")
+            or image.get("data-lazy-src")
+            or ""
+        )
+        if "/images/products/" in candidate:
+            product_image = candidate
+            break
+    if product_image:
+        product.image_url = urljoin(product.source_url, product_image)
+
+    # Use OpenGraph only as a fallback and reject known site-wide artwork.
     og_image = soup.select_one(
         'meta[property="og:image"]'
     )
-    if og_image and og_image.get("content"):
-        product.image_url = urljoin(
-            product.source_url,
-            og_image["content"],
-        )
+    og_image_url = og_image.get("content", "") if og_image else ""
+    if (
+        not product.image_url
+        and og_image_url
+        and not og_image_url.endswith("/images/og-share-wide.png")
+    ):
+        product.image_url = urljoin(product.source_url, og_image_url)
     text = normalize_text(
         soup.get_text(" ", strip=True)
     )

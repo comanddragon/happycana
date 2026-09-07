@@ -7,6 +7,7 @@ import type { Cart, CouponResult } from './types'
 import Image from 'next/image'
 import { useRemoveCartItem, useUpdateCartItem } from '@/hooks/useApi'
 import type { CartItem } from '@/types'
+import { useStorefront } from '@/storefront/StorefrontProvider'
 
 function getCartItemImage(item: CartItem): string | null {
     return mediaUrl(
@@ -48,6 +49,7 @@ export function OrderSummary({
     isCheckingOut,
     onCartChanged,
 }: OrderSummaryProps) {
+    const { storefront } = useStorefront()
     const updateItem = useUpdateCartItem()
     const removeItem = useRemoveCartItem()
     const isChangingCart = updateItem.isPending || removeItem.isPending
@@ -103,7 +105,7 @@ export function OrderSummary({
                                 </button>
                             </div>
                         </div>
-                        <p className="font-hc-mono text-xs font-semibold text-hc-ink">{formatPrice(item.subtotal)}</p>
+                        <p className="font-hc-mono text-xs font-semibold text-hc-ink">{formatPrice(item.subtotal, storefront.currency)}</p>
                     </div>
                     )
                 })}
@@ -112,21 +114,21 @@ export function OrderSummary({
             <div className="space-y-2 border-t border-dashed border-hc-ink/15 pt-4">
                 <div className="flex justify-between text-sm">
                     <span className="text-hc-ink-soft">Subtotal</span>
-                    <span className="font-hc-mono font-medium text-hc-ink">{formatPrice(subtotal)}</span>
+                    <span className="font-hc-mono font-medium text-hc-ink">{formatPrice(subtotal, storefront.currency)}</span>
                 </div>
                 {couponResult && discount > 0 && (
                     <div className="flex justify-between text-sm text-hc-amber-dim">
                         <span>Discount</span>
-                        <span className="font-hc-mono">−{formatPrice(discount)}</span>
+                        <span className="font-hc-mono">−{formatPrice(discount, storefront.currency)}</span>
                     </div>
                 )}
                 <div className="flex justify-between text-sm">
                     <span className="text-hc-ink-soft">Shipping</span>
-                    <span className="font-hc-mono font-medium text-hc-ink">{shipping > 0 ? formatPrice(shipping) : '—'}</span>
+                    <span className="font-hc-mono font-medium text-hc-ink">{shipping > 0 ? formatPrice(shipping, storefront.currency) : '—'}</span>
                 </div>
                 <div className="mt-2 flex justify-between border-t border-dashed border-hc-ink/15 pt-2.5 text-base font-semibold">
                     <span className="font-hc-display text-hc-ink">Total</span>
-                    <span className="font-hc-mono text-hc-ink">{formatPrice(total)}</span>
+                    <span className="font-hc-mono text-hc-ink">{formatPrice(total, storefront.currency)}</span>
                 </div>
             </div>
 
@@ -171,7 +173,7 @@ export function OrderSummary({
                 {isCheckingOut ? (
                     <><Loader2 className="h-4 w-4 animate-spin" /> Processing…</>
                 ) : (
-                    <>Place Order · {formatPrice(total)}</>
+                    <>Place Order · {formatPrice(total, storefront.currency)}</>
                 )}
             </button>
 

@@ -4,16 +4,49 @@
 // widget, or reaching the checkout contact step. Safe to call repeatedly;
 // once a session exists (guest or real) this is a no-op.
 
-import { authService } from './services'
+import { authService, userService } from './services'
 import { useAuthStore } from '@/store/auth'
 import { getAccessToken, getRefreshToken } from '@/lib/api'
+
+let restorePromise: Promise<ReturnType<typeof useAuthStore.getState>['user']> | null = null
+
+/** Restore the persisted JWT identity after a browser/app restart. */
+export function restoreExistingSession() {
+    const { user, isAuthenticated, setUser } = useAuthStore.getState()
+    const hasToken = Boolean(getAccessToken() || getRefreshToken())
+
+    if (user && isAuthenticated && hasToken) return Promise.resolve(user)
+    if (!hasToken) return Promise.resolve(null)
+    if (restorePromise) return restorePromise
+
+    restorePromise = userService.me()
+        .then(restoredUser => {
+            setUser(restoredUser)
+            return restoredUser
+        })
+        .catch(() => {
+            setUser(null)
+            return null
+        })
+        .finally(() => {
+            restorePromise = null
+        })
+
+    return restorePromise
+}
 
 /**
  * Ensures the visitor has a JWT session, creating a guest one if needed.
  * Returns the current (or newly created) user.
  */
 export async function ensureGuestSession(email?: string) {
-    const { isAuthenticated, user, setUser } = useAuthStore.getState()
+    const { setUser } = useAuthStore.getState()
+    let { isAuthenticated, user } = useAuthStore.getState()
+
+    if (!user && (getAccessToken() || getRefreshToken())) {
+        user = await restoreExistingSession()
+        isAuthenticated = Boolean(user)
+    }
 
     if (isAuthenticated && user && (getAccessToken() || getRefreshToken())) {
         // Already a real or guest session — nothing to do unless we're

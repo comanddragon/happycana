@@ -42,11 +42,28 @@ const PEPTIDE_COLUMNS: Record<string, { label: string; href: string }[]> = {
     Support: CANNABIS_COLUMNS.Support,
 }
 
+const HASH_COLUMNS: Record<string, { label: string; href: string }[]> = {
+    Catalog: [
+        { label: 'All hash', href: '/shop/products' },
+        { label: 'Dry sift', href: '/shop/products?category=hash-dry-sift-hash' },
+        { label: 'Static sift', href: '/shop/products?category=hash-static-sift-hash' },
+        { label: 'New drops', href: '/shop/new-arrivals' },
+    ],
+    Provenance: [
+        { label: 'Lab archive', href: '/lab-results' },
+        { label: 'Hash journal', href: '/blog' },
+    ],
+    Account: CANNABIS_COLUMNS.Account,
+    Support: CANNABIS_COLUMNS.Support,
+}
+
 export function Footer() {
     const { storefront, features } = useStorefront()
     const description = brandingString(storefront, 'description') || `Quality products and dependable service from ${storefront.name}.`
     const license = brandingString(storefront, 'license_number')
-    const columns = features.peptideCatalog ? PEPTIDE_COLUMNS : CANNABIS_COLUMNS
+    const columns = storefront.kind === 'hash'
+        ? HASH_COLUMNS
+        : features.peptideCatalog ? PEPTIDE_COLUMNS : CANNABIS_COLUMNS
     return (
         <footer className="bg-hc-canopy-2 px-7 pb-8 pt-16 text-hc-sage">
             <div className="mx-auto max-w-[1180px]">

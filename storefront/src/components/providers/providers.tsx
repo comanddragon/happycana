@@ -6,6 +6,7 @@ import React, { useEffect, useState } from 'react'
 import axios from 'axios'
 import { Toaster } from 'sonner'
 import { useAuthStore } from '@/store/auth'
+import { restoreExistingSession } from '@/lib/guestSession'
 
 export function Providers({ children }: { children: React.ReactNode }) {
     const [queryClient] = useState(
@@ -28,6 +29,8 @@ export function Providers({ children }: { children: React.ReactNode }) {
     )
 
     useEffect(() => {
+        void restoreExistingSession()
+
         const expire = () => {
             useAuthStore.getState().setUser(null)
             queryClient.removeQueries({ queryKey: ['cart'] })

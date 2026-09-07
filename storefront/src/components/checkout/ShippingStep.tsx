@@ -4,6 +4,7 @@ import { Check, Truck } from 'lucide-react'
 import { cn, formatPrice } from '@/lib/utils'
 import { CheckoutSection } from './CheckoutSection'
 import type { ShippingMethod } from './types'
+import { useStorefront } from '@/storefront/StorefrontProvider'
 
 interface ShippingStepProps {
     methods: ShippingMethod[] | undefined
@@ -13,6 +14,7 @@ interface ShippingStepProps {
 }
 
 export function ShippingStep({ methods, selectedShipping, onSelect, locked }: ShippingStepProps) {
+    const { storefront } = useStorefront()
     return (
         <CheckoutSection
             index={2}
@@ -44,7 +46,7 @@ export function ShippingStep({ methods, selectedShipping, onSelect, locked }: Sh
                                 </p>
                             </div>
                             <div className="flex items-center gap-3">
-                                <span className="font-hc-mono text-sm font-medium text-hc-ink">{formatPrice(method.price)}</span>
+                                <span className="font-hc-mono text-sm font-medium text-hc-ink">{formatPrice(method.price, storefront.currency)}</span>
                                 <span className={cn(
                                     'flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-colors',
                                     selectedShipping === method.id ? 'border-hc-amber bg-hc-amber text-hc-canopy-2' : 'border-hc-ink/15',

@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { Menu, X } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetDescription } from '@/components/ui/sheet'
-import { NAV_LINKS, PEPTIDE_NAV_LINKS } from './constants'
+import { HASH_NAV_LINKS, NAV_LINKS, PEPTIDE_NAV_LINKS } from './constants'
 import { Logo } from '../Logo'
 import { useCategoriesMenuTree } from '@/hooks/useCategoriesMenuTree'
 import { NavMobileTreeItem } from '@/components/layout/navbar/NavMobileTreeItem'
@@ -28,8 +28,10 @@ export function NavbarMobileMenu({
                                      isAuthenticated,
                                  }: NavbarMobileMenuProps) {
     const { rootNodes } = useCategoriesMenuTree()
-    const { features } = useStorefront()
-    const navLinks = features.peptideCatalog ? PEPTIDE_NAV_LINKS : NAV_LINKS
+    const { storefront, features } = useStorefront()
+    const navLinks = storefront.kind === 'hash'
+        ? HASH_NAV_LINKS
+        : features.peptideCatalog ? PEPTIDE_NAV_LINKS : NAV_LINKS
 
     return (
         <Sheet open={open} onOpenChange={setOpen}>

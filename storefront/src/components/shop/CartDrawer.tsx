@@ -14,6 +14,7 @@ import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Skeleton } from '@/components/ui/skeleton'
+import { useStorefront } from '@/storefront/StorefrontProvider'
 
 import type { CartItem } from '@/types'
 
@@ -36,6 +37,7 @@ const CartLineItem = memo(function CartLineItem({
     onRemove: (id: string) => void
 }) {
     const img = getCartItemImage(item)
+    const { storefront } = useStorefront()
 
     return (
         <div className="flex gap-3">
@@ -56,7 +58,7 @@ const CartLineItem = memo(function CartLineItem({
                         {getVariantLabel(item.variant)}
                     </p>
                 ) : null}
-                <p className="text-sm font-semibold text-hc-amber-dim mt-1">{formatPrice(item.subtotal)}</p>
+                <p className="text-sm font-semibold text-hc-amber-dim mt-1">{formatPrice(item.subtotal, storefront.currency)}</p>
                 <div className="flex items-center gap-2 mt-2">
                     <div className="flex items-center rounded-md border overflow-hidden">
                         <Button variant="ghost" size="icon" className="h-7 w-7 rounded-none"
@@ -84,6 +86,7 @@ const CartLineItem = memo(function CartLineItem({
 
 export function CartDrawer() {
     const { isOpen, closeCart } = useCartStore()
+    const { storefront } = useStorefront()
     const { data: cart, isLoading } = useCart()
     const updateItem = useUpdateCartItem()
     const removeItem = useRemoveCartItem()
@@ -161,7 +164,7 @@ export function CartDrawer() {
                     <div className="border-t border-hc-ink/10 px-5 py-4 space-y-3 bg-hc-paper-2/60">
                         <div className="flex items-center justify-between text-sm">
                             <span className="text-muted-foreground">Subtotal</span>
-                            <span className="font-semibold">{formatPrice(cart.total_price)}</span>
+                            <span className="font-semibold">{formatPrice(cart.total_price, storefront.currency)}</span>
                         </div>
                         <p className="text-xs text-muted-foreground">Shipping and taxes calculated at checkout</p>
                         <Separator />

@@ -31,9 +31,12 @@
          style="width:600px;max-width:600px;background:#faf9f5;">
     <tr>
       <td class="px" style="padding:32px 50px 24px;">
+        {% if logo_url %}
         <a href="{{ store_url }}" style="text-decoration:none;">
-          <img src="{{ logo_url }}" alt="{{ store_name }}" width="120" style="max-width:120px;">
+          <img src="{{ logo_url }}" alt="{{ store_name }}" width="220"
+               style="width:220px;max-width:100%;height:auto;">
         </a>
+        {% endif %}
       </td>
     </tr>
     <tr>

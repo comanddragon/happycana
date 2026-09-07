@@ -10,13 +10,15 @@ import { getStorefront } from '@/lib/storefront.server'
 export async function generateMetadata(): Promise<Metadata> {
     const storefront = await getStorefront()
     const peptides = storefront.kind === 'peptides'
+    const hash = storefront.kind === 'hash'
     return {
         title: {
-            default: peptides ? `${storefront.name} — Research Catalog` : `${DEFAULT_STOREFRONT_NAME} — Shop the Menu`,
+            default: peptides ? `${storefront.name} — Research Catalog` : hash ? `${storefront.name} — The Hash Room` : `${DEFAULT_STOREFRONT_NAME} — Shop the Menu`,
             template: `%s | ${storefront.name || DEFAULT_STOREFRONT_NAME}`,
         },
         description: peptides
             ? 'Browse source-traceable research compounds by concentration and format.'
+            : hash ? 'Browse hash by process, producer, weight, and availability.'
             : 'Shop Flower, edibles, and concentrates from small-batch growers, third-party tested and delivered same-day.',
     }
 }

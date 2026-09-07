@@ -2,13 +2,15 @@
 
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
-import { NAV_LINKS, PEPTIDE_NAV_LINKS } from './constants'
+import { HASH_NAV_LINKS, NAV_LINKS, PEPTIDE_NAV_LINKS } from './constants'
 import { NavCategoriesMenu } from '@/components/layout/navbar/NavCategoriesMenu'
 import { useStorefront } from '@/storefront/StorefrontProvider'
 
 export function NavbarDesktopLinks({ pathname }: { pathname: string }) {
-    const { features } = useStorefront()
-    const navLinks = features.peptideCatalog ? PEPTIDE_NAV_LINKS : NAV_LINKS
+    const { storefront, features } = useStorefront()
+    const navLinks = storefront.kind === 'hash'
+        ? HASH_NAV_LINKS
+        : features.peptideCatalog ? PEPTIDE_NAV_LINKS : NAV_LINKS
     // Pick the single most specific (longest) matching href instead of
     // highlighting every link whose href is a prefix of the current path.
     // e.g. on /shop/products/some-slug, only "Products" should light up,
