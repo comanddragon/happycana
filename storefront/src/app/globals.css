@@ -150,6 +150,7 @@
     --color-hc-ink-soft:    #4a453c;
 
     --font-hc-display: var(--font-editorial), serif;
+    --font-hc-commerce: var(--font-editorial), serif;
     --font-hc-body:    var(--font-space-grotesk), sans-serif;
     --font-hc-mono:    var(--font-ibm-plex-mono), monospace;
 }
@@ -168,6 +169,7 @@ html[data-vertical="peptides"] {
     --color-hc-ink:         #10231e;
     --color-hc-ink-soft:    #526a62;
     --font-hc-display: var(--font-peptide-display), sans-serif;
+    --font-hc-commerce: var(--font-peptide-display), sans-serif;
     --radius: 0.375rem;
 }
 

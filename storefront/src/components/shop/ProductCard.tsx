@@ -130,7 +130,7 @@ export const ProductCard = memo(function ProductCard({ product, className, prior
                                 {product.brand.name}
                             </p>
                         )}
-                        <h2 className="font-hc-display text-[17px] font-medium leading-snug line-clamp-2 group-hover:text-hc-amber-dim transition-colors">
+                        <h2 className="font-hc-commerce line-clamp-2 text-[17px] font-semibold leading-snug tracking-[-.01em] transition-colors group-hover:text-hc-amber-dim">
                             {product.name}
                         </h2>
                     </div>

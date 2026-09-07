@@ -66,7 +66,7 @@ export function AgeGate() {
                         boxShadow: '0 0 40px rgba(200,121,46,.45)',
                     }}
                 />
-                <h1 className="font-hc-display text-3xl sm:text-4xl font-medium leading-tight mb-3">
+                <h1 className="mb-3 font-hc-commerce text-3xl font-semibold leading-tight tracking-[-.02em] sm:text-4xl">
                     Welcome to {storefront.name}
                 </h1>
                 <p className="text-hc-sage text-[15px] leading-relaxed mb-8">

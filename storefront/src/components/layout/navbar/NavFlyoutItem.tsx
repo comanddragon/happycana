@@ -1,6 +1,5 @@
 'use client'
 
-import { useRef, useState } from 'react'
 import Link from 'next/link'
 import { ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -11,21 +10,8 @@ export interface MenuNode {
     children?: MenuNode[]
 }
 
-const CLOSE_DELAY_MS = 200
-
 export function NavFlyoutItem({ node }: { node: MenuNode }) {
-    const [open, setOpen] = useState(false)
-    const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-
     const hasChildren = !!node.children?.length
-
-    const handleEnter = () => {
-        if (closeTimer.current) clearTimeout(closeTimer.current)
-        setOpen(true)
-    }
-    const handleLeave = () => {
-        closeTimer.current = setTimeout(() => setOpen(false), CLOSE_DELAY_MS)
-    }
 
     const rowClasses = cn(
         'flex items-center gap-2 rounded-lg px-4 py-2 text-sm text-hc-sage transition-colors',
@@ -33,11 +19,7 @@ export function NavFlyoutItem({ node }: { node: MenuNode }) {
     )
 
     return (
-        <div
-            className="relative"
-            onMouseEnter={hasChildren ? handleEnter : undefined}
-            onMouseLeave={hasChildren ? handleLeave : undefined}
-        >
+        <div className="group/item relative after:absolute after:inset-y-0 after:left-full after:w-2">
             {node.href ? (
                 <Link href={node.href} className={cn(rowClasses, 'justify-between')}>
                     <span className="truncate">{node.label}</span>
@@ -50,11 +32,9 @@ export function NavFlyoutItem({ node }: { node: MenuNode }) {
                 </div>
             )}
 
-            {hasChildren && open && (
+            {hasChildren && (
                 <div
-                    className="absolute left-full top-0 z-50 ml-1 min-w-[200px] max-h-[360px] overflow-y-auto rounded-xl border border-white/10 bg-hc-canopy-2 p-2 shadow-xl"
-                    onMouseEnter={handleEnter}
-                    onMouseLeave={handleLeave}
+                    className="pointer-events-none invisible absolute left-[calc(100%+0.5rem)] top-0 z-50 max-h-[360px] min-w-[200px] translate-x-1 overflow-y-auto rounded-xl border border-white/10 bg-hc-canopy-2 p-2 opacity-0 shadow-[0_16px_40px_rgba(0,0,0,.32)] transition-[opacity,transform] duration-150 ease-out group-hover/item:pointer-events-auto group-hover/item:visible group-hover/item:translate-x-0 group-hover/item:opacity-100 group-focus-within/item:pointer-events-auto group-focus-within/item:visible group-focus-within/item:translate-x-0 group-focus-within/item:opacity-100"
                 >
                     {node.children!.map((child, i) => (
                         <NavFlyoutItem key={`${child.label}-${child.href ?? i}`} node={child} />

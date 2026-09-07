@@ -3,7 +3,10 @@ __pycache__/
 .venv/
 .env
 *.sqlite3
-Backend/static/
+Backend/static/*
+!Backend/static/admin/
+Backend/static/admin/*
+!Backend/static/admin/dashboard.css
 Backend/staticfiles/
 storefront/public
 node_modules/

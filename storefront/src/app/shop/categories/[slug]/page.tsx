@@ -54,7 +54,7 @@ export default async function CategoryPage({ params, searchParams }: Props) {
             <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(schema) }} />
             <header className="mb-8 max-w-2xl">
                 <p className="mb-2 font-hc-mono text-xs uppercase tracking-[0.12em] text-hc-canopy-3">Category</p>
-                <h1 className="font-hc-display text-3xl font-medium text-hc-ink">{category.name}</h1>
+                <h1 className="font-hc-commerce text-3xl font-semibold tracking-[-.02em] text-hc-ink">{category.name}</h1>
                 {category.description && <p className="mt-3 text-hc-ink-soft">{category.description}</p>}
             </header>
             <HydrationBoundary state={dehydrate(queryClient)}>

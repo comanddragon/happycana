@@ -87,9 +87,14 @@ export function ProductDetails({ product }: { product: Product }) {
                 <span className="text-foreground font-medium truncate max-w-[180px]">{product.name}</span>
             </nav>
 
-            <div className="grid lg:grid-cols-2 gap-12">
+            {/* On wide screens the media rail floats into the product copy. This
+                lets genuinely long editorial descriptions continue at full
+                width beneath the image instead of becoming an extremely tall,
+                narrow right-hand column. Short descriptions and purchase
+                controls still sit naturally beside the media. */}
+            <div className="flow-root">
 
-                <div className="space-y-3">
+                <div className="mb-8 space-y-3 lg:float-left lg:mb-10 lg:mr-12 lg:w-[calc(50%_-_1.5rem)]">
                     <div className="aspect-square rounded-3xl overflow-hidden bg-muted relative">
                         {currentMedia?.kind === 'video' ? (
                             <VideoPlayer video={currentMedia.data} />
@@ -165,7 +170,7 @@ export function ProductDetails({ product }: { product: Product }) {
                     )}
                 </div>
 
-                <div className="flex flex-col gap-5">
+                <div className="contents [&>*]:mb-5">
                     <div className="flex flex-wrap items-center gap-2">
                         {category && (
                             <Link href={`/shop/products?category=${category.slug}`}>
@@ -186,7 +191,7 @@ export function ProductDetails({ product }: { product: Product }) {
                                 {product.brand.name}
                             </Link>
                         )}
-                        <h1 className="font-hc-display text-3xl lg:text-4xl font-medium leading-tight text-hc-ink">{product.name}</h1>
+                        <h1 className="font-hc-commerce text-3xl font-semibold leading-tight tracking-[-.02em] text-hc-ink lg:text-4xl">{product.name}</h1>
                         <p className="mt-3 text-2xl font-bold">
                             {variant ? formatPrice(variant.price, storefront.currency) : formatPrice(product.base_price, storefront.currency)}
                         </p>

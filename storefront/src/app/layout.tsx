@@ -87,10 +87,10 @@ export async function generateMetadata(): Promise<Metadata> {
     },
     robots: { index: true, follow: true },
     icons: storefront.kind === 'peptides'
-        ? { icon: '/peptide-icon.svg', apple: '/peptide-icon.svg' }
+        ? { icon: '/axiom-peptides-icon.svg?v=2', apple: '/axiom-peptides-icon.svg?v=2' }
         : storefront.kind === 'hash'
-            ? { icon: '/hash-icon.svg', apple: '/hash-icon.svg' }
-            : { icon: '/dispensary-favicon.ico', apple: '/apple-touch-icon.png' },
+            ? { icon: '/axiom-hash-icon.svg?v=2', apple: '/axiom-hash-icon.svg?v=2' }
+            : { icon: '/axiom-dispensary-icon.svg?v=2', apple: '/axiom-dispensary-icon.svg?v=2' },
     // Search Console (and other engine) ownership verification. Values are
     // read from env so nothing is committed here; unset keys are simply
     // omitted from the rendered <meta> tags by Next.

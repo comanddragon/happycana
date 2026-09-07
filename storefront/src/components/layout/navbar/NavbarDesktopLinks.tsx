@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import { HASH_NAV_LINKS, NAV_LINKS, PEPTIDE_NAV_LINKS } from './constants'
 import { NavCategoriesMenu } from '@/components/layout/navbar/NavCategoriesMenu'
+import { NavEffectsMenu } from '@/components/layout/navbar/NavEffectsMenu'
 import { useStorefront } from '@/storefront/StorefrontProvider'
 
 export function NavbarDesktopLinks({ pathname }: { pathname: string }) {
@@ -29,6 +30,9 @@ export function NavbarDesktopLinks({ pathname }: { pathname: string }) {
 
                 if (item.dynamic) {
                     return <NavCategoriesMenu key={item.label} />
+                }
+                if (item.effects) {
+                    return <NavEffectsMenu key={item.label} />
                 }
 
                 return (

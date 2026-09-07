@@ -2,12 +2,14 @@ export interface NavLink {
     href?: string
     label: string
     dynamic?: boolean
+    effects?: boolean
 }
 
 export const NAV_LINKS: NavLink[] = [
     { href: '/shop', label: 'Shop' },
     { href: '/shop/products', label: 'Products' },
     { label: 'Categories', dynamic: true },
+    { label: 'Shop by effect', effects: true },
     { href: '/blog', label: 'Blog' },
 ]
 

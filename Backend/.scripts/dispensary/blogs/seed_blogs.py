@@ -27,13 +27,14 @@ load_dotenv()
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings.development")
 django.setup()
 
-from django.conf import settings
-from django.db import transaction
-from django.utils import timezone
-from django.utils.dateparse import parse_datetime
-from django.utils.text import slugify
+from django.conf import settings  # noqa: E402
+from django.db import transaction  # noqa: E402
+from django.utils import timezone  # noqa: E402
+from django.utils.dateparse import parse_datetime  # noqa: E402
+from django.utils.text import slugify  # noqa: E402
 
-from apps.blog.models import BlogPost
+from apps.blog.models import BlogPost  # noqa: E402
+from apps.storefronts.models import Storefront  # noqa: E402
 
 DEFAULT_PATH = BACKEND_DIR / ".output" / "dispensary" / "blogs" / "blogs.csv"
 LOCAL_DATABASE_HOSTS = {"", "localhost", "127.0.0.1", "::1"}
@@ -87,9 +88,15 @@ def main():
     parser.add_argument("--file", default=str(DEFAULT_PATH), help=f"Path to blogs.csv (default: {DEFAULT_PATH})")
     parser.add_argument("--dry-run", action="store_true", help="Parse and report without writing to the database.")
     parser.add_argument("--allow-remote-db", action="store_true", help="Explicitly permit seeding a non-local database.")
+    parser.add_argument("--storefront", default="dispensary", help="Storefront slug that owns the imported posts.")
     args = parser.parse_args()
 
     verify_database_target(args.allow_remote_db)
+
+    try:
+        storefront = Storefront.objects.get(slug=args.storefront, is_active=True)
+    except Storefront.DoesNotExist:
+        sys.exit(f"No active storefront with slug {args.storefront!r}.")
 
     try:
         with open(args.file, encoding="utf-8", newline="") as f:
@@ -131,7 +138,11 @@ def main():
                 print(f"[dry-run] {slug}: {title}")
                 continue
 
-            _, was_created = BlogPost.objects.update_or_create(slug=slug, defaults=defaults)
+            _, was_created = BlogPost.objects.update_or_create(
+                storefront=storefront,
+                slug=slug,
+                defaults=defaults,
+            )
             created += was_created
             updated += not was_created
 

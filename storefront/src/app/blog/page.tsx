@@ -40,7 +40,11 @@ export default async function BlogIndexPage({ searchParams }: PageProps) {
     const storefront = await getStorefront()
     const { page } = await searchParams
     const pageNum = Number(page) > 1 ? Number(page) : 1
-    const { results: posts, count } = await getBlogPosts({ page: pageNum })
+    // Django already keeps this endpoint in a short, versioned cache that is
+    // invalidated whenever a post changes. Avoid layering Next's one-hour
+    // data cache over it, otherwise a previously empty storefront can remain
+    // blank long after its posts are seeded or reassigned.
+    const { results: posts, count } = await getBlogPosts({ page: pageNum, revalidate: false })
     const totalPages = Math.max(1, Math.ceil(count / PAGE_SIZE))
 
     return (

@@ -145,10 +145,6 @@ CHANNEL_LAYERS = {
 # ---------------------------------------------------------------------------
 TASKS = {
     "default": {
-        # There's no separate worker process in this project, so run tasks
-        # synchronously in-process rather than queuing them to a backend
-        # that's never drained. Swap for a real queuing backend once a
-        # worker exists.
         "BACKEND": "django.tasks.backends.immediate.ImmediateBackend",
     }
 }
@@ -189,6 +185,8 @@ UNFOLD = {
     "SITE_TITLE": _("Axiom Commerce Admin"),
     "SITE_HEADER": _("Axiom Commerce"),
     "SITE_SUBHEADER": _("Store operations"),
+    "DASHBOARD_CALLBACK": "core.admin_dashboard.dashboard_callback",
+    "STYLES": [lambda request: static("admin/dashboard.css")],
     "SITE_ICON": {
         "light": lambda request: static("branding/axiom-commerce-mark-light.png"),
         "dark": lambda request: static("branding/axiom-commerce-mark-dark.png"),
@@ -299,11 +297,6 @@ SPECTACULAR_SETTINGS = {
     "DESCRIPTION": "High-performance Django e-commerce backend",
     "VERSION":     "1.0.0",
     "SERVE_INCLUDE_SCHEMA": False,
-    # Several models expose an unrelated "status" field with their own
-    # distinct choice sets (Order, ChatRoom, Shipment, Payment, Refund).
-    # Without explicit names drf-spectacular auto-generates suffixed
-    # component names (e.g. "Status0faEnum") to avoid clobbering one
-    # another, which surfaces as W001 warnings on every deploy check.
     "ENUM_NAME_OVERRIDES": {
         "OrderStatusEnum": "apps.orders.models.Order.Status",
         "ChatRoomStatusEnum": "apps.chat.models.ChatRoom.Status",

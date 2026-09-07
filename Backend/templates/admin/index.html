@@ -1,0 +1,112 @@
+{% extends "admin/base.html" %}
+{% load i18n static unfold %}
+
+{% block title %}Dashboard | {{ site_title|default:_('Django site admin') }}{% endblock %}
+
+{% block branding %}
+  {% include "unfold/helpers/site_branding.html" %}
+{% endblock %}
+
+{% block content %}
+<main class="commerce-dashboard">
+  <header class="dashboard-heading">
+    <div>
+      <p class="dashboard-eyebrow">Commerce overview</p>
+      <h1>{% if dashboard_greeting %}{{ dashboard_greeting }}{% else %}Good day{% endif %}{% if request.user.first_name %}, {{ request.user.first_name }}{% endif %}. Here’s what’s happening.</h1>
+      <p>Live performance across every Axiom storefront.</p>
+    </div>
+    <div class="period-pill"><span class="material-symbols-outlined">calendar_today</span>{{ dashboard_period }}</div>
+  </header>
+
+  <section class="kpi-grid" aria-label="Key performance indicators">
+    {% for kpi in dashboard_kpis %}
+      <article class="dashboard-card kpi-card">
+        <div class="kpi-icon"><span class="material-symbols-outlined">{{ kpi.icon }}</span></div>
+        <div class="kpi-copy">
+          <span>{{ kpi.label }}</span>
+          <strong>{{ kpi.value }}</strong>
+          {% if kpi.value_note %}
+            <small class="trend trend-{{ kpi.direction }}">{{ kpi.value_note }}</small>
+          {% else %}
+            <small class="trend trend-{{ kpi.direction }}">
+              <span class="material-symbols-outlined">{% if kpi.direction == 'up' %}trending_up{% elif kpi.direction == 'down' %}trending_down{% else %}remove{% endif %}</span>
+              {{ kpi.delta }}% from previous period
+            </small>
+          {% endif %}
+        </div>
+      </article>
+    {% endfor %}
+  </section>
+
+  <section class="dashboard-grid dashboard-grid-main">
+    <article class="dashboard-card chart-card">
+      <div class="card-heading">
+        <div><h2>Revenue trend</h2><p>Confirmed revenue over the last 14 days</p></div>
+        <a href="{{ orders_url }}">View orders <span class="material-symbols-outlined">arrow_forward</span></a>
+      </div>
+      <div class="chart-frame">
+        {% component "unfold/components/chart/line.html" with data=revenue_chart options=revenue_chart_options responsive=True %}{% endcomponent %}
+      </div>
+    </article>
+
+    <article class="dashboard-card status-card">
+      <div class="card-heading"><div><h2>Order health</h2><p>Status mix this month</p></div></div>
+      <div class="status-list">
+        {% for status in status_rows %}
+          <div class="status-row">
+            <div><span>{{ status.label }}</span><strong>{{ status.count }}</strong></div>
+            <div class="progress-track"><span class="progress-{{ status.tone }}" style="width: {{ status.percentage }}%"></span></div>
+            <small>{{ status.percentage }}%</small>
+          </div>
+        {% empty %}
+          <div class="empty-state"><span class="material-symbols-outlined">inbox</span><p>No orders in this period yet.</p></div>
+        {% endfor %}
+      </div>
+    </article>
+  </section>
+
+  <section class="dashboard-grid dashboard-grid-lower">
+    <article class="dashboard-card storefront-card">
+      <div class="card-heading"><div><h2>Storefront performance</h2><p>30-day revenue by brand</p></div></div>
+      <div class="storefront-list">
+        {% for store in storefront_rows %}
+          <div class="storefront-row">
+            <div class="store-avatar">{{ store.name|slice:":1" }}</div>
+            <div class="store-main">
+              <div><strong>{{ store.name }}</strong><span>{{ store.kind }} · {{ store.orders }} orders</span></div>
+              <div class="progress-track"><span style="width: {{ store.share }}%"></span></div>
+            </div>
+            <b>{{ store.revenue }}</b>
+          </div>
+        {% empty %}
+          <div class="empty-state"><span class="material-symbols-outlined">storefront</span><p>Add a storefront to see performance here.</p></div>
+        {% endfor %}
+      </div>
+    </article>
+
+    <article class="dashboard-card orders-card">
+      <div class="card-heading">
+        <div><h2>Recent orders</h2><p>The latest activity across all stores</p></div>
+        <a href="{{ orders_url }}">View all <span class="material-symbols-outlined">arrow_forward</span></a>
+      </div>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>Order</th><th>Customer</th><th>Status</th><th>Total</th></tr></thead>
+          <tbody>
+          {% for order in recent_orders %}
+            <tr>
+              <td><a href="{{ order.url }}">#{{ order.id }}</a><small>{{ order.storefront }} · {{ order.date }}</small></td>
+              <td>{{ order.customer }}</td>
+              <td><span class="status-badge status-{{ order.status_key }}">{{ order.status }}</span></td>
+              <td><strong>{{ order.total }}</strong></td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="4"><div class="empty-state"><span class="material-symbols-outlined">receipt_long</span><p>New orders will appear here.</p></div></td></tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </article>
+  </section>
+</main>
+{% endblock %}

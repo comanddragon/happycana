@@ -1,30 +1,40 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { DEFAULT_STOREFRONT_SLUG } from '@/lib/storefront'
+import { DEFAULT_STOREFRONT_SLUG, isLocalDevelopmentHost } from '@/lib/storefront'
 
-const PRIVATE_IPV4_RANGES = [
-    /^10\.\d{1,3}\.\d{1,3}\.\d{1,3}$/,
-    /^192\.168\.\d{1,3}\.\d{1,3}$/,
-    /^172\.(1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}$/,
-]
+const LAN_STOREFRONT_COOKIE = 'axiom-storefront'
 
-function isLocalHostname(host: string): boolean {
-    const hostname = host.split(':', 1)[0].toLowerCase()
-    if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '[::1]') return true
-    return PRIVATE_IPV4_RANGES.some((pattern) => pattern.test(hostname))
+function validStorefrontSlug(value: string | null | undefined): value is string {
+    return Boolean(value && /^[a-z0-9][a-z0-9-]{0,62}$/.test(value))
 }
 
 export function proxy(request: NextRequest) {
     const headers = new Headers(request.headers)
     const publicHost = request.headers.get('x-forwarded-host')?.split(',', 1)[0]?.trim()
         || request.headers.get('host')
+    const requestedSlug = request.nextUrl.searchParams.get('storefront')?.toLowerCase()
+    const savedSlug = request.cookies.get(LAN_STOREFRONT_COOKIE)?.value.toLowerCase()
+    const localSlug = validStorefrontSlug(requestedSlug)
+        ? requestedSlug
+        : validStorefrontSlug(savedSlug)
+            ? savedSlug
+            : DEFAULT_STOREFRONT_SLUG
 
-    if (publicHost && isLocalHostname(publicHost) && DEFAULT_STOREFRONT_SLUG) {
-        headers.set('x-storefront', DEFAULT_STOREFRONT_SLUG)
+    if (publicHost && isLocalDevelopmentHost(publicHost) && localSlug) {
+        headers.set('x-storefront', localSlug)
         headers.delete('x-storefront-host')
     } else if (publicHost) {
         headers.set('x-storefront-host', publicHost)
     }
-    return NextResponse.next({ request: { headers } })
+    const response = NextResponse.next({ request: { headers } })
+    if (publicHost && isLocalDevelopmentHost(publicHost) && validStorefrontSlug(requestedSlug)) {
+        response.cookies.set(LAN_STOREFRONT_COOKIE, requestedSlug, {
+            httpOnly: true,
+            sameSite: 'lax',
+            path: '/',
+            maxAge: 60 * 60 * 24 * 30,
+        })
+    }
+    return response
 }
 
 export const config = {

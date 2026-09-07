@@ -19,7 +19,7 @@ function categoryToNode(category: Category): MenuNode {
 // plus a "Brands" branch and an "Effects" branch, each expanding into
 // their own live list. Shared by the desktop flyout and mobile accordion
 // so both stay in sync automatically.
-export function useCategoriesMenuTree() {
+export function useCategoriesMenuTree({ includeEffects = true }: { includeEffects?: boolean } = {}) {
     const { data: categories, isLoading: categoriesLoading } = useCategories()
     const { data: brands }  = useBrands()
     const { data: effects } = useEffects()
@@ -56,7 +56,7 @@ export function useCategoriesMenuTree() {
     const rootNodes: MenuNode[] = [
         ...(departmentsNode ? [departmentsNode] : []),
         ...(brandNode ? [brandNode] : []),
-        ...(effectNode ? [effectNode] : []),
+        ...(includeEffects && effectNode ? [effectNode] : []),
     ]
 
     return { rootNodes, isLoading: categoriesLoading }
