@@ -13,22 +13,22 @@ ALLOWED_HOSTS = os.environ["ALLOWED_HOSTS"].split(",")
 # ---------------------------------------------------------------------------
 # Database — Postgres with connection pooling
 # ---------------------------------------------------------------------------
-tmpPostgres = urlparse(os.environ["DATABASE_URL"])
+tmp_postgres = urlparse(os.environ["DATABASE_URL"])
 
 DATABASES = {
     "default": {
         "ENGINE":   "django.db.backends.postgresql",
-        "NAME":     tmpPostgres.path.lstrip("/"),
-        "USER":     tmpPostgres.username,
-        "PASSWORD": tmpPostgres.password,
-        "HOST":     tmpPostgres.hostname,
-        "PORT":     tmpPostgres.port or 5432,
+        "NAME":     tmp_postgres.path.lstrip("/"),
+        "USER":     tmp_postgres.username,
+        "PASSWORD": tmp_postgres.password,
+        "HOST":     tmp_postgres.hostname,
+        "PORT":     tmp_postgres.port or 5432,
         "CONN_MAX_AGE": 60,
         "DISABLE_SERVER_SIDE_CURSORS": True,
         "OPTIONS": {
             "connect_timeout": 10,
             "isolation_level": 2,  # psycopg2.extensions.ISOLATION_LEVEL_READ_COMMITTED
-            **dict(parse_qsl(tmpPostgres.query)),
+            **dict(parse_qsl(tmp_postgres.query)),
         },
     }
 }

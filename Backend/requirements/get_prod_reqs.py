@@ -8,8 +8,9 @@ def get_pkgs(filepath):
         with open(filepath) as file:
             lines = file.read().splitlines()
         return [
-            re.split(r'==|>|<|\[', l.strip())[0].lower().replace('-', '_')
-            for l in lines if l.strip() and not l.startswith(('#', '-r'))
+            re.split(r"==|>|<|\[", line.strip())[0].lower().replace("-", "_")
+            for line in lines
+            if line.strip() and not line.startswith(("#", "-r"))
         ]
     except Exception:
         return []
