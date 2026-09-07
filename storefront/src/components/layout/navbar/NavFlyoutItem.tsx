@@ -14,7 +14,7 @@ export interface MenuNode {
     children?: MenuNode[]
 }
 
-const CLOSE_DELAY_MS = 150
+const CLOSE_DELAY_MS = 200
 
 export function NavFlyoutItem({ node }: { node: MenuNode }) {
     const [open, setOpen] = useState(false)
