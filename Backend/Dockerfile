@@ -29,4 +29,4 @@ RUN DJANGO_SECRET_KEY=collectstatic-only-not-a-runtime-secret-0000000000000000 \
 
 EXPOSE 10000
 
-CMD ["sh", "-c", "exec gunicorn config.asgi:application -k uvicorn.workers.UvicornWorker -w 2 -b 0.0.0.0:${PORT:-10000}"]
+CMD ["sh", "-c", "python manage.py runserver"]
