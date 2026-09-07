@@ -1,7 +1,6 @@
-import os
 from datetime import timedelta
 from pathlib import Path
-
+from decouple import config
 from django.templatetags.static import static
 from django.urls import reverse_lazy
 from django.utils.translation import gettext_lazy as _
@@ -10,7 +9,7 @@ from dotenv import load_dotenv
 load_dotenv()
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
-SECRET_KEY = os.environ["DJANGO_SECRET_KEY"]
+SECRET_KEY = config["DJANGO_SECRET_KEY"]
 
 INSTALLED_APPS = [
     "unfold",  # before django.contrib.admin
@@ -125,6 +124,7 @@ SIMPLE_JWT = {
     "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
     "ROTATE_REFRESH_TOKENS":  True,
     "BLACKLIST_AFTER_ROTATION": True,
+    "UPDATE_LAST_LOGIN": True,
     "AUTH_HEADER_TYPES": ("Bearer",),
 }
 
@@ -135,7 +135,7 @@ CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
-            "hosts": [(os.environ.get("REDIS_HOST", "127.0.0.1"), 6379)],
+            "hosts": [(config("REDIS_HOST"), 6379)],
         },
     },
 }
@@ -155,7 +155,7 @@ TASKS = {
 CACHES = {
     "default": {
         "BACKEND": "django.core.cache.backends.redis.RedisCache",
-        "LOCATION": os.environ.get("REDIS_URL", ""),
+        "LOCATION": config("REDIS_URL", ""),
     }
 }
 
@@ -163,7 +163,7 @@ CACHES = {
 # Internationalization
 # ---------------------------------------------------------------------------
 LANGUAGE_CODE = "en-us"
-TIME_ZONE     = "UTC"
+TIME_ZONE     = "Africa/Douala"
 USE_I18N      = True
 USE_TZ        = True
 
@@ -309,30 +309,30 @@ SPECTACULAR_SETTINGS = {
 # ---------------------------------------------------------------------------
 # Email (base — overridden per environment)
 # ---------------------------------------------------------------------------
-DEFAULT_FROM_EMAIL = os.environ.get(
-    "RESEND_FROM_EMAIL", os.environ.get("DEFAULT_FROM_EMAIL", "noreply@example.com")
+DEFAULT_FROM_EMAIL = config(
+    "RESEND_FROM_EMAIL", config("DEFAULT_FROM_EMAIL", "noreply@example.com")
 )
 
 # Resend — all transactional email goes through services/email.py.
-RESEND_API_KEY = os.environ.get("RESEND_API_KEY", "")
-ADMIN_NOTIFICATION_EMAIL = os.environ.get("ADMIN_NOTIFICATION_EMAIL", "")
+RESEND_API_KEY = config("RESEND_API_KEY", "")
+ADMIN_NOTIFICATION_EMAIL = config("ADMIN_NOTIFICATION_EMAIL", "")
 
 # Payment providers. Individual storefronts can override these through a
 # provider-account model later; these defaults preserve the existing gateways.
-STRIPE_SECRET_KEY = os.environ.get("STRIPE_SECRET_KEY", "")
-STRIPE_WEBHOOK_SECRET = os.environ.get("STRIPE_WEBHOOK_SECRET", "")
-PAYPAL_CLIENT_ID = os.environ.get("PAYPAL_CLIENT_ID", "")
-PAYPAL_CLIENT_SECRET = os.environ.get("PAYPAL_CLIENT_SECRET", "")
-PAYPAL_BASE_URL = os.environ.get("PAYPAL_BASE_URL", "https://api-m.paypal.com")
-PAYPAL_WEBHOOK_ID = os.environ.get("PAYPAL_WEBHOOK_ID", "")
-PAYPAL_RETURN_URL = os.environ.get("PAYPAL_RETURN_URL", "")
-PAYPAL_CANCEL_URL = os.environ.get("PAYPAL_CANCEL_URL", "")
+STRIPE_SECRET_KEY = config("STRIPE_SECRET_KEY", "")
+STRIPE_WEBHOOK_SECRET = config("STRIPE_WEBHOOK_SECRET", "")
+PAYPAL_CLIENT_ID = config("PAYPAL_CLIENT_ID", "")
+PAYPAL_CLIENT_SECRET = config("PAYPAL_CLIENT_SECRET", "")
+PAYPAL_BASE_URL = config("PAYPAL_BASE_URL", "https://api-m.paypal.com")
+PAYPAL_WEBHOOK_ID = config("PAYPAL_WEBHOOK_ID", "")
+PAYPAL_RETURN_URL = config("PAYPAL_RETURN_URL", "")
+PAYPAL_CANCEL_URL = config("PAYPAL_CANCEL_URL", "")
 
 # Branding vars injected into every templates/emails/*.html render.
-STORE_NAME    = os.environ.get("STORE_NAME", "Our Store")
-FRONTEND_URL  = os.environ.get("FRONTEND_URL", "https://example.com")
+STORE_NAME    = config("STORE_NAME", "Our Store")
+FRONTEND_URL  = config("FRONTEND_URL", "https://example.com")
 
-BACKEND_URL = os.environ.get("BACKEND_URL", "")
-STORE_LOGO_URL= os.environ.get("STORE_LOGO_URL", "")
-SUPPORT_EMAIL = os.environ.get("SUPPORT_EMAIL", "support@example.com")
-STORE_ADDRESS = os.environ.get("STORE_ADDRESS", "")
+BACKEND_URL = config("BACKEND_URL", "")
+STORE_LOGO_URL= config("STORE_LOGO_URL", "")
+SUPPORT_EMAIL = config("SUPPORT_EMAIL", "support@example.com")
+STORE_ADDRESS = config("STORE_ADDRESS", "")

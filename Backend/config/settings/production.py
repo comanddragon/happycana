@@ -1,19 +1,19 @@
-import os
 from urllib.parse import parse_qsl, urlparse
 
 import sentry_sdk
+from sentry_sdk.integrations.celery import CeleryIntegration
 from sentry_sdk.integrations.django import DjangoIntegration
-
+from sentry_sdk.integrations.redis import RedisIntegration
 from .base import *  # noqa
 
 DEBUG = False
 
-ALLOWED_HOSTS = os.environ["ALLOWED_HOSTS"].split(",")
+ALLOWED_HOSTS = config["ALLOWED_HOSTS"].split(",")
 
 # ---------------------------------------------------------------------------
 # Database — Postgres with connection pooling
 # ---------------------------------------------------------------------------
-tmp_postgres = urlparse(os.environ["DATABASE_URL"])
+tmp_postgres = urlparse(config["DATABASE_URL"])
 
 DATABASES = {
     "default": {
@@ -37,7 +37,7 @@ DATABASES = {
 # Security hardening
 # ---------------------------------------------------------------------------
 def _env_bool(name, default):
-    return os.environ.get(name, str(default)).lower() in ("true", "1", "yes")
+    return config.get(name, str(default)).lower() in ("true", "1", "yes")
 
 SECURE_SSL_REDIRECT            = _env_bool("SECURE_SSL_REDIRECT", True)
 SECURE_HSTS_SECONDS            = 31536000
@@ -52,7 +52,7 @@ X_FRAME_OPTIONS                = "DENY"
 # ---------------------------------------------------------------------------
 # CORS
 # ---------------------------------------------------------------------------
-CORS_ALLOWED_ORIGINS = os.environ["CORS_ALLOWED_ORIGINS"].split(",")
+CORS_ALLOWED_ORIGINS = config["CORS_ALLOWED_ORIGINS"].split(",")
 CORS_ALLOW_CREDENTIALS = True
 
 # ---------------------------------------------------------------------------
@@ -68,25 +68,21 @@ STORAGES = {
     },
 }
 
-AWS_ACCESS_KEY_ID     = os.environ["AWS_ACCESS_KEY_ID"]
-AWS_SECRET_ACCESS_KEY = os.environ["AWS_SECRET_ACCESS_KEY"]
-AWS_STORAGE_BUCKET_NAME = os.environ["AWS_STORAGE_BUCKET_NAME"]
-AWS_S3_REGION = os.environ.get("AWS_S3_REGION", "us-east-1")
-AWS_S3_CUSTOM_DOMAIN  = os.environ.get("AWS_CLOUDFRONT_DOMAIN", "")
+AWS_ACCESS_KEY_ID     = config["AWS_ACCESS_KEY_ID"]
+AWS_SECRET_ACCESS_KEY = config["AWS_SECRET_ACCESS_KEY"]
+AWS_STORAGE_BUCKET_NAME = config["AWS_STORAGE_BUCKET_NAME"]
+AWS_S3_REGION = config.get("AWS_S3_REGION", "us-east-1")
+AWS_S3_CUSTOM_DOMAIN  = config.get("AWS_CLOUDFRONT_DOMAIN", "")
 AWS_DEFAULT_ACL       = "private"
 AWS_S3_FILE_OVERWRITE = False
-# The "static" bucket is a Neon Object Storage bucket with public_read
-# access, so reads don't need auth. Without this, django-storages defaults
-# to signing every .url() call (AWS_QUERYSTRING_AUTH defaults to True),
-# which is where the categories endpoint's ~1s/request overhead comes from.
 AWS_QUERYSTRING_AUTH  = False
 
 # ---------------------------------------------------------------------------
 # Sentry — error tracking
 # ---------------------------------------------------------------------------
 sentry_sdk.init(
-    dsn=os.environ["SENTRY_DSN"],
-    integrations=[DjangoIntegration()],
+    dsn=config["SENTRY_DSN"],
+    integrations=[DjangoIntegration(),CeleryIntegration(),RedisIntegration()],
     traces_sample_rate=0.2,
     send_default_pii=False,
 )

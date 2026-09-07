@@ -1,22 +1,20 @@
-import os
-
 from .base import *  # noqa
 
 DEBUG = True
 
 ALLOWED_HOSTS = ["*"]
 
-STORE_LOGO_URL = os.environ.get("STORE_LOGO_URL", "")
+STORE_LOGO_URL = config("STORE_LOGO_URL", "")
 
 # Postgres for local dev too — connection details come from env vars below
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME":     os.environ.get("DB_NAME",     ""),
-        "USER":     os.environ.get("DB_USER",     ""),
-        "PASSWORD": os.environ.get("DB_PASSWORD", ""),
-        "HOST":     os.environ.get("DB_HOST",     ""),
-        "PORT":     os.environ.get("DB_PORT",     ""),
+        "NAME":     config("DB_NAME",     ""),
+        "USER":     config("DB_USER",     ""),
+        "PASSWORD": config("DB_PASSWORD", ""),
+        "HOST":     config("DB_HOST",     ""),
+        "PORT":     config("DB_PORT",     ""),
     }
 }
 
