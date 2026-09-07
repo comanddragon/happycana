@@ -25,7 +25,7 @@ class CategorySerializer(serializers.ModelSerializer):
         extra_kwargs = {"image": {"write_only": True}}
 
 
-    def get_children(self, obj):
+    def get_children(self, obj) -> list:
         # attach_full_tree() (called from the view) stamps this in memory
         # so no query is issued here. Fall back to a live query only if a
         # caller serializes a Category without going through that path.
@@ -38,7 +38,7 @@ class CategorySerializer(serializers.ModelSerializer):
             return []
         return CategorySerializer(children, many=True, context=self.context).data
 
-    def get_image_url(self, obj):
+    def get_image_url(self, obj) -> str | None:
         request = self.context.get("request")
         if obj.image and request:
             return request.build_absolute_uri(obj.image.url)
@@ -65,7 +65,7 @@ class CollectionSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = fields
 
-    def get_image_url(self, obj):
+    def get_image_url(self, obj) -> str | None:
         request = self.context.get("request")
         if not obj.image:
             return None
@@ -151,7 +151,7 @@ class ProductImageSerializer(serializers.ModelSerializer):
         fields = ["id", "image", "source_url", "image_url", "alt_text", "is_primary", "order"]
         read_only_fields = ["id"]
 
-    def get_image_url(self, obj):
+    def get_image_url(self, obj) -> str | None:
         request = self.context.get("request")
         if obj.image:
             return request.build_absolute_uri(obj.image.url) if request else obj.image.url
@@ -185,13 +185,13 @@ class ProductVideoSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ["id"]
 
-    def get_thumbnail_url(self, obj):
+    def get_thumbnail_url(self, obj) -> str | None:
         request = self.context.get("request")
         if obj.thumbnail and request:
             return request.build_absolute_uri(obj.thumbnail.url)
         return None
 
-    def get_playback_url(self, obj):
+    def get_playback_url(self, obj) -> str | None:
         request = self.context.get("request")
         if obj.video_type == ProductVideo.VideoType.UPLOAD and obj.file and request:
             return request.build_absolute_uri(obj.file.url)
@@ -205,7 +205,7 @@ class VariantImageSerializer(serializers.ModelSerializer):
         fields = ["id", "image", "image_url", "alt_text", "is_primary", "order"]
         read_only_fields = ["id"]
 
-    def get_image_url(self, obj):
+    def get_image_url(self, obj) -> str | None:
         request = self.context.get("request")
         if not obj.image:
             return None
@@ -226,13 +226,13 @@ class VariantVideoSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ["id"]
 
-    def get_thumbnail_url(self, obj):
+    def get_thumbnail_url(self, obj) -> str | None:
         request = self.context.get("request")
         if obj.thumbnail and request:
             return request.build_absolute_uri(obj.thumbnail.url)
         return None
 
-    def get_playback_url(self, obj):
+    def get_playback_url(self, obj) -> str | None:
         request = self.context.get("request")
         if obj.video_type == VariantVideo.VideoType.UPLOAD and obj.file and request:
             return request.build_absolute_uri(obj.file.url)
@@ -266,7 +266,7 @@ class ProductVariantSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ["id"]
 
-    def get_in_stock(self, obj):
+    def get_in_stock(self, obj) -> bool:
         # Relies on the queryset prefetching stock_levels (see
         # ProductQuerySet.with_stock / .full()) — falls back to a live
         # query if a caller serializes a variant without that prefetch.
@@ -308,7 +308,7 @@ class ProductVariantSummarySerializer(serializers.ModelSerializer):
         fields = ["id", "sku", "price", "weight_value", "weight_unit", "lab", "in_stock"]
         read_only_fields = ["id"]
 
-    def get_in_stock(self, obj):
+    def get_in_stock(self, obj) -> bool:
         # See ProductVariantSerializer.get_in_stock — same prefetch dependency.
         return any((sl.quantity - sl.reserved) > 0 for sl in obj.stock_levels.all())
 
@@ -349,30 +349,30 @@ class ProductListSerializer(serializers.ModelSerializer):
     active_discount = serializers.SerializerMethodField()
     vertical_profile = serializers.SerializerMethodField()
 
-    def get_active_discount(self, obj):
+    def get_active_discount(self, obj) -> dict | None:
         discount = current_discount(obj)
         return ProductDiscountSerializer(discount).data if discount else None
 
     def _cannabis_profile(self, obj):
         return getattr(obj, "cannabis_profile", None)
 
-    def get_compliance_category(self, obj):
+    def get_compliance_category(self, obj) -> str:
         profile = self._cannabis_profile(obj)
         return profile.compliance_category if profile else ""
 
-    def get_cannabis_type(self, obj):
+    def get_cannabis_type(self, obj) -> str:
         profile = self._cannabis_profile(obj)
         return profile.cannabis_type if profile else ""
 
-    def get_sub_type(self, obj):
+    def get_sub_type(self, obj) -> str:
         profile = self._cannabis_profile(obj)
         return profile.sub_type if profile else ""
 
-    def get_effects(self, obj):
+    def get_effects(self, obj) -> list:
         profile = self._cannabis_profile(obj)
         return EffectSerializer(profile.effect_tags.all(), many=True).data if profile else []
 
-    def get_vertical_profile(self, obj):
+    def get_vertical_profile(self, obj) -> dict | None:
         return serialize_vertical_profile(obj)
 
     class Meta:
@@ -402,30 +402,30 @@ class ProductSerializer(serializers.ModelSerializer):
     active_discount = serializers.SerializerMethodField()
     vertical_profile = serializers.SerializerMethodField()
 
-    def get_active_discount(self, obj):
+    def get_active_discount(self, obj) -> dict | None:
         discount = current_discount(obj)
         return ProductDiscountSerializer(discount).data if discount else None
 
     def _cannabis_profile(self, obj):
         return getattr(obj, "cannabis_profile", None)
 
-    def get_compliance_category(self, obj):
+    def get_compliance_category(self, obj) -> str:
         profile = self._cannabis_profile(obj)
         return profile.compliance_category if profile else ""
 
-    def get_cannabis_type(self, obj):
+    def get_cannabis_type(self, obj) -> str:
         profile = self._cannabis_profile(obj)
         return profile.cannabis_type if profile else ""
 
-    def get_sub_type(self, obj):
+    def get_sub_type(self, obj) -> str:
         profile = self._cannabis_profile(obj)
         return profile.sub_type if profile else ""
 
-    def get_effects(self, obj):
+    def get_effects(self, obj) -> list:
         profile = self._cannabis_profile(obj)
         return EffectSerializer(profile.effect_tags.all(), many=True).data if profile else []
 
-    def get_vertical_profile(self, obj):
+    def get_vertical_profile(self, obj) -> dict | None:
         return serialize_vertical_profile(obj)
 
     class Meta:

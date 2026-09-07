@@ -13,7 +13,7 @@ class ChatParticipantSerializer(serializers.ModelSerializer):
         model = User
         fields = ["id", "email", "first_name", "last_name", "full_name"]
 
-    def get_full_name(self, obj):
+    def get_full_name(self, obj) -> str:
         return f"{obj.first_name} {obj.last_name}".strip() or obj.email
 
 
@@ -65,7 +65,7 @@ class ChatRoomSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ["id", "customer", "created_at", "updated_at"]
 
-    def get_latest_message(self, obj):
+    def get_latest_message(self, obj) -> dict | None:
         # `_latest_message_list` is populated by ChatRoomViewSet.get_queryset's
         # Prefetch(to_attr=...); obj.messages.last() would bypass that cache
         # and issue a fresh query per room. Fall back for any code path that
@@ -83,7 +83,7 @@ class ChatRoomSerializer(serializers.ModelSerializer):
             }
         return None
 
-    def get_unread_count(self, obj):
+    def get_unread_count(self, obj) -> int:
         request = self.context.get("request")
         if not request:
             return 0

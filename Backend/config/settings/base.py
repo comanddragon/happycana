@@ -177,6 +177,18 @@ SPECTACULAR_SETTINGS = {
     "DESCRIPTION": "High-performance Django e-commerce backend",
     "VERSION":     "1.0.0",
     "SERVE_INCLUDE_SCHEMA": False,
+    # Several models expose an unrelated "status" field with their own
+    # distinct choice sets (Order, ChatRoom, Shipment, Payment, Refund).
+    # Without explicit names drf-spectacular auto-generates suffixed
+    # component names (e.g. "Status0faEnum") to avoid clobbering one
+    # another, which surfaces as W001 warnings on every deploy check.
+    "ENUM_NAME_OVERRIDES": {
+        "OrderStatusEnum": "apps.orders.models.Order.Status",
+        "ChatRoomStatusEnum": "apps.chat.models.ChatRoom.Status",
+        "ShipmentStatusEnum": "apps.shipping.models.Shipment.Status",
+        "PaymentStatusEnum": "apps.payments.models.Payment.Status",
+        "RefundStatusEnum": "apps.payments.models.Refund.Status",
+    },
 }
 
 # ---------------------------------------------------------------------------

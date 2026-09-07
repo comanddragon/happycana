@@ -47,6 +47,8 @@ class ChatRoomViewSet(ModelViewSet):
     permission_classes = [permissions.IsAuthenticated, IsParticipant]
 
     def get_queryset(self):
+        if getattr(self, "swagger_fake_view", False):
+            return ChatRoom.objects.none()
         user = self.request.user
         # Prefetch exactly what ChatRoomSerializer.get_latest_message /
         # get_unread_count need, via to_attr, so those methods can read from

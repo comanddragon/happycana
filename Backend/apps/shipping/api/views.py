@@ -104,6 +104,8 @@ class OrderShipmentListView(generics.ListAPIView):
     permission_classes = [IsOwnerOrAdmin]
 
     def get_queryset(self):
+        if getattr(self, "swagger_fake_view", False):
+            return Shipment.objects.none()
         order_pk = self.kwargs["order_pk"]
 
         if not self.request.user.is_staff:
@@ -134,6 +136,8 @@ class TrackingEventListView(generics.ListAPIView):
     permission_classes = [permissions.AllowAny]
 
     def get_queryset(self):
+        if getattr(self, "swagger_fake_view", False):
+            return TrackingEvent.objects.none()
         return (
             for_request(
                 TrackingEvent.objects, self.request, "shipment__order__storefront"

@@ -130,6 +130,8 @@ class OrderListView(generics.ListAPIView):
     ordering = ["-created_at"]
 
     def get_queryset(self):
+        if getattr(self, "swagger_fake_view", False):
+            return Order.objects.none()
         user = self.request.user
         qs = Order.objects.select_related(
             "address", "coupon", "payment_method", "storefront"

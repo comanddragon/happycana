@@ -1,6 +1,6 @@
 // app/layout.tsx
 import type { Metadata } from 'next'
-import { Fraunces, Space_Grotesk, IBM_Plex_Mono } from 'next/font/google'
+import { Fraunces, Geist, Space_Grotesk, IBM_Plex_Mono } from 'next/font/google'
 import './globals.css'
 import { Providers } from '@/components/providers/providers'
 import {AgeGate} from "@/verticals/cannabis/AgeGate";
@@ -25,6 +25,12 @@ const fraunces = Fraunces({
     display: 'swap',
 })
 
+const peptideDisplay = Geist({
+    subsets: ['latin'],
+    variable: '--font-peptide-display',
+    display: 'swap',
+})
+
 const spaceGrotesk = Space_Grotesk({
     subsets: ['latin'],
     weight: ['400', '500', '600', '700'],
@@ -38,6 +44,14 @@ const ibmPlexMono = IBM_Plex_Mono({
     variable: '--font-ibm-plex-mono',
     display: 'swap',
 })
+
+const DISPLAY_FONT_CLASS: Record<string, string> = {
+    general: fraunces.variable,
+    dispensary: fraunces.variable,
+    hash: fraunces.variable,
+    footwear: fraunces.variable,
+    peptides: peptideDisplay.variable,
+}
 
 export async function generateMetadata(): Promise<Metadata> {
     const storefront = await getStorefront()
@@ -119,7 +133,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             suppressHydrationWarning
             data-storefront={storefront.slug}
             data-vertical={storefront.kind}
-            className={`${fraunces.variable} ${spaceGrotesk.variable} ${ibmPlexMono.variable}`}
+            className={`${DISPLAY_FONT_CLASS[storefront.kind] ?? fraunces.variable} ${spaceGrotesk.variable} ${ibmPlexMono.variable}`}
         >
         <body className="font-hc-body bg-hc-paper">
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(organizationLd) }} />

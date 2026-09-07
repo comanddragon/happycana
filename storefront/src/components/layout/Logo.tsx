@@ -28,10 +28,11 @@ export function Logo({
 }) {
     const { storefront } = useStorefront()
     const fallback = VARIANTS[variant]
-    if (storefront.kind === 'peptides' && !storefront.logo_url) {
+    if (!storefront.logo_url && storefront.kind !== 'dispensary') {
+        const initial = storefront.name.trim().charAt(0).toUpperCase() || 'S'
         return (
             <Link href={href} className="flex shrink-0 items-center gap-2.5 text-hc-paper">
-                <span className="flex h-8 w-8 items-center justify-center rounded-full border border-[#9ee8ce]/40 bg-[#9ee8ce]/10 font-hc-mono text-sm font-semibold text-[#9ee8ce]">A</span>
+                <span className="flex h-8 w-8 items-center justify-center rounded-full border border-hc-amber-light/40 bg-hc-amber-light/10 font-hc-mono text-sm font-semibold text-hc-amber-light">{initial}</span>
                 <span className="font-hc-display text-lg font-medium tracking-tight">{storefront.name}</span>
             </Link>
         )

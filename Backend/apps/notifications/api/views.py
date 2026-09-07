@@ -15,6 +15,8 @@ class NotificationListView(generics.ListAPIView):
     serializer_class = NotificationSerializer
 
     def get_queryset(self):
+        if getattr(self, "swagger_fake_view", False):
+            return Notification.objects.none()
         qs = for_request(
             Notification.objects.filter(user=self.request.user), self.request
         )

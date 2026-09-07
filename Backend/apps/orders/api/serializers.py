@@ -2,6 +2,7 @@
 # apps/orders/api/serializers.py
 # =============================================================================
 from rest_framework import serializers
+from decimal import Decimal
 from django.db.models import Q
 from apps.orders.models import Cart, CartItem, Order, OrderItem
 from apps.catalog.api.serializers import ProductVariantSerializer
@@ -18,7 +19,7 @@ class CartItemSerializer(serializers.ModelSerializer):
         fields = ["id", "variant", "quantity", "subtotal", "added_at"]
         read_only_fields = ["id", "added_at"]
 
-    def get_subtotal(self, obj):
+    def get_subtotal(self, obj) -> Decimal:
         return obj.variant.price * obj.quantity
 
 
@@ -57,10 +58,10 @@ class CartSerializer(serializers.ModelSerializer):
         fields = ["id", "items", "item_count", "total_price", "updated_at"]
         read_only_fields = ["id", "updated_at"]
 
-    def get_total_price(self, obj):
+    def get_total_price(self, obj) -> Decimal:
         return sum(i.variant.price * i.quantity for i in obj.items.all())
 
-    def get_item_count(self, obj):
+    def get_item_count(self, obj) -> int:
         return obj.items.count()
 
 
@@ -80,7 +81,7 @@ class OrderSerializer(serializers.ModelSerializer):
     payment_method = serializers.SerializerMethodField()
     storefront = serializers.SerializerMethodField()
 
-    def get_payment_method(self, obj):
+    def get_payment_method(self, obj) -> dict:
         method = obj.payment_method
         return {
             "id": method.id,
@@ -90,7 +91,7 @@ class OrderSerializer(serializers.ModelSerializer):
             "logo_url": method.logo_url,
         }
 
-    def get_storefront(self, obj):
+    def get_storefront(self, obj) -> dict | None:
         if not obj.storefront:
             return None
         return {

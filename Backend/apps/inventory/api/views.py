@@ -70,6 +70,8 @@ class StockMovementListView(generics.ListCreateAPIView):
     permission_classes = [permissions.IsAdminUser]
 
     def get_queryset(self):
+        if getattr(self, "swagger_fake_view", False):
+            return StockMovement.objects.none()
         return for_request(
             StockMovement.objects.filter(stock_id=self.kwargs["stock_pk"]),
             self.request,

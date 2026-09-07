@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState, useSyncExternalStore } from 'react'
 import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { useStorefront } from '@/storefront/StorefrontProvider'
@@ -8,41 +8,35 @@ import { useStorefront } from '@/storefront/StorefrontProvider'
 export function AgeGate() {
     const { storefront, features } = useStorefront()
     const storageKey = `storefront_age_ok:${storefront.slug}`
-    // Always render nothing until we've explicitly checked localStorage on
-    // the client. This avoids relying on useSyncExternalStore's automatic
-    // post-hydration re-check, which wasn't reliably re-syncing in this
-    // setup — an explicit effect is slightly less elegant but leaves no
-    // room for ambiguity about when the check actually runs.
-    //
-    // `mounted` and `alreadyVerified` are read from localStorage, which is
-    // only available on the client, so they can't be computed during the
-    // initial (server) render — hence the one-time effect below. They're
-    // combined into a single state object so the effect only performs one
-    // setState call instead of two.
-    const [status, setStatus] = useState({ mounted: false, alreadyVerified: false })
+    const alreadyVerified = useSyncExternalStore(
+        (onStoreChange) => {
+            window.addEventListener('storage', onStoreChange)
+            return () => window.removeEventListener('storage', onStoreChange)
+        },
+        () => {
+            try {
+                return localStorage.getItem(storageKey) === '1'
+            } catch {
+                return false
+            }
+        },
+        // Keep the gate out of server HTML. React rechecks the browser
+        // snapshot immediately after hydration and opens it when needed.
+        () => true,
+    )
     const [closing, setClosing] = useState(false)
     const [blocked, setBlocked] = useState(false)
     const [dismissed, setDismissed] = useState(false)
     const router = useRouter()
 
-    useEffect(() => {
-        let alreadyVerified = false
-        try {
-            alreadyVerified = localStorage.getItem(storageKey) === '1'
-        } catch {
-            // localStorage unavailable (private mode etc) — treat as unverified
-        }
-        setStatus({ mounted: true, alreadyVerified })
-    }, [storageKey])
-
-    const open = status.mounted && !status.alreadyVerified && !dismissed
+    const open = !alreadyVerified && !dismissed
 
     if (!features.ageGate || !open) return null
 
     const confirm = () => {
-        try { localStorage.setItem(storageKey, '1') } catch {}
         setClosing(true)
         window.setTimeout(() => {
+            try { localStorage.setItem(storageKey, '1') } catch {}
             setDismissed(true)
             router.push('/')
         }, 400)

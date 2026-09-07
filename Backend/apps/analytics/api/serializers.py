@@ -68,11 +68,11 @@ class ConversionFunnelSerializer(serializers.ModelSerializer):
             return 0.0
         return round((numerator / denominator) * 100, 2)
 
-    def get_view_to_cart_rate(self, obj):
+    def get_view_to_cart_rate(self, obj) -> float:
         return self._rate(obj.cart_adds, obj.product_views)
 
-    def get_cart_to_checkout_rate(self, obj):
+    def get_cart_to_checkout_rate(self, obj) -> float:
         return self._rate(obj.checkout_starts, obj.cart_adds)
 
-    def get_checkout_to_purchase_rate(self, obj):
+    def get_checkout_to_purchase_rate(self, obj) -> float:
         return self._rate(obj.purchases, obj.checkout_starts)

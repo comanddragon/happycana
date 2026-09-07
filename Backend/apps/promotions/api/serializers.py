@@ -25,7 +25,7 @@ class CouponSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ["id", "used_count", "is_expired"]
 
-    def get_is_expired(self, obj):
+    def get_is_expired(self, obj) -> bool:
         if obj.expires_at and obj.expires_at < timezone.now():
             return True
         if obj.max_uses and obj.used_count >= obj.max_uses:

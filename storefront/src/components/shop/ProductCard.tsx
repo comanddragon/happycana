@@ -8,10 +8,14 @@ import { ShoppingBag, Plus } from 'lucide-react'
 import { cn, formatPrice, mediaUrl, formatWeight, formatThc, CANNABIS_TYPE_LABEL, COMPLIANCE_CATEGORY_LABEL } from '@/lib/utils'
 import { useAddToCart } from '@/hooks/useApi'
 import type { Product } from '@/types'
+import { useStorefront } from '@/storefront/StorefrontProvider'
+import { storefrontTheme } from '@/storefront/theme'
 
 interface Props { product: Product; className?: string; priority?: boolean }
 
 export const ProductCard = memo(function ProductCard({ product, className, priority = false }: Props) {
+    const { storefront } = useStorefront()
+    const cardVariant = storefrontTheme(storefront.kind).productCardVariant
     const router        = useRouter()
     const addToCart      = useAddToCart()
     const [imageLoaded, setImageLoaded] = useState(priority)
@@ -68,7 +72,10 @@ export const ProductCard = memo(function ProductCard({ product, className, prior
     return (
         <div
             className={cn(
-                'group relative min-w-0 rounded-[22px] bg-gradient-to-b from-[#fbf7ee] to-hc-paper-2 p-3.5 pt-5 text-hc-ink shadow-[0_20px_40px_-24px_rgba(23,20,15,0.35)] transition-transform duration-300 hover:-translate-y-1.5 hover:rotate-[-0.6deg] hover:shadow-[0_28px_48px_-20px_rgba(23,20,15,0.32)]',
+                'group relative min-w-0 bg-gradient-to-b from-hc-paper to-hc-paper-2 p-3.5 pt-5 text-hc-ink transition-all duration-300 hover:-translate-y-1.5',
+                cardVariant === 'organic'
+                    ? 'rounded-[22px] shadow-[0_20px_40px_-24px_rgb(from_var(--color-hc-ink)_r_g_b/0.35)] hover:rotate-[-0.6deg] hover:shadow-[0_28px_48px_-20px_rgb(from_var(--color-hc-ink)_r_g_b/0.32)]'
+                    : 'rounded-lg border border-hc-canopy/15 shadow-[0_14px_32px_-26px_rgb(from_var(--color-hc-ink)_r_g_b/0.28)] hover:border-hc-amber-dim/45 hover:shadow-[0_20px_38px_-26px_rgb(from_var(--color-hc-ink)_r_g_b/0.24)]',
                 className,
             )}
         >
@@ -79,7 +86,7 @@ export const ProductCard = memo(function ProductCard({ product, className, prior
             )}
 
             <Link href={`/shop/products/${product.slug}`} className="block">
-                <div className="relative aspect-square overflow-hidden rounded-2xl bg-white">
+                <div className={cn('relative aspect-square overflow-hidden bg-white', cardVariant === 'organic' ? 'rounded-2xl' : 'rounded-md')}>
                     {displayImage ? (
                         <Image src={displayImage} alt={product.primary_image?.alt_text || product.name}
                                fill

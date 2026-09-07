@@ -29,8 +29,8 @@ export const JarCard = memo(function JarCard({ product, className, interactive =
         <Link
             href={`/shop/products/${product.slug}`}
             className={cn(
-                'relative block rounded-[22px] bg-gradient-to-b from-[#fbf7ee] to-hc-paper-2 px-6 pt-7 pb-5 text-hc-ink shadow-[0_30px_60px_-20px_rgba(0,0,0,0.55)]',
-                interactive && 'transition-transform duration-300 hover:-translate-y-2 hover:rotate-[-1.2deg] hover:shadow-[0_34px_60px_-18px_rgba(23,20,15,0.3)]',
+                'relative block rounded-[22px] bg-gradient-to-b from-hc-paper to-hc-paper-2 px-6 pt-7 pb-5 text-hc-ink shadow-[0_30px_60px_-20px_rgb(from_var(--color-hc-ink)_r_g_b/0.55)]',
+                interactive && 'transition-transform duration-300 hover:-translate-y-2 hover:rotate-[-1.2deg] hover:shadow-[0_34px_60px_-18px_rgb(from_var(--color-hc-ink)_r_g_b/0.3)]',
                 className,
             )}
         >

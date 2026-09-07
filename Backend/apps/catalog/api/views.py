@@ -205,6 +205,8 @@ class CollectionProductListView(ProductListView):
     http_method_names = ["get", "head", "options"]
 
     def get_queryset(self):
+        if getattr(self, "swagger_fake_view", False):
+            return Product.objects.none()
         # Resolve through the collection queryset so key categories and
         # inactive categories return 404 instead of masquerading as collections.
         collection = generics.get_object_or_404(
@@ -281,6 +283,8 @@ class ProductImageListView(generics.ListCreateAPIView):
     parser_classes     = [MultiPartParser, FormParser]
 
     def get_queryset(self):
+        if getattr(self, "swagger_fake_view", False):
+            return ProductImage.objects.none()
         return ProductImage.objects.filter(product_id=self.kwargs["product_pk"])
 
     def perform_create(self, serializer):
@@ -318,6 +322,8 @@ class ProductVideoListView(generics.ListCreateAPIView):
     parser_classes     = [MultiPartParser, FormParser]
 
     def get_queryset(self):
+        if getattr(self, "swagger_fake_view", False):
+            return ProductVideo.objects.none()
         return ProductVideo.objects.filter(product_id=self.kwargs["product_pk"])
 
     def perform_create(self, serializer):
@@ -351,6 +357,8 @@ class ProductVariantListView(generics.ListCreateAPIView):
     parser_classes     = [MultiPartParser, FormParser]
 
     def get_queryset(self):
+        if getattr(self, "swagger_fake_view", False):
+            return ProductVariant.objects.none()
         return (
             ProductVariant.objects
             .for_product(self.kwargs["product_pk"])

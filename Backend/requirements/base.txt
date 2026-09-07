@@ -4,37 +4,37 @@
 # =============================================================================
 
 # Core
-Django==6.0.3
-python-dotenv==1.2.2
-psycopg2-binary==2.9.11        # PostgreSQL adapter
+Django==6.1.1
+python-dotenv==1.2.3
+psycopg2-binary==2.9.12        # PostgreSQL adapter
 django-ratelimit==4.1.0
 
 # REST API
-djangorestframework==3.16.1
+djangorestframework==3.18.0
 djangorestframework-simplejwt==5.5.1
 django-cors-headers==4.9.0
 django-tasks==0.12.0
-django-filter==25.2
-drf-spectacular==0.29.0        # OpenAPI / Swagger schema generation
+django-filter==26.1
+drf-spectacular==0.30.0        # OpenAPI / Swagger schema generation
 
 # Realtime
 channels==4.3.2
 channels-redis==4.3.0
-daphne==4.2.1                 # ASGI server
+daphne==4.2.3                 # ASGI server
 
 # Cache & storage
-redis==6.4.0
+redis==8.1.0
 django-storages==1.14.6        # S3 / GCS backends
-boto3==1.42.61                 # AWS SDK (S3, SES, SQS)
+boto3==1.43.89                 # AWS SDK (S3, SES, SQS)
 
 # Static files
 whitenoise==6.12.0
 
 # Utilities
-Pillow==12.1.1                 # Image processing
+Pillow==12.3.0                 # Image processing
 pillow-avif-plugin==1.6.0      # AVIF read/write support for Pillow
 
-stripe==14.4.0
-resend==2.42.0
-requests==2.32.5
+stripe==15.6.1
+resend==2.43.0
+requests==2.34.2
 beautifulsoup4==4.15.0          # HTML parsing for catalog scraper scripts
