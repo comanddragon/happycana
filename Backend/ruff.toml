@@ -1,4 +1,4 @@
-[lint]
+[tool.ruff]
 
 # Exclude directories
 exclude = [".venv", ".output", ".scripts", "staticfiles"]
