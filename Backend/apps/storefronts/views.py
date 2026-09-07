@@ -8,6 +8,7 @@ from .serializers import StorefrontSerializer
 
 class CurrentStorefrontView(APIView):
     permission_classes = [permissions.AllowAny]
+    serializer_class = StorefrontSerializer
 
     def get(self, request):
         storefront = getattr(request, "storefront", None)

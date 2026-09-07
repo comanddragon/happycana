@@ -1,11 +1,21 @@
 #!/usr/bin/env python3
 """Idempotently seed the peptide storefront from scrape_products.py's CSV.
 
-Rows with no parseable price (common for BigCommerce storefronts that gate
-pricing behind a login wall, e.g. limitlesslifenootropics.com) are skipped
-from seeding but written to needs_pricing.csv for manual follow-up, instead
-of being silently dropped. Rows with a price value present but unparseable
-are reported separately as likely data problems.
+Rows with no parseable price (e.g. leftover rows from a source that gates
+pricing behind a login wall, or an out-of-stock listing with no price
+rendered) are skipped from seeding but written to needs_pricing.csv for
+manual follow-up, instead of being silently dropped. peptidessource.com,
+the default scrape source, does not gate pricing, so this path should
+rarely trigger going forward. Rows with a price value present but
+unparseable are reported separately as likely data problems.
+
+Listing.meta_title/meta_description prefer the source site's own scraped
+`meta_title`/`meta_description` CSV columns (populated by
+scrape_products.py's parse_product_meta()) when present, since that's
+usually hand-written, product-specific SEO copy; rows without it (or CSVs
+scraped before these columns existed) fall back to a generated
+title/description built from the product name, concentration, form, and
+category.
 
 Examples:
     python seed_products.py --dry-run
@@ -124,9 +134,9 @@ def seed(storefront, rows, stock_quantity):
                 print(f"Skipping {row.get('name') or row.get('source_url')}: invalid price {raw_price!r}")
                 invalid_price_rows.append(row)
             else:
-                # Expected for storefronts that gate pricing behind a login wall
-                # (e.g. BigCommerce B2B "research professional" pricing) --
-                # not a data error, just needs a price filled in manually.
+                # Expected for any leftover rows from a source that gates pricing
+                # behind a login wall (e.g. BigCommerce B2B "research professional"
+                # pricing) -- not a data error, just needs a price filled in manually.
                 print(f"Skipping {row.get('name') or row.get('source_url')}: no price yet (needs manual pricing)")
                 pending_price_rows.append(row)
             continue
@@ -171,11 +181,23 @@ def seed(storefront, rows, stock_quantity):
         category_label = labels[0] if labels else "Research Peptides"
         concentration = row.get("concentration", "").strip()
         form = row.get("form", "").strip()
-        meta_title = f"{row['name'].strip()} {concentration}".strip()[:60] if concentration else row["name"].strip()[:60]
-        meta_description = (
+        generated_meta_title = (
+            f"{row['name'].strip()} {concentration}".strip()[:60] if concentration else row["name"].strip()[:60]
+        )
+        generated_meta_description = (
             f"{row['name'].strip()}{f' ({form})' if form else ''} — {category_label} for research use only. "
             "Source documentation available."
         )[:160]
+        # Prefer the source site's own SEO copy (scraped into these columns
+        # by scrape_products.py's parse_product_meta()) when present, since
+        # it's usually hand-written and product-specific; fall back to the
+        # generated strings above for rows that don't have it (e.g. a source
+        # whose product pages don't set a meta description, or older CSV
+        # rows scraped before this columns existed).
+        scraped_meta_title = (row.get("meta_title") or "").strip()
+        scraped_meta_description = (row.get("meta_description") or "").strip()
+        meta_title = scraped_meta_title[:60] if scraped_meta_title else generated_meta_title
+        meta_description = scraped_meta_description[:160] if scraped_meta_description else generated_meta_description
         listing, _ = Listing.objects.update_or_create(
             storefront=storefront,
             product=product,

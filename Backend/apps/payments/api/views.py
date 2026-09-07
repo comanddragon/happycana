@@ -6,6 +6,8 @@ from django_ratelimit.decorators import ratelimit
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from drf_spectacular.utils import extend_schema
+from drf_spectacular.types import OpenApiTypes
 from apps.payments.models import Payment, PaymentMethod
 from apps.payments.gateways import GatewayFactory
 from apps.storefronts.querysets import for_request, options_for_request
@@ -51,6 +53,7 @@ class PaymentDetailView(generics.RetrieveAPIView):
 class InitiatePaymentView(APIView):
     """Creates a payment intent via the gateway and returns a client secret."""
 
+    @extend_schema(request=None, responses=OpenApiTypes.OBJECT)
     def post(self, request, order_pk):
         from apps.orders.models import Order
 
@@ -91,6 +94,7 @@ class StripeWebhookView(APIView):
     permission_classes = [permissions.AllowAny]
     authentication_classes = []
 
+    @extend_schema(request=None, responses=OpenApiTypes.OBJECT)
     def post(self, request):
         payload = request.body
         sig_header = request.META.get("HTTP_STRIPE_SIGNATURE", "")
@@ -117,6 +121,7 @@ class PayPalWebhookView(APIView):
     permission_classes = [permissions.AllowAny]
     authentication_classes = []
 
+    @extend_schema(request=None, responses=OpenApiTypes.OBJECT)
     def post(self, request):
         gateway = GatewayFactory.get("paypal")
         try:

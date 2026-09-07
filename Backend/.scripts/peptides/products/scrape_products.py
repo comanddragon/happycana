@@ -1,50 +1,25 @@
 #!/usr/bin/env python3
-"""Scrape a public peptide catalog into a reusable CSV checkpoint.
+"""
+PeptidesDirect catalog scraper.
 
-Supports two storefront platforms, auto-detected per source URL:
-  - WooCommerce (e.g. corepeptides.com): categories aren't on the archive
-    grid, so each product's own page is visited once to read them.
-  - BigCommerce Stencil (e.g. limitlesslifenootropics.com): categories come
-    from the archive URL itself (each category has its own page), and
-    pricing is commonly gated behind a login wall for B2B "research
-    professional" storefronts -- those rows are written with an empty
-    price and are skipped by seed_products.py until priced manually.
+Scrapes the public PeptidesDirect catalog without authentication.
 
-Saves as it goes, like scrape_blogs.py: products.csv is rewritten (via an
-atomic tmp-file + replace) after every page and after every per-product
-category lookup, and categories.csv is rewritten after every category
-finishes -- so a crash or Ctrl-C partway through only costs the current
-in-flight page, not the whole run. On the next run, any existing
-products.csv is loaded first and merged with freshly scraped data instead
-of being overwritten from scratch (pass --no-resume to start clean).
-Progress is logged to stdout throughout: which category/page is being
-fetched, how many products were found on it, when a save happens and the
-running total on disk, and a final summary banner.
+Source:
+    https://peptidesdirect.com/shop/
 
-Examples:
-    # No flags: scrapes BOTH default sources -- corepeptides.com (WooCommerce,
-    # single page) and every category discovered off limitlesslifenootropics.com's
-    # category hub (BigCommerce). Passing --source-url and/or
-    # --discover-category-hub explicitly overrides these defaults rather than
-    # adding to them.
-    python scrape_products.py
-    python scrape_products.py --pages 4 --output products.csv
+The site uses a custom storefront rather than WooCommerce, so this scraper
+does NOT depend on WooCommerce selectors.
 
-    # One BigCommerce category, several pages:
-    python scrape_products.py \\
-        --source-url "https://limitlesslifenootropics.com/product-category/cognitive-research/" \\
-        --pages 5
+It discovers category links from the shop page, extracts product cards from
+the rendered HTML/text, then visits each product page to collect additional
+metadata.
 
-    # Crawl every category linked from a site's category hub page:
-    python scrape_products.py \\
-        --discover-category-hub "https://limitlesslifenootropics.com/shop-by-research-category/" \\
-        --pages 20
+Outputs:
+    products.csv
+    categories.csv
 
-    # Both sites explicitly, side by side:
-    python scrape_products.py \\
-        --source-url "https://www.corepeptides.com/" \\
-        --discover-category-hub "https://limitlesslifenootropics.com/shop-by-research-category/" \\
-        --pages 10
+The scraper is resumable: products already present in products.csv are
+loaded and merged with newly discovered products.
 """
 
 import argparse
@@ -56,7 +31,7 @@ import time
 from dataclasses import asdict, dataclass, field
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
-from urllib.parse import parse_qsl, urlencode, urljoin, urlparse, urlsplit, urlunsplit
+from urllib.parse import parse_qsl, urlencode, urljoin, urlparse, urlunsplit
 
 import requests
 from bs4 import BeautifulSoup
@@ -64,16 +39,39 @@ from bs4 import BeautifulSoup
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 BACKEND_DIR = SCRIPT_DIR.parents[2]
-DEFAULT_OUTPUT = BACKEND_DIR / ".output" / "peptides" / "products" / "products.csv"
-DEFAULT_CATEGORIES_OUTPUT = BACKEND_DIR / ".output" / "peptides" / "categories" / "categories.csv"
-DEFAULT_SOURCE = "https://www.corepeptides.com/"
-DEFAULT_DISCOVER_HUB = "https://limitlesslifenootropics.com/shop-by-research-category/"
-USER_AGENT = "CatalogResearchBot/1.0 (+local catalog import; respects robots.txt)"
-MAX_RETRIES = 7
-BACKOFF_SECONDS = 2.0
-CATEGORY_HREF_RE = re.compile(r"/(product-category|research-peptide-categories|product-type)/[^/?#]+/?$")
-FILTER_QUERYSTRING_MARKERS = ("_bc_fsnf", "is_featured", "in_stock", "Grade=", "Container=")
 
+DEFAULT_OUTPUT = (
+    BACKEND_DIR
+    / ".output"
+    / "peptides"
+    / "products"
+    / "products.csv"
+)
+
+DEFAULT_CATEGORIES_OUTPUT = (
+    BACKEND_DIR
+    / ".output"
+    / "peptides"
+    / "categories"
+    / "categories.csv"
+)
+
+BASE_URL = "https://peptidesdirect.com"
+SHOP_URL = f"{BASE_URL}/shop"
+
+USER_AGENT = (
+    "Mozilla/5.0 (X11; Linux x86_64) "
+    "AppleWebKit/537.36 (KHTML, like Gecko) "
+    "Chrome/140.0.0.0 Safari/537.36"
+)
+
+MAX_RETRIES = 5
+BACKOFF_SECONDS = 2.0
+
+
+# ---------------------------------------------------------------------------
+# Data models
+# ---------------------------------------------------------------------------
 
 @dataclass
 class ScrapedProduct:
@@ -83,18 +81,34 @@ class ScrapedProduct:
     compare_at_price: Decimal | None = None
     categories: list[str] = field(default_factory=list)
     image_url: str = ""
+    meta_title: str = ""
+    meta_description: str = ""
+    short_description: str = ""
+    sku: str = ""
+    cas_number: str = ""
+    molecular_weight: str = ""
+    purity: str = ""
+    strength: str = ""
 
     @property
     def source_id(self):
-        return "peptide:" + hashlib.sha256(self.source_url.encode()).hexdigest()[:32]
+        return (
+            "peptide:"
+            + hashlib.sha256(self.source_url.encode()).hexdigest()[:32]
+        )
 
     def to_row(self):
-        profile = infer_profile(self.name)
+        profile = infer_profile(self.name, self.strength)
+
         return {
             "source_id": self.source_id,
             **asdict(self),
             "price": str(self.price) if self.price is not None else "",
-            "compare_at_price": str(self.compare_at_price or ""),
+            "compare_at_price": (
+                str(self.compare_at_price)
+                if self.compare_at_price is not None
+                else ""
+            ),
             "categories": "|".join(self.categories),
             **profile,
         }
@@ -104,7 +118,6 @@ class ScrapedProduct:
 class CategoryStat:
     name: str
     url: str
-    platform: str
     scraped_count: int
     reported_count: int | None = None
 
@@ -112,528 +125,1190 @@ class CategoryStat:
         return {
             "name": self.name,
             "url": self.url,
-            "platform": self.platform,
             "scraped_count": self.scraped_count,
-            "reported_count": self.reported_count if self.reported_count is not None else "",
+            "reported_count": (
+                self.reported_count
+                if self.reported_count is not None
+                else ""
+            ),
         }
 
 
+# ---------------------------------------------------------------------------
+# HTTP
+# ---------------------------------------------------------------------------
+
+def build_session():
+    session = requests.Session()
+
+    session.headers.update({
+        "User-Agent": USER_AGENT,
+        "Accept": (
+            "text/html,application/xhtml+xml,"
+            "application/xml;q=0.9,image/avif,image/webp,"
+            "*/*;q=0.8"
+        ),
+        "Accept-Language": "en-US,en;q=0.9",
+        "Accept-Encoding": "gzip, deflate",
+        "Connection": "keep-alive",
+        "Upgrade-Insecure-Requests": "1",
+    })
+
+    return session
+
+
+def get(session, url):
+    for attempt in range(MAX_RETRIES + 1):
+        try:
+            response = session.get(
+                url,
+                timeout=30,
+                allow_redirects=True,
+            )
+
+            if response.status_code == 200:
+                return response
+
+            if response.status_code in {429, 500, 502, 503, 504}:
+                if attempt == MAX_RETRIES:
+                    response.raise_for_status()
+
+                wait = min(
+                    BACKOFF_SECONDS * (2 ** attempt),
+                    60,
+                ) + random.uniform(0.2, 1.0)
+
+                print(
+                    f"  HTTP {response.status_code}; "
+                    f"retrying in {wait:.1f}s "
+                    f"({attempt + 1}/{MAX_RETRIES})"
+                )
+
+                time.sleep(wait)
+                continue
+
+            response.raise_for_status()
+
+        except (
+            requests.Timeout,
+            requests.ConnectionError,
+        ) as exc:
+            if attempt == MAX_RETRIES:
+                raise
+
+            wait = min(
+                BACKOFF_SECONDS * (2 ** attempt),
+                60,
+            ) + random.uniform(0.2, 1.0)
+
+            print(
+                f"  Network error: {exc}; "
+                f"retrying in {wait:.1f}s "
+                f"({attempt + 1}/{MAX_RETRIES})"
+            )
+
+            time.sleep(wait)
+
+    raise RuntimeError(f"Unable to fetch {url}")
+
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+def clean_url(url):
+    if not url:
+        return ""
+
+    parsed = urlparse(url)
+
+    return urlunsplit((
+        parsed.scheme,
+        parsed.netloc,
+        parsed.path.rstrip("/") or "/",
+        parsed.query,
+        "",
+    ))
+
+
+def normalize_text(value):
+    return re.sub(r"\s+", " ", value or "").strip()
+
+
 def parse_price(text):
-    values = re.findall(r"(?:USD\s*)?\$?([0-9][0-9,]*(?:\.\d{1,2})?)", text or "")
-    if not values:
+    if not text:
         return None
+
+    matches = re.findall(
+        r"(?:USD\s*)?\$?\s*"
+        r"([0-9][0-9,]*(?:\.\d{1,2})?)",
+        text,
+        re.I,
+    )
+
+    if not matches:
+        return None
+
     try:
-        return Decimal(values[-1].replace(",", ""))
+        return Decimal(matches[-1].replace(",", ""))
     except InvalidOperation:
         return None
 
 
-def detect_platform(html):
-    """Guess the storefront platform from generator meta tags / asset hosts.
+def extract_price_from_text(text):
+    if not text:
+        return None
 
-    Falls back to "woocommerce" since that's the original/default source.
-    """
-    lowered = html.lower()
-    if "bigcommerce" in lowered or "cdn11.bigcommerce.com" in lowered or "stencil-utils" in lowered:
-        return "bigcommerce"
-    if "woocommerce" in lowered or "wp-content" in lowered:
-        return "woocommerce"
-    return "woocommerce"
+    # Prefer explicit dollar amounts.
+    matches = re.findall(
+        r"\$\s*([0-9][0-9,]*(?:\.\d{1,2})?)",
+        text,
+    )
 
-
-def paginate_url(source_url, page, platform):
-    """Build the URL for `page` on a given platform's catalog pagination."""
-    if page == 1:
-        return source_url
-    if platform == "bigcommerce":
-        parts = urlsplit(source_url)
-        query = [(key, value) for key, value in parse_qsl(parts.query) if key != "page"]
-        query.append(("page", str(page)))
-        return urlunsplit((parts.scheme, parts.netloc, parts.path, urlencode(query), parts.fragment))
-    return source_url.rstrip("/") + f"/page/{page}/"
-
-
-def parse_catalog_page(html, source_url):
-    """Parse WooCommerce cards without depending on one theme's exact markup.
-
-    Category badges are not rendered on the shop archive grid on most WooCommerce
-    themes (including this one), so categories are fetched separately from each
-    product's own page in fetch_categories() below.
-    """
-    soup = BeautifulSoup(html, "html.parser")
-    cards = soup.select("li.product, .product-grid-item, .wd-product, article.product")
-    products = []
-    seen = set()
-    for card in cards:
-        title = card.select_one("h2, h3, .woocommerce-loop-product__title, .wd-entities-title")
-        anchor = None
-        if title:
-            anchor = title if title.name == "a" and title.get("href") else title.find_parent("a", href=True)
-        anchor = anchor or card.select_one("a[href*='/product/']")
-        name = title.get_text(" ", strip=True) if title else ""
-        if not name or not anchor:
-            continue
-        product_url = urljoin(source_url, anchor["href"])
-        if product_url in seen:
-            continue
-        price_node = card.select_one(".price")
-        price = parse_price(price_node.get_text(" ", strip=True) if price_node else "")
-        if price is None:
-            continue
-        old_price_node = price_node.select_one("del") if price_node else None
-        compare_at = parse_price(old_price_node.get_text(" ", strip=True)) if old_price_node else None
-        image = card.select_one("img")
-        image_url = ""
-        if image:
-            image_url = image.get("data-lazy-src") or image.get("data-src") or image.get("src") or ""
-        products.append(ScrapedProduct(
-            source_url=product_url,
-            name=name,
-            price=price,
-            compare_at_price=compare_at if compare_at and compare_at > price else None,
-            image_url=urljoin(source_url, image_url),
-        ))
-        seen.add(product_url)
-    return products
-
-
-def parse_catalog_page_bigcommerce(html, source_url, category_name=None):
-    """Parse BigCommerce Stencil product cards from a category archive page.
-
-    Unlike the WooCommerce grid, each archive URL here *is* a category, so the
-    category tag comes from the page itself instead of a per-product visit.
-    Pricing is frequently gated behind a "Log In for Professional Pricing"
-    link on B2B research-chemical storefronts; when no numeric price is
-    present the product is still kept, with `price` left unset, since the
-    catalog data (name, url, image, category) is still useful on its own.
-    """
-    soup = BeautifulSoup(html, "html.parser")
-    cards = soup.select("li.product, .product, .card")
-    products = []
-    seen = set()
-    for card in cards:
-        title = card.select_one(".card-title a, h4.card-title, h4 a, .card-title")
-        anchor = None
-        if title:
-            anchor = title if title.name == "a" and title.get("href") else title.find_parent("a", href=True)
-        anchor = anchor or card.select_one("a.card-figure__link, a[href*='/product/']")
-        name = title.get_text(" ", strip=True) if title else ""
-        if not name or not anchor:
-            continue
-        product_url = urljoin(source_url, anchor["href"])
-        if product_url in seen:
-            continue
-        price_node = card.select_one(".price, .card-text--price")
-        price_text = price_node.get_text(" ", strip=True) if price_node else ""
-        price = None if "log in" in price_text.lower() else parse_price(price_text)
-        old_price_node = price_node.select_one("del, .price--rrp") if price_node else None
-        compare_at = parse_price(old_price_node.get_text(" ", strip=True)) if old_price_node else None
-        image = card.select_one("img")
-        image_url = ""
-        if image:
-            image_url = image.get("data-src") or image.get("src") or image.get("data-lazy-src") or ""
-        products.append(ScrapedProduct(
-            source_url=product_url,
-            name=name,
-            price=price,
-            compare_at_price=compare_at if (compare_at and price and compare_at > price) else None,
-            categories=[category_name] if category_name else [],
-            image_url=urljoin(source_url, image_url) if image_url else "",
-        ))
-        seen.add(product_url)
-    return products
-
-
-def parse_category_meta(html):
-    """Read the category display name, reported product count, and last page
-    number off a BigCommerce Stencil category archive page."""
-    soup = BeautifulSoup(html, "html.parser")
-    heading = soup.select_one("h1")
-    name = heading.get_text(" ", strip=True) if heading else None
-
-    count_match = re.search(r"([\d,]+)\s+Compounds\b", html, re.I) or re.search(r"([\d,]+)\s+Products?\b", html, re.I)
-    reported_count = int(count_match.group(1).replace(",", "")) if count_match else None
-
-    max_page = 1
-    for match in re.finditer(r"[?&]page=(\d+)", html):
-        max_page = max(max_page, int(match.group(1)))
-    return name, reported_count, max_page
-
-
-def discover_category_links(html, base_url):
-    """Pull real category archive links (not filter/sort links) off a hub page
-    such as /shop-by-research-category/ or /shop-by-type/."""
-    soup = BeautifulSoup(html, "html.parser")
-    found = []
-    seen = set()
-    for anchor in soup.select("a[href]"):
-        href = anchor["href"]
-        if any(marker in href for marker in FILTER_QUERYSTRING_MARKERS):
-            continue
-        if not CATEGORY_HREF_RE.search(urlparse(href).path):
-            continue
-        url = urljoin(base_url, href).split("?")[0]
-        if url in seen:
-            continue
-        seen.add(url)
-        found.append(url)
-    return found
-
-
-def parse_product_categories(html):
-    """Extract categories from a single product page (WooCommerce-oriented,
-    with a breadcrumb-based fallback used for any platform).
-
-    Standard WooCommerce single-product templates render:
-        <span class="posted_in">Category: <a href="...">X</a>, <a href="...">Y</a></span>
-    Falls back to the breadcrumb trail (minus "Home" and the product name itself)
-    for themes that omit posted_in.
-    """
-    soup = BeautifulSoup(html, "html.parser")
-    posted_in = soup.select_one(".posted_in")
-    if posted_in:
-        categories = [a.get_text(" ", strip=True) for a in posted_in.select("a") if a.get_text(strip=True)]
-        if categories:
-            return categories
-
-    breadcrumb = soup.select_one(".woocommerce-breadcrumb, nav.breadcrumbs, .breadcrumb, .breadcrumbs")
-    if not breadcrumb:
-        return []
-    crumbs = [a.get_text(" ", strip=True) for a in breadcrumb.select("a") if a.get_text(strip=True)]
-    return [crumb for crumb in crumbs if crumb.lower() != "home"]
-
-
-def fetch_categories(session, items, delay, on_saved=None):
-    """Visit each product's own page to read its real category, in place.
-
-    Only used for products that came off a page where categories weren't
-    already known (currently: WooCommerce archive grids). Calls `on_saved`
-    after every product so progress is written to disk immediately -- the
-    same way the blog scraper saves after every article.
-    """
-    total = len(items)
-    for index, item in enumerate(items, 1):
+    if matches:
         try:
-            response = get(session, item.source_url)
-            item.categories = parse_product_categories(response.text)
-            print(f"  [{index}/{total}] categorized: {item.name} -> {item.categories or 'none found'}")
-        except (requests.RequestException, RuntimeError) as exc:
-            print(f"  [{index}/{total}] category fetch failed for {item.source_url}: {exc}")
-        if on_saved:
-            on_saved()
-        if index < total and delay:
-            time.sleep(delay)
+            return Decimal(matches[0].replace(",", ""))
+        except InvalidOperation:
+            pass
+
+    # "From $89"
+    match = re.search(
+        r"\bfrom\s+\$?\s*([0-9][0-9,]*(?:\.\d{1,2})?)",
+        text,
+        re.I,
+    )
+
+    if match:
+        try:
+            return Decimal(match.group(1).replace(",", ""))
+        except InvalidOperation:
+            pass
+
+    return None
 
 
-def infer_profile(name):
-    concentration_match = re.search(r"\b(\d+(?:\.\d+)?\s*(?:mcg|mg|ml))\b", name, re.I)
+def extract_strength(text):
+    if not text:
+        return ""
+
+    patterns = [
+        r"\b\d+(?:\.\d+)?\s*mg\b",
+        r"\b\d+(?:\.\d+)?\s*mcg\b",
+        r"\b\d+(?:\.\d+)?\s*µg\b",
+        r"\b\d+(?:\.\d+)?\s*IU\b",
+        r"\b\d+(?:\.\d+)?\s*g\b",
+    ]
+
+    values = []
+
+    for pattern in patterns:
+        values.extend(
+            re.findall(pattern, text, re.I)
+        )
+
+    if not values:
+        return ""
+
+    # Preserve unique strengths in the order found.
+    seen = set()
+    result = []
+
+    for value in values:
+        value = normalize_text(value)
+
+        if value.lower() not in seen:
+            seen.add(value.lower())
+            result.append(value)
+
+    return " · ".join(result)
+
+
+def infer_profile(name, strength=""):
     lowered = name.lower()
+
     if "capsule" in lowered:
         form = "Capsules"
+    elif "tablet" in lowered:
+        form = "Tablets"
     elif "topical" in lowered:
         form = "Topical"
     elif "blend" in lowered:
         form = "Lyophilized blend"
     else:
         form = "Lyophilized powder"
+
+    concentration = strength
+
+    if not concentration:
+        match = re.search(
+            r"\b(\d+(?:\.\d+)?\s*(?:mcg|mg|ml|iu|g))\b",
+            name,
+            re.I,
+        )
+
+        if match:
+            concentration = (
+                match.group(1)
+                .replace(" ", "")
+            )
+
     return {
-        "concentration": concentration_match.group(1).replace(" ", "") if concentration_match else "",
+        "concentration": concentration,
         "form": form,
-        "storage_requirements": "Store according to the supplier documentation. Research use only.",
+        "storage_requirements": (
+            "Store according to supplier documentation. "
+            "Research use only."
+        ),
     }
 
 
-def build_session():
-    session = requests.Session()
-    session.headers.update({"User-Agent": USER_AGENT, "Accept": "text/html"})
-    return session
+# ---------------------------------------------------------------------------
+# Category discovery
+# ---------------------------------------------------------------------------
 
-
-def get(session, url):
-    """Fetch a URL, respecting Retry-After and backing off on 429/5xx."""
-    for attempt in range(MAX_RETRIES + 1):
-        try:
-            response = session.get(url, timeout=25)
-            if response.status_code not in {429, 500, 502, 503, 504}:
-                response.raise_for_status()
-                return response
-            if attempt == MAX_RETRIES:
-                response.raise_for_status()
-            retry_after = response.headers.get("Retry-After", "")
-            try:
-                wait = float(retry_after)
-            except ValueError:
-                wait = BACKOFF_SECONDS * (2 ** attempt)
-            wait = min(wait, 120) + random.uniform(0.25, 1.25)
-            print(f"  HTTP {response.status_code}; retrying {url} in {wait:.1f}s ({attempt + 1}/{MAX_RETRIES})")
-            time.sleep(wait)
-        except (requests.Timeout, requests.ConnectionError) as exc:
-            if attempt == MAX_RETRIES:
-                raise
-            wait = min(BACKOFF_SECONDS * (2 ** attempt), 120) + random.uniform(0.25, 1.25)
-            print(f"  Network error on {url}: {exc}; retrying in {wait:.1f}s ({attempt + 1}/{MAX_RETRIES})")
-            time.sleep(wait)
-    raise RuntimeError(f"Unable to fetch {url}")
-
-
-def scrape_category(session, source_url, pages, delay, items, on_saved=None):
-    """Scrape one catalog/category root URL across its pages into `items`
-    (keyed and merged by product URL). Returns a CategoryStat for it.
-
-    Calls `on_saved` after every page is merged in, so products.csv reflects
-    progress as it goes instead of only at the very end of the whole run.
+def discover_categories(html, base_url):
     """
-    platform = "woocommerce"
-    category_name = None
-    reported_count = None
-    max_page = max(1, pages)
-    scraped_count = 0
+    Discover categories from links such as:
 
-    for page in range(1, max(1, pages) + 1):
-        if page > max_page:
-            break
-        url = source_url if page == 1 else paginate_url(source_url, page, platform)
-        response = get(session, url)
-        html = response.text
+        /shop?cat=GLP-1+%26+Metabolic
 
-        if page == 1:
-            platform = detect_platform(html)
-            if platform == "bigcommerce":
-                category_name, reported_count, discovered_max_page = parse_category_meta(html)
-                max_page = min(max(1, pages), discovered_max_page) if pages else discovered_max_page
+    Also accepts normal /shop?cat=... links whose display text is the
+    category name.
+    """
 
-        if platform == "bigcommerce":
-            parsed = parse_catalog_page_bigcommerce(html, url, category_name)
-        else:
-            parsed = parse_catalog_page(html, url)
+    soup = BeautifulSoup(html, "html.parser")
 
-        label = category_name or source_url
-        print(f"  [{label}] page {page}/{max_page} ({platform}): {len(parsed)} products found")
-        if not parsed:
-            print(f"  [{label}] no products on this page; stopping pagination")
-            break
-        scraped_count += len(parsed)
-        for item in parsed:
-            existing = items.get(item.source_url)
-            if existing is None:
-                items[item.source_url] = item
-                continue
-            for category in item.categories:
-                if category not in existing.categories:
-                    existing.categories.append(category)
-            if existing.price is None and item.price is not None:
-                existing.price = item.price
-            if not existing.image_url and item.image_url:
-                existing.image_url = item.image_url
+    categories = []
+    seen = set()
 
-        if on_saved:
-            on_saved()
-            print(f"  [{label}] saved (total products on disk: {len(items)})")
+    for anchor in soup.select("a[href]"):
+        href = anchor.get("href", "")
+        text = normalize_text(anchor.get_text(" ", strip=True))
 
-        if page < max_page and delay:
-            time.sleep(delay)
+        if not href:
+            continue
 
-    return CategoryStat(
-        name=category_name or source_url,
-        url=source_url,
-        platform=platform,
-        scraped_count=scraped_count,
-        reported_count=reported_count,
+        absolute = urljoin(base_url, href)
+        parsed = urlparse(absolute)
+
+        if parsed.netloc.lower() != urlparse(BASE_URL).netloc.lower():
+            continue
+
+        if parsed.path.rstrip("/") != "/shop":
+            continue
+
+        query = dict(parse_qsl(parsed.query))
+
+        category = query.get("cat")
+
+        if not category:
+            continue
+
+        category = normalize_text(category)
+
+        if not category:
+            continue
+
+        if category.lower() in {"all", "all peptides"}:
+            continue
+
+        key = category.lower()
+
+        if key in seen:
+            continue
+
+        seen.add(key)
+
+        categories.append({
+            "name": category,
+            "url": clean_url(absolute),
+        })
+
+    return categories
+
+
+# ---------------------------------------------------------------------------
+# Product URL discovery
+# ---------------------------------------------------------------------------
+
+def is_product_url(url):
+    parsed = urlparse(url)
+
+    if parsed.netloc.lower() != urlparse(BASE_URL).netloc.lower():
+        return False
+
+    path = parsed.path.rstrip("/")
+
+    return bool(
+        re.match(
+            r"^/product/[^/]+$",
+            path,
+            re.I,
+        )
     )
 
 
-def scrape(source_urls, pages, delay, discover_category_hub=None, items=None,
-           on_products_saved=None, on_categories_saved=None):
-    session = build_session()
-    seed_urls = list(dict.fromkeys(u for u in source_urls if u))
+def discover_product_urls(html, base_url):
+    soup = BeautifulSoup(html, "html.parser")
 
-    if discover_category_hub:
-        if urlparse(discover_category_hub).scheme not in {"http", "https"}:
-            raise SystemExit("--discover-category-hub must be an HTTP(S) URL")
-        print(f"Discovering categories from hub: {discover_category_hub}")
-        hub_response = get(session, discover_category_hub)
-        discovered = discover_category_links(hub_response.text, discover_category_hub)
-        print(f"  found {len(discovered)} category links")
-        for url in discovered:
-            if url not in seed_urls:
-                seed_urls.append(url)
+    found = []
+    seen = set()
+
+    for anchor in soup.select("a[href]"):
+        href = anchor.get("href", "")
+
+        if not href:
+            continue
+
+        absolute = clean_url(
+            urljoin(base_url, href)
+        )
+
+        if not is_product_url(absolute):
+            continue
+
+        if absolute in seen:
+            continue
+
+        seen.add(absolute)
+        found.append(absolute)
+
+    return found
+
+
+# ---------------------------------------------------------------------------
+# Product card parsing
+# ---------------------------------------------------------------------------
+
+def find_product_card(anchor):
+    """
+    Walk upward looking for a useful product-card container.
+
+    PeptidesDirect isn't WooCommerce, so don't depend on a specific CSS class.
+    """
+
+    current = anchor
+
+    for _ in range(8):
+        if current is None:
+            break
+
+        text = normalize_text(
+            current.get_text(" ", strip=True)
+        )
+
+        if (
+            "$" in text
+            and len(text) < 2500
+        ):
+            return current
+
+        current = current.parent
+
+    return anchor.parent
+
+
+def parse_product_cards(html, source_url, category=None):
+    soup = BeautifulSoup(html, "html.parser")
+
+    products = []
+    seen = set()
+
+    anchors = soup.select("a[href]")
+
+    for anchor in anchors:
+        href = anchor.get("href", "")
+
+        absolute = clean_url(
+            urljoin(source_url, href)
+        )
+
+        if not is_product_url(absolute):
+            continue
+
+        if absolute in seen:
+            continue
+
+        card = find_product_card(anchor)
+
+        card_text = normalize_text(
+            card.get_text(" ", strip=True)
+        )
+
+        # Product names are usually headings, strong text, or the
+        # visible anchor itself.
+        title_node = (
+            card.select_one(
+                "h2, h3, h4, h5, "
+                "[class*='title'], "
+                "[class*='name']"
+            )
+        )
+
+        name = (
+            normalize_text(
+                title_node.get_text(" ", strip=True)
+            )
+            if title_node
+            else normalize_text(
+                anchor.get_text(" ", strip=True)
+            )
+        )
+
+        if not name:
+            continue
+
+        # Avoid treating navigation links as products.
+        if len(name) > 180:
+            continue
+
+        price = extract_price_from_text(card_text)
+
+        strength = extract_strength(card_text)
+
+        image_url = ""
+
+        image = card.select_one("img")
+
+        if image:
+            image_url = (
+                image.get("src")
+                or image.get("data-src")
+                or image.get("data-lazy-src")
+                or ""
+            )
+
+            if image_url:
+                image_url = urljoin(
+                    source_url,
+                    image_url,
+                )
+
+        description = ""
+
+        # Prefer a paragraph that isn't simply the price/CTA.
+        for node in card.select("p, div, span"):
+            value = normalize_text(
+                node.get_text(" ", strip=True)
+            )
+
+            if (
+                value
+                and value != name
+                and "$" not in value
+                and "add to cart" not in value.lower()
+                and "deep dive" not in value.lower()
+                and len(value) >= 25
+                and len(value) <= 500
+            ):
+                description = value
+                break
+
+        products.append(
+            ScrapedProduct(
+                source_url=absolute,
+                name=name,
+                price=price,
+                categories=[category] if category else [],
+                image_url=image_url,
+                short_description=description,
+                strength=strength,
+            )
+        )
+
+        seen.add(absolute)
+
+    return products
+
+
+# ---------------------------------------------------------------------------
+# Product detail parsing
+# ---------------------------------------------------------------------------
+
+def parse_product_detail(html, product):
+    soup = BeautifulSoup(html, "html.parser")
+
+    # SEO title.
+    title = soup.select_one("title")
+
+    if title:
+        product.meta_title = normalize_text(
+            title.get_text(" ", strip=True)
+        )
+
+    # SEO description.
+    description = (
+        soup.select_one(
+            'meta[name="description"]'
+        )
+        or soup.select_one(
+            'meta[property="og:description"]'
+        )
+    )
+
+    if description:
+        product.meta_description = normalize_text(
+            description.get("content", "")
+        )
+
+    # OpenGraph image is often more reliable than the product-card image.
+    og_image = soup.select_one(
+        'meta[property="og:image"]'
+    )
+
+    if og_image and og_image.get("content"):
+        product.image_url = urljoin(
+            product.source_url,
+            og_image["content"],
+        )
+
+    text = normalize_text(
+        soup.get_text(" ", strip=True)
+    )
+
+    # SKU.
+    sku_match = re.search(
+        r"\b(?:SKU|Product\s*(?:Code|ID))"
+        r"\s*[:#]?\s*([A-Z0-9._-]+)",
+        text,
+        re.I,
+    )
+
+    if sku_match:
+        product.sku = sku_match.group(1)
+
+    # CAS.
+    cas_match = re.search(
+        r"\bCAS\b\s*[:#]?\s*"
+        r"(\d{2,7}-\d{2}-\d)",
+        text,
+        re.I,
+    )
+
+    if cas_match:
+        product.cas_number = cas_match.group(1)
+
+    # Molecular weight.
+    mw_match = re.search(
+        r"\b(?:MW|Molecular\s+Weight)\b"
+        r"\s*[:#]?\s*"
+        r"([0-9]+(?:\.[0-9]+)?)\s*g?/mol",
+        text,
+        re.I,
+    )
+
+    if mw_match:
+        product.molecular_weight = (
+            mw_match.group(1) + " g/mol"
+        )
+
+    # Purity.
+    purity_match = re.search(
+        r"\b(?:Purity)\b"
+        r"\s*[:#]?\s*"
+        r"(≥\s*)?([0-9]+(?:\.[0-9]+)?)\s*%",
+        text,
+        re.I,
+    )
+
+    if purity_match:
+        prefix = purity_match.group(1) or ""
+        product.purity = (
+            f"{prefix}{purity_match.group(2)}%"
+        )
+
+    # Strength.
+    if not product.strength:
+        product.strength = extract_strength(text)
+
+    # Try to find a more useful description.
+    if not product.short_description:
+        paragraphs = [
+            normalize_text(p.get_text(" ", strip=True))
+            for p in soup.select("p")
+        ]
+
+        for paragraph in paragraphs:
+            if (
+                len(paragraph) >= 40
+                and len(paragraph) <= 1200
+                and "$" not in paragraph
+                and "research use only" not in paragraph.lower()
+            ):
+                product.short_description = paragraph
+                break
+
+    # Product page may contain a better price than the card.
+    if product.price is None:
+        product.price = extract_price_from_text(text)
+
+    return product
+
+
+# ---------------------------------------------------------------------------
+# Scraping
+# ---------------------------------------------------------------------------
+
+def scrape_shop(
+    session,
+    shop_url,
+    delay,
+    items,
+    on_products_saved=None,
+):
+    print(f"Fetching PeptidesDirect shop: {shop_url}")
+
+    response = get(session, shop_url)
+
+    html = response.text
+
+    if len(html) < 3000:
+        print(
+            f"  WARNING: shop response is unusually small "
+            f"({len(html)} bytes)"
+        )
+
+    product_urls = discover_product_urls(
+        html,
+        shop_url,
+    )
+
+    print(
+        f"  Main shop: {len(product_urls)} product links found"
+    )
+
+    parsed_products = parse_product_cards(
+        html,
+        shop_url,
+    )
+
+    print(
+        f"  Main shop: {len(parsed_products)} products parsed"
+    )
+
+    merge_products(
+        items,
+        parsed_products,
+    )
+
+    if on_products_saved:
+        on_products_saved()
+
+    categories = discover_categories(
+        html,
+        shop_url,
+    )
+
+    print(
+        f"  Categories discovered: {len(categories)}"
+    )
+
+    category_stats = []
+
+    for category_index, category in enumerate(
+        categories,
+        1,
+    ):
+        print()
+        print(
+            f"[{category_index}/{len(categories)}] "
+            f"Category: {category['name']}"
+        )
+
+        category_response = get(
+            session,
+            category["url"],
+        )
+
+        category_html = category_response.text
+
+        category_products = parse_product_cards(
+            category_html,
+            category["url"],
+            category["name"],
+        )
+
+        category_urls = discover_product_urls(
+            category_html,
+            category["url"],
+        )
+
+        print(
+            f"  Product links: {len(category_urls)}"
+        )
+
+        print(
+            f"  Products parsed: {len(category_products)}"
+        )
+
+        merge_products(
+            items,
+            category_products,
+        )
+
+        if on_products_saved:
+            on_products_saved()
+
+        # Reported count from:
+        # "# products"
+        count_match = re.search(
+            r"(\d+)\s+products?\b",
+            category_html,
+            re.I,
+        )
+
+        reported_count = (
+            int(count_match.group(1))
+            if count_match
+            else None
+        )
+
+        category_stats.append(
+            CategoryStat(
+                name=category["name"],
+                url=category["url"],
+                scraped_count=len(category_products),
+                reported_count=reported_count,
+            )
+        )
+
         if delay:
             time.sleep(delay)
 
-    for url in seed_urls:
-        if urlparse(url).scheme not in {"http", "https"}:
-            raise SystemExit(f"Source URL must be an HTTP(S) URL, got: {url}")
-    if not seed_urls:
-        raise SystemExit("No source URLs to scrape; pass --source-url and/or --discover-category-hub")
+    return category_stats
 
-    print()
-    print(f"Categories/sources to scrape: {len(seed_urls)}")
-    print()
 
-    items = {} if items is None else items
-    category_stats = []
-    for index, source_url in enumerate(seed_urls, 1):
-        print(f"[{index}/{len(seed_urls)}] Category: {source_url}")
-        stat = scrape_category(session, source_url, pages, delay, items, on_saved=on_products_saved)
-        category_stats.append(stat)
-        if on_categories_saved:
-            on_categories_saved(category_stats)
-        print(
-            f"  done: {stat.scraped_count} products scraped"
-            + (f" (site reports {stat.reported_count} total)" if stat.reported_count is not None else "")
+def merge_products(items, products):
+    for product in products:
+        existing = items.get(
+            product.source_url
         )
-        print()
-        if index < len(seed_urls) and delay:
+
+        if existing is None:
+            items[product.source_url] = product
+            continue
+
+        if not existing.name and product.name:
+            existing.name = product.name
+
+        if existing.price is None and product.price is not None:
+            existing.price = product.price
+
+        if not existing.image_url and product.image_url:
+            existing.image_url = product.image_url
+
+        if not existing.short_description and product.short_description:
+            existing.short_description = product.short_description
+
+        if not existing.strength and product.strength:
+            existing.strength = product.strength
+
+        for category in product.categories:
+            if (
+                category
+                and category not in existing.categories
+            ):
+                existing.categories.append(category)
+
+
+def fetch_product_details(
+    session,
+    items,
+    delay,
+    on_saved=None,
+):
+    products = list(items.values())
+
+    print()
+    print(
+        f"Fetching product details for {len(products)} products"
+    )
+    print()
+
+    for index, product in enumerate(
+        products,
+        1,
+    ):
+        try:
+            print(
+                f"  [{index}/{len(products)}] "
+                f"{product.name}"
+            )
+
+            response = get(
+                session,
+                product.source_url,
+            )
+
+            parse_product_detail(
+                response.text,
+                product,
+            )
+
+            print(
+                f"      price: "
+                f"{product.price if product.price is not None else 'not found'}"
+            )
+
+            print(
+                f"      category: "
+                f"{', '.join(product.categories) or 'none'}"
+            )
+
+            if product.cas_number:
+                print(
+                    f"      CAS: {product.cas_number}"
+                )
+
+            if product.purity:
+                print(
+                    f"      purity: {product.purity}"
+                )
+
+        except (
+            requests.RequestException,
+            RuntimeError,
+        ) as exc:
+            print(
+                f"      FAILED: {exc}"
+            )
+
+        if on_saved:
+            on_saved()
+
+        if (
+            delay
+            and index < len(products)
+        ):
             time.sleep(delay)
 
-    if not items:
-        raise SystemExit("No product cards were found; the source layout may have changed.")
 
-    products = list(items.values())
-    needs_categories = [item for item in products if not item.categories]
-    if needs_categories:
-        print(f"Fetching categories from {len(needs_categories)} product pages (WooCommerce-style lookup)")
-        print()
-        fetch_categories(session, needs_categories, delay, on_saved=on_products_saved)
-        print()
-    return products, category_stats
-
+# ---------------------------------------------------------------------------
+# CSV
+# ---------------------------------------------------------------------------
 
 def write_csv(items, output):
-    output.parent.mkdir(parents=True, exist_ok=True)
+    output.parent.mkdir(
+        parents=True,
+        exist_ok=True,
+    )
+
     fieldnames = [
-        "source_id", "source_url", "name", "price", "compare_at_price", "categories",
-        "image_url", "concentration", "form", "storage_requirements",
+        "source_id",
+        "source_url",
+        "name",
+        "price",
+        "compare_at_price",
+        "categories",
+        "image_url",
+        "meta_title",
+        "meta_description",
+        "short_description",
+        "sku",
+        "cas_number",
+        "molecular_weight",
+        "purity",
+        "strength",
+        "concentration",
+        "form",
+        "storage_requirements",
     ]
-    temporary = output.with_suffix(output.suffix + ".tmp")
-    with temporary.open("w", encoding="utf-8", newline="") as file:
-        writer = csv.DictWriter(file, fieldnames=fieldnames)
+
+    temporary = output.with_suffix(
+        output.suffix + ".tmp"
+    )
+
+    with temporary.open(
+        "w",
+        encoding="utf-8",
+        newline="",
+    ) as file:
+        writer = csv.DictWriter(
+            file,
+            fieldnames=fieldnames,
+            extrasaction="ignore",
+        )
+
         writer.writeheader()
-        writer.writerows(item.to_row() for item in items)
+
+        writer.writerows(
+            item.to_row()
+            for item in items
+        )
+
     temporary.replace(output)
 
 
-def read_products_csv(path):
-    """Load a previously written products.csv back into ScrapedProduct
-    objects, keyed by source_url, so a run can resume/merge instead of
-    starting from a blank slate."""
-    if not path.exists():
-        return {}
-    items = {}
-    with path.open(encoding="utf-8", newline="") as file:
-        for row in csv.DictReader(file):
-            source_url = row.get("source_url")
-            if not source_url:
-                continue
-            price = as_decimal(row.get("price"))
-            compare_at_price = as_decimal(row.get("compare_at_price"))
-            categories = [c for c in (row.get("categories") or "").split("|") if c]
-            items[source_url] = ScrapedProduct(
-                source_url=source_url,
-                name=row.get("name", ""),
-                price=price,
-                compare_at_price=compare_at_price,
-                categories=categories,
-                image_url=row.get("image_url", ""),
-            )
-    return items
+def write_categories_csv(
+    category_stats,
+    output,
+):
+    output.parent.mkdir(
+        parents=True,
+        exist_ok=True,
+    )
+
+    fieldnames = [
+        "name",
+        "url",
+        "scraped_count",
+        "reported_count",
+    ]
+
+    temporary = output.with_suffix(
+        output.suffix + ".tmp"
+    )
+
+    with temporary.open(
+        "w",
+        encoding="utf-8",
+        newline="",
+    ) as file:
+        writer = csv.DictWriter(
+            file,
+            fieldnames=fieldnames,
+        )
+
+        writer.writeheader()
+
+        writer.writerows(
+            stat.to_row()
+            for stat in category_stats
+        )
+
+    temporary.replace(output)
 
 
 def as_decimal(value):
     if value in (None, ""):
         return None
+
     try:
         return Decimal(str(value))
     except InvalidOperation:
         return None
 
 
-def write_categories_csv(category_stats, output):
-    output.parent.mkdir(parents=True, exist_ok=True)
-    fieldnames = ["name", "url", "platform", "scraped_count", "reported_count"]
-    temporary = output.with_suffix(output.suffix + ".tmp")
-    with temporary.open("w", encoding="utf-8", newline="") as file:
-        writer = csv.DictWriter(file, fieldnames=fieldnames)
-        writer.writeheader()
-        writer.writerows(stat.to_row() for stat in category_stats)
-    temporary.replace(output)
+def read_products_csv(path):
+    if not path.exists():
+        return {}
 
+    items = {}
+
+    with path.open(
+        encoding="utf-8",
+        newline="",
+    ) as file:
+        for row in csv.DictReader(file):
+            source_url = row.get(
+                "source_url"
+            )
+
+            if not source_url:
+                continue
+
+            categories = [
+                value
+                for value in (
+                    row.get("categories") or ""
+                ).split("|")
+                if value
+            ]
+
+            items[source_url] = ScrapedProduct(
+                source_url=source_url,
+                name=row.get("name", ""),
+                price=as_decimal(
+                    row.get("price")
+                ),
+                compare_at_price=as_decimal(
+                    row.get("compare_at_price")
+                ),
+                categories=categories,
+                image_url=row.get(
+                    "image_url",
+                    "",
+                ),
+                meta_title=row.get(
+                    "meta_title",
+                    "",
+                ),
+                meta_description=row.get(
+                    "meta_description",
+                    "",
+                ),
+                short_description=row.get(
+                    "short_description",
+                    "",
+                ),
+                sku=row.get(
+                    "sku",
+                    "",
+                ),
+                cas_number=row.get(
+                    "cas_number",
+                    "",
+                ),
+                molecular_weight=row.get(
+                    "molecular_weight",
+                    "",
+                ),
+                purity=row.get(
+                    "purity",
+                    "",
+                ),
+                strength=row.get(
+                    "strength",
+                    "",
+                ),
+            )
+
+    return items
+
+
+# ---------------------------------------------------------------------------
+# Main
+# ---------------------------------------------------------------------------
 
 def main():
     parser = argparse.ArgumentParser(
-        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+        description=__doc__
     )
+
     parser.add_argument(
-        "--source-url", dest="source_urls", action="append", default=None,
-        help="Catalog or category URL to scrape. May be passed multiple times.",
-    )
-    parser.add_argument(
-        "--discover-category-hub", default=None,
+        "--source-url",
+        default=SHOP_URL,
         help=(
-            "A category-index/hub page URL; every category link found on it is scraped too. "
-            f"Defaults to {DEFAULT_DISCOVER_HUB!r} when neither --source-url nor this flag is given."
+            "PeptidesDirect shop URL "
+            f"(default: {SHOP_URL})"
         ),
     )
-    parser.add_argument("--pages", type=int, default=1, help="Max pages per category (auto-capped to what exists).")
-    parser.add_argument("--delay", type=float, default=0.5)
-    parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
-    parser.add_argument("--categories-output", type=Path, default=DEFAULT_CATEGORIES_OUTPUT)
+
     parser.add_argument(
-        "--no-resume", action="store_true",
-        help="Ignore any existing products.csv instead of loading it as a starting point.",
+        "--delay",
+        type=float,
+        default=0.5,
     )
+
+    parser.add_argument(
+        "--output",
+        type=Path,
+        default=DEFAULT_OUTPUT,
+    )
+
+    parser.add_argument(
+        "--categories-output",
+        type=Path,
+        default=DEFAULT_CATEGORIES_OUTPUT,
+    )
+
+    parser.add_argument(
+        "--no-resume",
+        action="store_true",
+        help=(
+            "Ignore existing products.csv"
+        ),
+    )
+
     args = parser.parse_args()
 
-    source_urls = args.source_urls
-    discover_category_hub = args.discover_category_hub
-    if source_urls is None and discover_category_hub is None:
-        # Nothing explicit was passed: scrape both default sources.
-        source_urls = [DEFAULT_SOURCE]
-        discover_category_hub = DEFAULT_DISCOVER_HUB
-    elif source_urls is None:
-        source_urls = []
-
     output = args.output.resolve()
-    categories_output = args.categories_output.resolve()
 
-    print("=" * 60)
-    print("Peptide Catalog Scraper")
-    print("=" * 60)
-    print(f"Products output:   {output}")
-    print(f"Categories output: {categories_output}")
-
-    items = {} if args.no_resume else read_products_csv(output)
-    print(f"Existing products loaded from disk: {len(items)}")
-    print()
-
-    def save_products():
-        write_csv(list(items.values()), output)
-
-    def save_categories(category_stats):
-        write_categories_csv(category_stats, categories_output)
-
-    products, category_stats = scrape(
-        source_urls,
-        args.pages,
-        max(0, args.delay),
-        discover_category_hub,
-        items=items,
-        on_products_saved=save_products,
-        on_categories_saved=save_categories,
+    categories_output = (
+        args.categories_output.resolve()
     )
 
-    # Final save, in case nothing triggered a mid-run save (e.g. every page
-    # already matched what's on disk) -- keeps behavior correct either way.
-    save_products()
-    save_categories(category_stats)
+    print("=" * 60)
+    print("PeptidesDirect Catalog Scraper")
+    print("=" * 60)
 
+    print(
+        f"Source:            {args.source_url}"
+    )
+
+    print(
+        f"Products output:   {output}"
+    )
+
+    print(
+        f"Categories output: {categories_output}"
+    )
+
+    if args.no_resume:
+        items = {}
+    else:
+        items = read_products_csv(
+            output
+        )
+
+    print(
+        f"Existing products loaded from disk: "
+        f"{len(items)}"
+    )
+
+    print()
+
+    session = build_session()
+
+    def save_products():
+        write_csv(
+            list(items.values()),
+            output,
+        )
+
+    category_stats = scrape_shop(
+        session=session,
+        shop_url=args.source_url,
+        delay=max(0, args.delay),
+        items=items,
+        on_products_saved=save_products,
+    )
+
+    print()
+
+    if not items:
+        raise SystemExit(
+            "No products found. "
+            "PeptidesDirect may have changed its storefront "
+            "or returned a challenge page."
+        )
+
+    fetch_product_details(
+        session=session,
+        items=items,
+        delay=max(0, args.delay),
+        on_saved=save_products,
+    )
+
+    save_products()
+
+    write_categories_csv(
+        category_stats,
+        categories_output,
+    )
+
+    print()
     print("=" * 60)
     print("SCRAPING COMPLETE")
     print("=" * 60)
-    print(f"Total products saved: {len(products)}")
-    print(f"Total categories saved: {len(category_stats)}")
-    print(f"Products file:   {output}")
-    print(f"Categories file: {categories_output}")
+
+    print(
+        f"Total products saved: "
+        f"{len(items)}"
+    )
+
+    print(
+        f"Total categories saved: "
+        f"{len(category_stats)}"
+    )
+
+    print(
+        f"Products file:   {output}"
+    )
+
+    print(
+        f"Categories file: {categories_output}"
+    )
 
 
 if __name__ == "__main__":

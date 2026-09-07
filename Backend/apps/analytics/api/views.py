@@ -24,6 +24,7 @@ class EventIngestView(APIView):
     """Receives frontend tracking events. Auth optional — also accepts anonymous."""
 
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    serializer_class = EventIngestSerializer
 
     def post(self, request):
         s = EventIngestSerializer(data=request.data)

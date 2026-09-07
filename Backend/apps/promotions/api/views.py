@@ -4,6 +4,7 @@
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from drf_spectacular.utils import extend_schema
 from apps.promotions.models import Coupon
 from apps.storefronts.querysets import for_request
 from .serializers import CouponSerializer, CouponValidateSerializer
@@ -31,6 +32,7 @@ class CouponDetailView(generics.RetrieveUpdateDestroyAPIView):
 class ValidateCouponView(APIView):
     """Public endpoint — called during checkout to validate a coupon code."""
 
+    @extend_schema(request=CouponValidateSerializer, responses=CouponSerializer)
     def post(self, request):
         s = CouponValidateSerializer(data=request.data, context={"request": request})
         s.is_valid(raise_exception=True)

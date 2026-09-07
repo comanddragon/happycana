@@ -8,6 +8,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.tokens import RefreshToken
+from drf_spectacular.utils import extend_schema
+from drf_spectacular.types import OpenApiTypes
 from apps.users.models import User, Address
 from apps.users.tasks import send_welcome_email
 from .serializers import (
@@ -71,6 +73,7 @@ class GuestSessionView(APIView):
 
     permission_classes = [permissions.AllowAny]
 
+    @extend_schema(request=GuestSessionSerializer, responses=OpenApiTypes.OBJECT)
     def post(self, request):
         already_guest = request.user.is_authenticated and getattr(
             request.user, "is_guest", False
@@ -153,6 +156,7 @@ class GuestSessionView(APIView):
 
 
 class LogoutView(APIView):
+    @extend_schema(request=OpenApiTypes.OBJECT, responses=OpenApiTypes.OBJECT)
     def post(self, request):
         try:
             RefreshToken(request.data["refresh"]).blacklist()

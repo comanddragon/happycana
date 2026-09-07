@@ -4,6 +4,8 @@
 from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from drf_spectacular.utils import extend_schema
+from drf_spectacular.types import OpenApiTypes
 from apps.notifications.models import Notification
 from apps.storefronts.querysets import for_request
 from .serializers import NotificationSerializer, MarkReadSerializer
@@ -32,6 +34,8 @@ class NotificationDetailView(generics.RetrieveDestroyAPIView):
 
 
 class MarkNotificationsReadView(APIView):
+    serializer_class = MarkReadSerializer
+
     def post(self, request):
         s = MarkReadSerializer(data=request.data, context={"request": request})
         s.is_valid(raise_exception=True)
@@ -42,6 +46,7 @@ class MarkNotificationsReadView(APIView):
 
 
 class MarkAllNotificationsReadView(APIView):
+    @extend_schema(request=None, responses=OpenApiTypes.OBJECT)
     def post(self, request):
         for_request(
             Notification.objects.filter(user=request.user, is_read=False), request

@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.db.models import Count, Q, Prefetch
 from django_filters.rest_framework import DjangoFilterBackend
+from drf_spectacular.utils import extend_schema
 from core.permissions import IsAdminOrReadOnly
 from core.cache import cache_category_tree_response, get_cached_category_tree_response
 from apps.catalog.models import (
@@ -299,6 +300,7 @@ class SetPrimaryImageView(APIView):
     """Marks a specific image as primary, demoting all others."""
     permission_classes = [permissions.IsAdminUser]
 
+    @extend_schema(request=None, responses=ProductImageSerializer)
     def post(self, request, product_pk, pk):
         image = ProductImage.objects.get(pk=pk, product_id=product_pk)
         image.is_primary = True
@@ -335,6 +337,7 @@ class SetPrimaryVideoView(APIView):
     """Marks a specific video as primary, demoting all others."""
     permission_classes = [permissions.IsAdminUser]
 
+    @extend_schema(request=None, responses=ProductVideoSerializer)
     def post(self, request, product_pk, pk):
         video = ProductVideo.objects.get(pk=pk, product_id=product_pk)
         video.is_primary = True

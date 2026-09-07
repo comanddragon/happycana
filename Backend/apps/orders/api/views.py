@@ -8,6 +8,7 @@ from rest_framework import generics, permissions, status, filters
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django_filters.rest_framework import DjangoFilterBackend
+from drf_spectacular.utils import extend_schema
 from core.permissions import IsOwnerOrAdmin
 from apps.orders.models import Cart, CartItem, Order, OrderItem
 from apps.orders.state_machine import InvalidTransitionError, OrderStateMachine
@@ -71,12 +72,15 @@ def _order_items_prefetch():
 class CartView(APIView):
     """Always returns or creates the current user's cart."""
 
+    serializer_class = CartSerializer
+
     def get(self, request):
         cart = _get_full_cart(request)
         return Response(CartSerializer(cart).data)
 
 
 class CartItemAddView(APIView):
+    @extend_schema(request=CartItemWriteSerializer, responses=CartSerializer)
     def post(self, request):
         cart, _ = Cart.objects.get_or_create(
             user=request.user, storefront=getattr(request, "storefront", None)
@@ -96,6 +100,7 @@ class CartItemAddView(APIView):
 
 
 class CartItemUpdateView(APIView):
+    @extend_schema(request=CartItemWriteSerializer, responses=CartSerializer)
     def patch(self, request, pk):
         item = for_request(CartItem.objects, request, "cart__storefront").get(
             pk=pk, cart__user=request.user
@@ -108,6 +113,7 @@ class CartItemUpdateView(APIView):
         cart = _get_full_cart(request)
         return Response(CartSerializer(cart).data)
 
+    @extend_schema(request=None, responses=CartSerializer)
     def delete(self, request, pk):
         for_request(CartItem.objects, request, "cart__storefront").filter(
             pk=pk, cart__user=request.user
@@ -149,6 +155,7 @@ class OrderDetailView(generics.RetrieveAPIView):
 class OrderCreateView(APIView):
     """Delegates to CheckoutService — cart → order → stock reservation."""
 
+    @extend_schema(request=OrderCreateSerializer, responses=OrderSerializer)
     def post(self, request):
         s = OrderCreateSerializer(data=request.data, context={"request": request})
         s.is_valid(raise_exception=True)
@@ -169,6 +176,7 @@ class OrderCreateView(APIView):
 class OrderCancelView(APIView):
     permission_classes = [IsOwnerOrAdmin]
 
+    @extend_schema(request=None, responses=OrderSerializer)
     def post(self, request, pk):
         order = for_request(Order.objects, request).get(pk=pk)
         self.check_object_permissions(request, order)
