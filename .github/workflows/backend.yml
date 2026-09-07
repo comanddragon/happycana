@@ -34,6 +34,8 @@ jobs:
       - run: python manage.py makemigrations --check --dry-run
       - run: pytest -q
       - run: python manage.py spectacular --file /tmp/openapi.yml
+      - name: Install production dependencies
+        run: pip install -r requirements/production.txt
       - name: Validate production security settings
         env:
           DJANGO_SETTINGS_MODULE: config.settings.production
