@@ -1,10 +1,9 @@
-from urllib.parse import parse_qsl, urlparse
-
+from .base import *  # noqa
 import sentry_sdk
+from urllib.parse import parse_qsl, urlparse
+from sentry_sdk.integrations.redis import RedisIntegration
 from sentry_sdk.integrations.celery import CeleryIntegration
 from sentry_sdk.integrations.django import DjangoIntegration
-from sentry_sdk.integrations.redis import RedisIntegration
-from .base import *  # noqa
 
 DEBUG = False
 
