@@ -1,6 +1,6 @@
 // app/layout.tsx
 import type { Metadata } from 'next'
-import { Fraunces, Geist, Space_Grotesk, IBM_Plex_Mono } from 'next/font/google'
+import { Cormorant_Garamond, Geist, Space_Grotesk, IBM_Plex_Mono, Six_Caps } from 'next/font/google'
 import './globals.css'
 import { Providers } from '@/components/providers/providers'
 import {AgeGate} from "@/verticals/cannabis/AgeGate";
@@ -17,13 +17,15 @@ import { StorefrontProvider } from '@/storefront/StorefrontProvider'
 // import {FloatingChatButton} from '@/components/chat/FloatingChatButton'
 
 
-const fraunces = Fraunces({
+const editorial = Cormorant_Garamond({
     subsets: ['latin'],
     weight: ['400', '500', '600'],
     style: ['normal', 'italic'],
-    variable: '--font-fraunces',
+    variable: '--font-editorial',
     display: 'swap',
 })
+
+const hashDisplay = Six_Caps({ weight: '400', subsets: ['latin'], variable: '--font-hash-display', display: 'swap' })
 
 const peptideDisplay = Geist({
     subsets: ['latin'],
@@ -46,10 +48,10 @@ const ibmPlexMono = IBM_Plex_Mono({
 })
 
 const DISPLAY_FONT_CLASS: Record<string, string> = {
-    general: fraunces.variable,
-    dispensary: fraunces.variable,
-    hash: fraunces.variable,
-    footwear: fraunces.variable,
+    general: editorial.variable,
+    dispensary: editorial.variable,
+    hash: `${editorial.variable} ${hashDisplay.variable}`,
+    footwear: editorial.variable,
     peptides: peptideDisplay.variable,
 }
 
@@ -135,7 +137,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             suppressHydrationWarning
             data-storefront={storefront.slug}
             data-vertical={storefront.kind}
-            className={`${DISPLAY_FONT_CLASS[storefront.kind] ?? fraunces.variable} ${spaceGrotesk.variable} ${ibmPlexMono.variable}`}
+            className={`${DISPLAY_FONT_CLASS[storefront.kind] ?? editorial.variable} ${spaceGrotesk.variable} ${ibmPlexMono.variable}`}
         >
         <body className="font-hc-body bg-hc-paper">
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(organizationLd) }} />

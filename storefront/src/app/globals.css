@@ -149,7 +149,7 @@
     --color-hc-ink:         #17140f;
     --color-hc-ink-soft:    #4a453c;
 
-    --font-hc-display: var(--font-fraunces), serif;
+    --font-hc-display: var(--font-editorial), serif;
     --font-hc-body:    var(--font-space-grotesk), sans-serif;
     --font-hc-mono:    var(--font-ibm-plex-mono), monospace;
 }
@@ -185,6 +185,18 @@ html[data-vertical="hash"] {
     --color-hc-ink:         #21170d;
     --color-hc-ink-soft:    #655746;
     --radius: 0.5rem;
+    --font-hc-display: var(--font-hash-display), sans-serif;
+}
+
+@keyframes axiom-drift {
+    0%, 100% { transform: translate3d(0, 0, 0) scale(1.02); }
+    50% { transform: translate3d(-1.2%, -0.8%, 0) scale(1.055); }
+}
+
+.axiom-hero-image { animation: axiom-drift 18s ease-in-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+    .axiom-hero-image { animation: none; }
 }
 
 @keyframes hc-pulse {

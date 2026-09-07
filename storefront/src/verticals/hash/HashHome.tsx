@@ -1,84 +1,35 @@
+import Image from 'next/image'
 import Link from 'next/link'
-import { ArrowRight, Layers3, ShieldCheck, Sparkles } from 'lucide-react'
-
+import { ArrowRight } from 'lucide-react'
 import { ProductCard } from '@/components/shop/ProductCard'
 import { getCategories, getProducts } from '@/lib/catalog.server'
 import type { Storefront } from '@/types'
-
-const STANDARDS = [
-    { icon: Layers3, title: 'Method first', copy: 'Browse dry sift, static sift, frozen sift, eggs, and traditional plates by process.' },
-    { icon: ShieldCheck, title: 'Source retained', copy: 'Every catalog record keeps its original producer and source reference.' },
-    { icon: Sparkles, title: 'Drop clarity', copy: 'Weights, availability, and variant pricing are visible before checkout.' },
-]
 
 export async function HashHome({ storefront }: { storefront: Storefront }) {
     const [{ results }, categories] = await Promise.all([
         getProducts({ ordering: '-created_at', page_size: 8 }, { revalidate: false }),
         getCategories(),
     ])
-    const hashCategories = categories.filter(category => category.is_key).slice(0, 6)
-
+    const methods = categories.filter(category => category.is_key).slice(0, 6)
     return (
-        <main className="bg-hc-paper text-hc-ink">
-            <section className="relative isolate overflow-hidden bg-hc-canopy px-6 py-24 text-hc-paper sm:py-32">
-                <div aria-hidden className="absolute inset-0 -z-10 opacity-25 [background-image:radial-gradient(circle_at_20%_20%,var(--color-hc-amber)_0,transparent_32%),radial-gradient(circle_at_80%_70%,var(--color-hc-canopy-3)_0,transparent_38%)]" />
-                <div aria-hidden className="absolute inset-0 -z-10 opacity-[.08] [background-image:repeating-linear-gradient(115deg,transparent_0,transparent_22px,#fff_23px,#fff_24px)]" />
-                <div className="mx-auto max-w-[1180px]">
-                    <p className="font-hc-mono text-xs uppercase tracking-[.22em] text-hc-amber-light">Solventless · sifted · selected</p>
-                    <h1 className="mt-6 max-w-4xl font-hc-display text-5xl leading-[.95] tracking-[-.04em] sm:text-7xl">
-                        Resin craft,<br /><em className="text-hc-amber-light">sorted by method.</em>
-                    </h1>
-                    <p className="mt-7 max-w-xl text-base leading-7 text-hc-sage sm:text-lg">
-                        {storefront.name} is a focused hash catalog built around process, provenance, weight, and current availability.
-                    </p>
-                    <div className="mt-9 flex flex-wrap gap-3">
-                        <Link href="/shop/products" className="inline-flex items-center gap-2 rounded-full bg-hc-amber px-6 py-3.5 text-sm font-semibold text-hc-canopy-2 transition hover:-translate-y-0.5">
-                            Enter the hash room <ArrowRight className="h-4 w-4" />
-                        </Link>
-                        <Link href="/shop" className="rounded-full border border-hc-paper/20 px-6 py-3.5 text-sm font-semibold transition hover:bg-hc-paper/5">Browse methods</Link>
+        <main className="bg-[#100c09] text-[#f5ead5]">
+            <section className="relative -mt-[88px] min-h-[860px] overflow-hidden px-6 pb-16 pt-40">
+                <Image src="/editorial/hash-hero.webp" alt="Macro view of golden solventless hash resin" fill priority sizes="100vw" className="axiom-hero-image object-cover object-[65%_center] opacity-85"/>
+                <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(12,8,5,.98)_0%,rgba(12,8,5,.78)_38%,rgba(12,8,5,.08)_78%),linear-gradient(0deg,#100c09_0%,transparent_45%)]"/>
+                <div className="relative mx-auto flex min-h-[690px] max-w-[1220px] items-center">
+                    <div className="max-w-[650px]">
+                        <div className="mb-8 flex items-center gap-5 font-hc-mono text-[10px] uppercase tracking-[.28em] text-[#d5a34b]"><span className="h-px w-14 bg-current"/> Axiom private archive</div>
+                        <h1 className="font-hc-display text-[7rem] uppercase leading-[.74] tracking-[.015em] sm:text-[10rem] lg:text-[13rem]">Pure<br/><span className="text-[#e0a438]">resin.</span></h1>
+                        <p className="mt-7 max-w-md border-l border-[#d5a34b] pl-5 text-base leading-7 text-[#c9bda8]">{storefront.name} is a collector’s room for solventless craft, indexed by method, maker, texture, and provenance.</p>
+                        <div className="mt-9 flex gap-3"><Link href="/shop/products" className="inline-flex items-center gap-2 bg-[#dfa840] px-6 py-3.5 text-sm font-bold text-[#160e07] transition hover:-translate-y-1">Enter the archive <ArrowRight className="h-4 w-4"/></Link><Link href="/shop" className="border border-white/25 bg-black/20 px-6 py-3.5 text-sm font-semibold backdrop-blur-xl">Browse methods</Link></div>
                     </div>
                 </div>
+                <div className="absolute bottom-7 right-7 hidden border border-white/15 bg-black/30 p-4 font-hc-mono text-[9px] uppercase leading-5 tracking-[.2em] text-white/60 backdrop-blur-xl sm:block">Dry sift / Static / Frozen<br/>Archive release 001</div>
             </section>
 
-            <section className="px-6 py-14">
-                <div className="mx-auto grid max-w-[1180px] gap-px overflow-hidden rounded-2xl border border-hc-ink/10 bg-hc-ink/10 md:grid-cols-3">
-                    {STANDARDS.map(({ icon: Icon, title, copy }) => (
-                        <article key={title} className="bg-white p-8">
-                            <Icon className="h-6 w-6 text-hc-amber-dim" />
-                            <h2 className="mt-5 font-hc-display text-2xl">{title}</h2>
-                            <p className="mt-2 text-sm leading-6 text-hc-ink-soft">{copy}</p>
-                        </article>
-                    ))}
-                </div>
-            </section>
+            {methods.length > 0 && <section className="relative z-10 mx-auto -mt-16 max-w-[1220px] px-6 pb-24"><div className="mb-7 flex items-end justify-between"><div><p className="font-hc-mono text-[10px] uppercase tracking-[.24em] text-[#d5a34b]">Select by process</p><h2 className="mt-2 font-hc-display text-6xl uppercase leading-none">The methods</h2></div><Link href="/shop" className="text-sm text-[#d5a34b]">Full index →</Link></div><div className="grid grid-cols-2 gap-3 md:grid-cols-3">{methods.map((category,index)=><Link key={category.id} href={`/shop/categories/${category.slug}`} className={`group relative overflow-hidden border border-white/10 bg-[#1b130d] ${index===0?'aspect-[1.55] md:col-span-2':'aspect-[1.15]'}`}><Image src={category.image_url} alt="" fill sizes="(max-width:768px) 50vw, 33vw" className="object-cover opacity-70 saturate-[.8] transition duration-700 group-hover:scale-105 group-hover:opacity-90"/><div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/15 to-transparent"/><span className="absolute left-4 top-4 font-hc-mono text-[9px] text-white/55">PLATE 0{index+1}</span><h3 className="absolute bottom-4 left-4 font-hc-display text-4xl uppercase tracking-wide text-[#fff3db]">{category.name}</h3></Link>)}</div></section>}
 
-            {hashCategories.length > 0 && (
-                <section className="px-6 pb-10">
-                    <div className="mx-auto max-w-[1180px]">
-                        <p className="font-hc-mono text-xs uppercase tracking-[.18em] text-hc-amber-dim">Shop the process</p>
-                        <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-3">
-                            {hashCategories.map(category => (
-                                <Link key={category.id} href={`/shop/categories/${category.slug}`} className="group border border-hc-ink/10 bg-hc-paper-2 p-5 transition hover:border-hc-amber">
-                                    <span className="font-hc-display text-xl group-hover:text-hc-amber-dim">{category.name}</span>
-                                    <span className="mt-4 flex items-center gap-1 font-hc-mono text-[10px] uppercase tracking-wider text-hc-ink-soft">View selection <ArrowRight className="h-3 w-3" /></span>
-                                </Link>
-                            ))}
-                        </div>
-                    </div>
-                </section>
-            )}
-
-            <section className="px-6 pb-24 pt-10">
-                <div className="mx-auto max-w-[1180px]">
-                    <div className="mb-9 flex items-end justify-between gap-4">
-                        <div><p className="font-hc-mono text-xs uppercase tracking-[.18em] text-hc-amber-dim">Freshly indexed</p><h2 className="mt-2 font-hc-display text-4xl">Latest hash</h2></div>
-                        <Link href="/shop/products" className="flex items-center gap-2 text-sm font-semibold text-hc-amber-dim">View all <ArrowRight className="h-4 w-4" /></Link>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4 lg:gap-6">
-                        {results.map((product, index) => <ProductCard key={product.id} product={product} priority={index < 4} />)}
-                    </div>
-                </div>
-            </section>
+            <section className="border-t border-white/10 bg-[#17100b] px-6 py-24"><div className="mx-auto max-w-[1220px]"><div className="mb-10 flex items-end justify-between"><div><p className="font-hc-mono text-[10px] uppercase tracking-[.22em] text-[#d5a34b]">Recently catalogued</p><h2 className="mt-2 font-hc-display text-7xl uppercase leading-none">Fresh plates</h2></div><Link href="/shop/products" className="hidden items-center gap-2 text-sm text-[#d5a34b] sm:flex">View the room <ArrowRight className="h-4 w-4"/></Link></div><div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">{results.map((product,index)=><ProductCard key={product.id} product={product} priority={index<4}/>)}</div></div></section>
         </main>
     )
 }

@@ -61,8 +61,8 @@ export function Navbar() {
     }
 
     return (
-        <header className="sticky top-0 z-40 border-b border-hc-paper/[0.08] bg-hc-canopy/[0.92] backdrop-blur-md">
-            <div className="mx-auto max-w-[1180px] px-4 sm:px-6 lg:px-7">
+        <header className="sticky top-0 z-40 px-3 pt-3 sm:px-5">
+            <div className="mx-auto max-w-[1220px] rounded-[1.1rem] border border-white/15 bg-hc-canopy/[0.78] px-4 shadow-[0_12px_40px_rgba(0,0,0,.18)] backdrop-blur-xl transition-all duration-500 sm:px-6 lg:px-7">
                 <div className="flex h-16 items-center justify-between gap-4">
 
                     <NavbarLogo />

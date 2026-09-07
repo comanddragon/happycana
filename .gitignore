@@ -3,7 +3,9 @@ __pycache__/
 .venv/
 .env
 *.sqlite3
-/Backend/staticfiles/
+Backend/static/
+Backend/staticfiles/
+storefront/public
 node_modules/
 .next/
 frontend/.env
@@ -11,4 +13,5 @@ frontend/.env
 .idea/
 .vscode/
 .DS_Store
-
+.impeccable/
+assets/

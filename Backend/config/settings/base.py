@@ -3,6 +3,7 @@ from datetime import timedelta
 from pathlib import Path
 
 from dotenv import load_dotenv
+from django.templatetags.static import static
 from django.urls import reverse_lazy
 from django.utils.translation import gettext_lazy as _
 
@@ -188,6 +189,27 @@ UNFOLD = {
     "SITE_TITLE": _("Axiom Commerce Admin"),
     "SITE_HEADER": _("Axiom Commerce"),
     "SITE_SUBHEADER": _("Store operations"),
+    "SITE_ICON": {
+        "light": lambda request: static("branding/axiom-commerce-mark-light.png"),
+        "dark": lambda request: static("branding/axiom-commerce-mark-dark.png"),
+    },
+    "SITE_FAVICONS": [
+        {
+            "rel": "icon",
+            "sizes": "32x32",
+            "type": "image/png",
+            "href": lambda request: static(
+                "branding/axiom-commerce-favicon-32.png"
+            ),
+        },
+        {
+            "rel": "icon",
+            "type": "image/x-icon",
+            "href": lambda request: static(
+                "branding/axiom-commerce-favicon.ico"
+            ),
+        },
+    ],
     "SIDEBAR": {
         "show_search": True,
         "show_all_applications": False,

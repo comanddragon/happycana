@@ -1,92 +1,43 @@
+import Image from 'next/image'
 import Link from 'next/link'
-import { ArrowRight, Beaker, FileCheck2, Microscope, Snowflake } from 'lucide-react'
+import { ArrowRight, FileCheck2, FlaskConical, ScanLine } from 'lucide-react'
 import { ProductCard } from '@/components/shop/ProductCard'
-import { getProducts } from '@/lib/catalog.server'
+import { getCategories, getProducts } from '@/lib/catalog.server'
 import type { Storefront } from '@/types'
 
-const TRUST = [
-    { icon: FileCheck2, title: 'Source traceability', copy: 'Catalog records keep a direct link to their source documentation.' },
-    { icon: Beaker, title: 'Research format', copy: 'Concentration and material format are visible before you open a listing.' },
-    { icon: Snowflake, title: 'Handling clarity', copy: 'Storage guidance travels with every research compound profile.' },
-]
-
 export async function PeptideHome({ storefront }: { storefront: Storefront }) {
-    const { results } = await getProducts(
-        { ordering: '-created_at', page_size: 8 },
-        { revalidate: false },
-    )
-
+    const [{ results }, categories] = await Promise.all([
+        getProducts({ ordering: '-created_at', page_size: 8 }, { revalidate: false }),
+        getCategories(),
+    ])
+    const featured = categories.filter(category => category.is_key).slice(0, 4)
     return (
-        <main className="bg-hc-paper text-hc-ink">
-            <section className="relative overflow-hidden border-b border-hc-canopy-3/10 bg-hc-canopy px-6 pb-20 pt-20 text-white sm:pb-28 sm:pt-28">
-                <div aria-hidden className="absolute inset-0 opacity-40 [background-image:linear-gradient(rgba(143,211,188,.08)_1px,transparent_1px),linear-gradient(90deg,rgba(143,211,188,.08)_1px,transparent_1px)] [background-size:46px_46px]" />
-                <div aria-hidden className="absolute -right-40 -top-40 h-[620px] w-[620px] rounded-full border border-hc-amber-light/15 shadow-[inset_0_0_100px_rgb(from_var(--color-hc-amber)_r_g_b/0.08)]" />
-                <div className="relative mx-auto grid max-w-[1180px] gap-14 lg:grid-cols-[1.15fr_.85fr] lg:items-center">
-                    <div>
-                        <p className="mb-6 font-hc-mono text-xs uppercase tracking-[.2em] text-hc-amber-light">Research materials · catalog verified</p>
-                        <h1 className="max-w-3xl font-hc-display text-5xl font-medium leading-[.98] tracking-[-.04em] sm:text-7xl">
-                            Precision compounds.<br /><em className="text-hc-amber-light">Clear provenance.</em>
-                        </h1>
-                        <p className="mt-7 max-w-xl text-base leading-7 text-hc-sage sm:text-lg">
-                            {storefront.name} organizes research peptides by format, concentration, and source documentation—without therapeutic claims or guesswork.
-                        </p>
-                        <div className="mt-9 flex flex-wrap gap-3">
-                            <Link href="/shop/products" className="inline-flex items-center gap-2 rounded-full bg-hc-amber-light px-6 py-3.5 text-sm font-semibold text-hc-canopy transition hover:-translate-y-0.5">
-                                Browse compounds <ArrowRight className="h-4 w-4" />
-                            </Link>
-                            <a href="#standards" className="rounded-full border border-white/20 px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-white/5">Our catalog standard</a>
-                        </div>
-                    </div>
-                    <div className="relative mx-auto flex aspect-square w-full max-w-[430px] items-center justify-center">
-                        <div className="absolute inset-[8%] rounded-full border border-hc-amber-light/20" />
-                        <div className="absolute inset-[22%] rounded-full border border-dashed border-hc-amber-light/30" />
-                        <div className="absolute h-[52%] w-[38%] rotate-6 rounded-[36px] border border-white/15 bg-gradient-to-b from-white/15 to-white/[.03] p-5 shadow-2xl backdrop-blur">
-                            <div className="h-3 w-16 rounded-full bg-hc-amber-light/80" />
-                            <Microscope className="mx-auto mt-14 h-20 w-20 text-hc-amber-light" strokeWidth={1} />
-                            <div className="mt-12 border-t border-white/15 pt-3 font-hc-mono text-[10px] uppercase tracking-widest text-hc-sage">Research use only</div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <section id="standards" className="px-6 py-16">
-                <div className="mx-auto grid max-w-[1180px] gap-px overflow-hidden rounded-3xl border border-hc-canopy-3/10 bg-hc-canopy-3/10 md:grid-cols-3">
-                    {TRUST.map(({ icon: Icon, title, copy }) => (
-                        <article key={title} className="bg-white p-7 sm:p-9">
-                            <Icon className="h-6 w-6 text-hc-amber-dim" />
-                            <h2 className="mt-5 font-hc-display text-2xl">{title}</h2>
-                            <p className="mt-2 text-sm leading-6 text-hc-ink-soft">{copy}</p>
-                        </article>
-                    ))}
-                </div>
-            </section>
-
-            <section className="px-6 pb-24 pt-8">
-                <div className="mx-auto max-w-[1180px]">
-                    <div className="mb-10 flex flex-wrap items-end justify-between gap-5">
+        <main className="bg-[#f2f6f4] text-hc-ink">
+            <section className="relative -mt-[88px] min-h-[780px] overflow-hidden border-b border-emerald-950/10 pt-36">
+                <div className="absolute inset-0 opacity-50 [background-image:linear-gradient(rgba(9,45,37,.06)_1px,transparent_1px),linear-gradient(90deg,rgba(9,45,37,.06)_1px,transparent_1px)] [background-size:40px_40px]"/>
+                <div className="relative mx-auto grid min-h-[644px] max-w-[1220px] px-6 lg:grid-cols-[.82fr_1.18fr]">
+                    <div className="flex flex-col justify-between border-x border-emerald-950/10 bg-[#f2f6f4]/85 p-7 backdrop-blur-sm sm:p-12">
+                        <p className="font-hc-mono text-[10px] uppercase tracking-[.25em] text-hc-amber-dim">Axiom / reference series 2026</p>
                         <div>
-                            <p className="font-hc-mono text-xs uppercase tracking-[.18em] text-hc-amber-dim">Fresh to the catalog</p>
-                            <h2 className="mt-2 font-hc-display text-4xl tracking-tight">Research collection</h2>
+                            <p className="mb-5 font-hc-mono text-xs text-hc-amber-dim">CATALOGUE 01—{String(results.length).padStart(2,'0')}</p>
+                            <h1 className="font-hc-display text-5xl font-semibold leading-[.92] tracking-[-.065em] sm:text-7xl">Research,<br/>without the<br/><span className="text-hc-amber-dim">guesswork.</span></h1>
+                            <p className="mt-7 max-w-md text-[15px] leading-7 text-hc-ink-soft">{storefront.name} presents compounds by format, concentration, source, and documentation—designed for fast, exact comparison.</p>
+                            <Link href="/shop/products" className="mt-8 inline-flex items-center gap-3 border-b border-hc-ink pb-1 text-sm font-semibold">Open compound index <ArrowRight className="h-4 w-4"/></Link>
                         </div>
-                        <Link href="/shop/products" className="inline-flex items-center gap-2 text-sm font-semibold text-hc-amber-dim">View all compounds <ArrowRight className="h-4 w-4" /></Link>
+                        <div className="grid grid-cols-3 border-t border-emerald-950/15 pt-5 font-hc-mono text-[9px] uppercase tracking-wider text-hc-ink-soft"><span>Traceable</span><span>Cold-chain</span><span>Research only</span></div>
                     </div>
-                    {results.length ? (
-                        <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4 lg:gap-6">
-                            {results.map((product, index) => <ProductCard key={product.id} product={product} priority={index < 4} />)}
-                        </div>
-                    ) : (
-                        <div className="rounded-3xl border border-dashed border-hc-canopy-3/20 bg-white px-6 py-20 text-center">
-                            <Beaker className="mx-auto h-8 w-8 text-hc-amber-dim" />
-                            <p className="mt-4 font-hc-display text-2xl">Catalog import ready</p>
-                            <p className="mt-2 text-sm text-hc-ink-soft">Run the peptide product scraper and seed script to publish source-traceable products here.</p>
-                        </div>
-                    )}
+                    <div className="relative min-h-[520px] overflow-hidden bg-[#dbeee7]">
+                        <Image src="/editorial/peptide-hero.webp" alt="Research peptide vial in a precision laboratory setting" fill priority sizes="(max-width:1024px) 100vw, 60vw" className="axiom-hero-image object-cover"/>
+                        <div className="absolute inset-0 bg-gradient-to-t from-[#06221b]/70 via-transparent to-transparent"/>
+                        <div className="absolute bottom-7 left-7 right-7 flex justify-between border-t border-white/40 pt-4 font-hc-mono text-[10px] uppercase tracking-[.18em] text-white"><span>Documented material</span><span>Fig. 01</span></div>
+                    </div>
                 </div>
             </section>
 
-            <section className="border-y border-hc-canopy-3/10 bg-hc-paper-2 px-6 py-8 text-center text-sm text-hc-ink-soft">
-                Products are supplied for laboratory research and educational use only. Not for human consumption.
-            </section>
+            {featured.length > 0 && <section className="mx-auto max-w-[1220px] px-6 py-20"><div className="mb-8 flex items-end justify-between"><div><p className="font-hc-mono text-[10px] uppercase tracking-[.22em] text-hc-amber-dim">Compound families</p><h2 className="mt-2 font-hc-display text-4xl font-semibold tracking-[-.045em]">Browse the index</h2></div><Link href="/shop" className="text-sm font-semibold">All families →</Link></div><div className="grid gap-px overflow-hidden border border-emerald-950/10 bg-emerald-950/10 sm:grid-cols-2 lg:grid-cols-4">{featured.map((category,index)=><Link key={category.id} href={`/shop/categories/${category.slug}`} className="group relative aspect-[4/5] overflow-hidden bg-white"><Image src={category.image_url} alt="" fill sizes="(max-width:640px) 100vw, 25vw" className="object-cover transition duration-700 group-hover:scale-105"/><div className="absolute inset-0 bg-gradient-to-t from-[#041d17]/90 via-transparent to-transparent"/><span className="absolute left-5 top-5 font-hc-mono text-[10px] text-white/70">0{index+1}</span><h3 className="absolute bottom-5 left-5 right-5 font-hc-display text-2xl font-semibold text-white">{category.name}</h3></Link>)}</div></section>}
+
+            <section className="bg-[#07231c] px-6 py-20 text-white"><div className="mx-auto max-w-[1220px]"><div className="mb-10 grid gap-6 md:grid-cols-2"><div><p className="font-hc-mono text-[10px] uppercase tracking-[.22em] text-hc-amber-light">New reference entries</p><h2 className="mt-3 font-hc-display text-5xl font-semibold tracking-[-.05em]">The latest compounds.</h2></div><div className="grid grid-cols-3 gap-4 self-end font-hc-mono text-[9px] uppercase tracking-wider text-hc-sage"><span className="flex gap-2"><FileCheck2 className="h-4 w-4"/> Source kept</span><span className="flex gap-2"><FlaskConical className="h-4 w-4"/> Format shown</span><span className="flex gap-2"><ScanLine className="h-4 w-4"/> Exact index</span></div></div><div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">{results.map((product,index)=><ProductCard key={product.id} product={product} priority={index<4}/>)}</div></div></section>
+            <p className="border-t border-emerald-950/10 px-6 py-7 text-center font-hc-mono text-[10px] uppercase tracking-wider text-hc-ink-soft">For laboratory research and educational use only · Not for human consumption</p>
         </main>
     )
 }

@@ -103,7 +103,7 @@ class ProductAdmin(ModelAdmin):
 @admin.register(ProductVariant)
 class ProductVariantAdmin(ModelAdmin):
     inlines       = [LabInline, VariantImageInline, VariantVideoInline, AttributeInline]
-    list_display  = ["sku", "product", "price", "is_active"]
+    list_display  = ["product", "sku", "price", "is_active"]
     list_filter   = ["is_active"]
     search_fields = ["sku", "product__name"]
     raw_id_fields = ["product"]
