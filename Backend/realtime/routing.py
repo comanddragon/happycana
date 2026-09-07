@@ -2,11 +2,12 @@
 # realtime/routing.py
 # =============================================================================
 from django.urls import re_path
+
 from .consumers import (
-    order_status,
+    chat,
     inventory,
     notifications,
-    chat,
+    order_status,
 )
 
 websocket_urlpatterns = [

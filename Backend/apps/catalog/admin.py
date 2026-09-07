@@ -1,7 +1,19 @@
 from django.contrib import admin
 from unfold.admin import ModelAdmin
-from apps.catalog.models import Category, Product, ProductVariant, Attribute, ProductImage, ProductVideo, VariantImage, \
-    VariantVideo, Effect, Brand, Lab
+
+from apps.catalog.models import (
+    Attribute,
+    Brand,
+    Category,
+    Effect,
+    Lab,
+    Product,
+    ProductImage,
+    ProductVariant,
+    ProductVideo,
+    VariantImage,
+    VariantVideo,
+)
 
 
 class AttributeInline(admin.TabularInline):

@@ -1,9 +1,10 @@
 # =============================================================================
 # apps/orders/managers.py
 # =============================================================================
+from datetime import timedelta
+
 from django.db import models as db_models
 from django.utils import timezone
-from datetime import timedelta
 
 
 class CartQuerySet(db_models.QuerySet):
@@ -22,8 +23,7 @@ class CartQuerySet(db_models.QuerySet):
         )
 
     def abandoned(self, minutes=30):
-        """
-        Carts that haven't been touched in `minutes` and belong to a
+        """Carts that haven't been touched in `minutes` and belong to a
         user with a PENDING order — i.e. stale checkout attempts.
         """
         cutoff = timezone.now() - timedelta(minutes=minutes)
@@ -96,16 +96,14 @@ class OrderQuerySet(db_models.QuerySet):
         )
 
     def stale_pending(self, minutes=30):
-        """
-        Pending orders older than `minutes` — used by
+        """Pending orders older than `minutes` — used by
         inventory.tasks.release_expired_reservations.
         """
         cutoff = timezone.now() - timedelta(minutes=minutes)
         return self.filter(status="pending", created_at__lt=cutoff)
 
     def ready_for_auto_complete(self, days=14):
-        """
-        Shipped orders with no manual delivery update after `days` —
+        """Shipped orders with no manual delivery update after `days` —
         used by orders.tasks.auto_complete_delivered_orders.
         """
         cutoff = timezone.now() - timedelta(days=days)

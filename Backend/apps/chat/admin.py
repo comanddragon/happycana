@@ -3,7 +3,8 @@
 # =============================================================================
 from django.contrib import admin
 from unfold.admin import ModelAdmin
-from apps.chat.models import ChatRoom, ChatMessage
+
+from apps.chat.models import ChatMessage, ChatRoom
 
 
 class ChatMessageInline(admin.TabularInline):

@@ -38,7 +38,8 @@ def _fix_lazy_image(match: "re.Match[str]") -> str:
 
 def clean_content_html(html: str) -> str:
     """Strip scripts/links, fix lazy-loaded images, repoint old store links.
-    Idempotent — safe to call on already-cleaned HTML (a no-op scan)."""
+    Idempotent — safe to call on already-cleaned HTML (a no-op scan).
+    """
     if not html:
         return html
     html = _SCRIPT_RE.sub("", html)

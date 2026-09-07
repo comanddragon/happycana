@@ -2,6 +2,7 @@
 # core/utils.py
 # =============================================================================
 import hashlib
+
 from django.utils.text import slugify
 
 

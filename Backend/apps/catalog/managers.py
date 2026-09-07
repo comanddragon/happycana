@@ -20,8 +20,7 @@ class CategoryManager(db_models.Manager):
         return self.get_queryset().active().root()
 
     def attach_full_tree(self, objs, queryset=None):
-        """
-        CategorySerializer.get_children() recurses through the category
+        """CategorySerializer.get_children() recurses through the category
         tree, and `with_children()` only prefetches one level deep — so
         every level below that was issuing one query per node (N+1,
         scaling with tree size, not just depth).
@@ -114,7 +113,8 @@ class ProductVariantQuerySet(db_models.QuerySet):
         """Variants that carry a real, on-file Lab record with a
         certificate of analysis link — i.e. a verifiable lab-testing
         claim, not just a badge graphic. Backs the public Lab Results
-        index page."""
+        index page.
+        """
         return self.filter(product__is_active=True, lab__isnull=False).exclude(lab__coa_url="")
 
 

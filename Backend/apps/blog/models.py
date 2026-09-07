@@ -1,5 +1,7 @@
 import uuid
+
 from django.db import models
+
 from apps.blog.utils import clean_content_html, compute_read_time
 
 

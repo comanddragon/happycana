@@ -17,8 +17,7 @@ def get_serialization_time_ms() -> float:
 
 
 def patch_json_renderer() -> None:
-    """
-    Wraps DRF's JSONRenderer.render (the step that turns response.data into
+    """Wraps DRF's JSONRenderer.render (the step that turns response.data into
     JSON bytes) so its time is tracked as "serialization time" per request.
     Idempotent — safe to call from AppConfig.ready() on every process boot.
     """

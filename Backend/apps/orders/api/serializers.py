@@ -1,13 +1,15 @@
 # =============================================================================
 # apps/orders/api/serializers.py
 # =============================================================================
-from rest_framework import serializers
 from decimal import Decimal
+
 from django.db.models import Q
-from apps.orders.models import Cart, CartItem, Order, OrderItem
+from rest_framework import serializers
+
 from apps.catalog.api.serializers import ProductVariantSerializer
-from apps.users.api.serializers import AddressSerializer
+from apps.orders.models import Cart, CartItem, Order, OrderItem
 from apps.promotions.api.serializers import CouponSerializer
+from apps.users.api.serializers import AddressSerializer
 
 
 class CartItemSerializer(serializers.ModelSerializer):
@@ -130,8 +132,7 @@ class OrderSerializer(serializers.ModelSerializer):
 
 
 class OrderCreateSerializer(serializers.Serializer):
-    """
-    Handed off to services/checkout.py which orchestrates the full
+    """Handed off to services/checkout.py which orchestrates the full
     cart → order → stock reservation → payment flow.
     """
 

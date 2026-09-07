@@ -3,29 +3,30 @@
 # =============================================================================
 from django.db.models import Prefetch
 from django.utils.decorators import method_decorator
+from django_filters.rest_framework import DjangoFilterBackend
 from django_ratelimit.decorators import ratelimit
-from rest_framework import generics, permissions, status, filters
+from drf_spectacular.utils import extend_schema
+from rest_framework import filters, generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from django_filters.rest_framework import DjangoFilterBackend
-from drf_spectacular.utils import extend_schema
-from core.permissions import IsOwnerOrAdmin
+
 from apps.orders.models import Cart, CartItem, Order, OrderItem
 from apps.orders.state_machine import InvalidTransitionError, OrderStateMachine
-from services.checkout import CheckoutService, CheckoutError
 from apps.storefronts.querysets import for_request
+from core.permissions import IsOwnerOrAdmin
+from services.checkout import CheckoutError, CheckoutService
+
 from .serializers import (
-    CartSerializer,
     CartItemWriteSerializer,
-    OrderSerializer,
+    CartSerializer,
     OrderCreateSerializer,
+    OrderSerializer,
     OrderStatusSerializer,
 )
 
 
 def _cart_items_prefetch():
-    """
-    Everything CartItemSerializer.variant (a full ProductVariantSerializer)
+    """Everything CartItemSerializer.variant (a full ProductVariantSerializer)
     touches: attributes/images/videos/stock_levels (prefetch), product/lab
     (select_related). Without this, every field access on a cart item's
     variant is a fresh query per item.

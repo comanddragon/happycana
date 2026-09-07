@@ -3,12 +3,12 @@
 # =============================================================================
 from channels.db import database_sync_to_async
 from django.utils import timezone
+
 from .base import BaseConsumer
 
 
 class ChatConsumer(BaseConsumer):
-    """
-    WebSocket: ws/chat/<room_id>/
+    """WebSocket: ws/chat/<room_id>/
     Full-featured customer-support chat consumer.
 
     Client → server actions
@@ -161,8 +161,9 @@ class ChatConsumer(BaseConsumer):
 
     @database_sync_to_async
     def can_access_room(self, user, room_id):
-        from apps.chat.models import ChatRoom
         from django.contrib.auth.models import AnonymousUser
+
+        from apps.chat.models import ChatRoom
 
         if isinstance(user, AnonymousUser):
             return False
@@ -175,7 +176,7 @@ class ChatConsumer(BaseConsumer):
 
     @database_sync_to_async
     def save_message(self, room_id, user, body, message_type="text"):
-        from apps.chat.models import ChatRoom, ChatMessage
+        from apps.chat.models import ChatMessage, ChatRoom
 
         try:
             room = ChatRoom.objects.get(id=room_id)

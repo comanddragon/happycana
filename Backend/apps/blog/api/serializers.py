@@ -1,4 +1,5 @@
 from rest_framework import serializers
+
 from apps.blog.models import BlogPost
 
 
@@ -19,4 +20,8 @@ class BlogPostDetailSerializer(BlogPostListSerializer):
         # content_html is cleaned once at write time (BlogPost.save()), so
         # it's returned as-is here instead of re-running the regex cleanup
         # pipeline on every detail-page request.
-        fields = BlogPostListSerializer.Meta.fields + ["content_html", "source_url"]
+        fields = [
+            *BlogPostListSerializer.Meta.fields,
+            "content_html",
+            "source_url",
+        ]

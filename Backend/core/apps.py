@@ -56,7 +56,8 @@ class CoreConfig(AppConfig):
     @staticmethod
     def _safe_target():
         """Return the configured Redis LOCATION with any credentials masked,
-        so the connection string is never written to logs in full."""
+        so the connection string is never written to logs in full.
+        """
         from django.conf import settings
 
         location = settings.CACHES.get("default", {}).get("LOCATION", "") or "(not set)"

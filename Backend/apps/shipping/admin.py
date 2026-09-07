@@ -5,7 +5,8 @@
 # =============================================================================
 from django.contrib import admin
 from unfold.admin import ModelAdmin
-from apps.shipping.models import Shipment, TrackingEvent, ShippingMethod
+
+from apps.shipping.models import Shipment, ShippingMethod, TrackingEvent
 
 
 class TrackingEventInline(admin.TabularInline):

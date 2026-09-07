@@ -1,5 +1,5 @@
 import os
-from urllib.parse import urlparse, parse_qsl
+from urllib.parse import parse_qsl, urlparse
 
 import sentry_sdk
 from sentry_sdk.integrations.django import DjangoIntegration

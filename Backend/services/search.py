@@ -5,6 +5,7 @@
 # Swap MeiliSearch for Elasticsearch by only changing this file.
 # =============================================================================
 import logging
+
 from django.conf import settings
 
 logger = logging.getLogger(__name__)
@@ -61,8 +62,7 @@ class SearchService:
 
     @classmethod
     def search_products(cls, query, filters=None, limit=20, offset=0):
-        """
-        Search products and return raw MeiliSearch hits.
+        """Search products and return raw MeiliSearch hits.
         filters example: "category = 'electronics' AND base_price < 500"
         """
         try:

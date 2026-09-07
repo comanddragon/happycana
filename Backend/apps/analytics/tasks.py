@@ -5,17 +5,18 @@ from django.tasks import task
 
 
 @task()
-def aggregate_daily_sales(date_str: str = None):
-    """
-    Computes and stores a DailySalesSnapshot for a given date.
+def aggregate_daily_sales(date_str: str | None = None ):
+    """Computes and stores a DailySalesSnapshot for a given date.
     Defaults to yesterday. Run nightly at midnight via cron.
     """
+    from datetime import date, timedelta
+
+    from django.db.models import Count, Sum
     from django.utils import timezone
-    from datetime import timedelta, date
-    from django.db.models import Sum, Count
+
+    from apps.analytics.models import DailySalesSnapshot
     from apps.orders.models import Order
     from apps.payments.models import Refund
-    from apps.analytics.models import DailySalesSnapshot
     from apps.storefronts.models import Storefront
 
     target_date = (
@@ -64,17 +65,18 @@ def aggregate_daily_sales(date_str: str = None):
 
 
 @task()
-def aggregate_product_performance(date_str: str = None):
-    """
-    Computes per-product stats for a given date from the Event table.
+def aggregate_product_performance(date_str: str | None = None ):
+    """Computes per-product stats for a given date from the Event table.
     Run nightly after aggregate_daily_sales.
     """
-    from django.utils import timezone
-    from datetime import timedelta, date
+    from datetime import date, timedelta
+
     from django.db.models import Sum
+    from django.utils import timezone
+
     from apps.analytics.models import Event, ProductPerformance
-    from apps.orders.models import OrderItem
     from apps.catalog.models import Product
+    from apps.orders.models import OrderItem
     from apps.storefronts.models import Storefront
 
     target_date = (
@@ -125,14 +127,15 @@ def aggregate_product_performance(date_str: str = None):
 
 
 @task()
-def aggregate_conversion_funnel(date_str: str = None):
-    """
-    Computes daily conversion funnel metrics from the Event table.
+def aggregate_conversion_funnel(date_str: str | None = None ):
+    """Computes daily conversion funnel metrics from the Event table.
     Run nightly after aggregate_product_performance.
     """
+    from datetime import date, timedelta
+
     from django.utils import timezone
-    from datetime import timedelta, date
-    from apps.analytics.models import Event, ConversionFunnel
+
+    from apps.analytics.models import ConversionFunnel, Event
     from apps.orders.models import Order
     from apps.storefronts.models import Storefront
 

@@ -1,12 +1,14 @@
 # =============================================================================
 # apps/promotions/api/views.py
 # =============================================================================
+from drf_spectacular.utils import extend_schema
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from drf_spectacular.utils import extend_schema
+
 from apps.promotions.models import Coupon
 from apps.storefronts.querysets import for_request
+
 from .serializers import CouponSerializer, CouponValidateSerializer
 
 

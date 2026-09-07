@@ -3,7 +3,8 @@
 # =============================================================================
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-from apps.users.models import User, Address
+
+from apps.users.models import Address, User
 
 
 class AddressSerializer(serializers.ModelSerializer):
@@ -40,8 +41,7 @@ class RegisterSerializer(serializers.ModelSerializer):
 
 
 class GuestSessionSerializer(serializers.Serializer):
-    """
-    Optional email — chat can open a guest session with no email yet;
+    """Optional email — chat can open a guest session with no email yet;
     checkout supplies one so the admin notification has somewhere to reply.
     """
     email = serializers.EmailField(required=False, allow_blank=True)

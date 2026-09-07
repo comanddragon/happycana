@@ -3,8 +3,9 @@
 # apps/inventory/api/serializers.py
 # =============================================================================
 from rest_framework import serializers
-from apps.inventory.models import Warehouse, Stock, StockMovement
+
 from apps.catalog.api.serializers import ProductVariantSerializer
+from apps.inventory.models import Stock, StockMovement, Warehouse
 
 
 class WarehouseSerializer(serializers.ModelSerializer):

@@ -24,8 +24,8 @@ DATABASES = {
 CORS_ALLOW_ALL_ORIGINS = True
 
 # Django Debug Toolbar (install separately)
-INSTALLED_APPS += ["debug_toolbar"]  # noqa: F405
-MIDDLEWARE.insert(1, "debug_toolbar.middleware.DebugToolbarMiddleware")  # noqa: F405
+INSTALLED_APPS += ["debug_toolbar"]
+MIDDLEWARE.insert(1, "debug_toolbar.middleware.DebugToolbarMiddleware")
 INTERNAL_IPS   = ["127.0.0.1"]
 
 # Logging — print SQL queries to console

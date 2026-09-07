@@ -20,8 +20,9 @@ class NotificationQuerySet(db_models.QuerySet):
         return self.filter(type=notification_type)
 
     def older_than(self, days):
-        from django.utils import timezone
         from datetime import timedelta
+
+        from django.utils import timezone
         cutoff = timezone.now() - timedelta(days=days)
         return self.filter(created_at__lt=cutoff)
 

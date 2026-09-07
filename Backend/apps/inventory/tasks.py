@@ -6,8 +6,7 @@ from django.tasks import task
 
 @task()
 def check_low_stock(stock_id: str, threshold: int = 5):
-    """
-    Re-evaluate a stock record after a movement.
+    """Re-evaluate a stock record after a movement.
     Creates an admin notification if stock falls below threshold.
     """
     from apps.inventory.models import Stock
@@ -37,14 +36,14 @@ def check_low_stock(stock_id: str, threshold: int = 5):
 
 @task()
 def release_expired_reservations():
-    """
-    Periodically release stock reservations for orders stuck in PENDING
+    """Periodically release stock reservations for orders stuck in PENDING
     for more than 30 minutes (e.g. abandoned checkouts).
     Run every 15 minutes via cron.
     """
-    from apps.orders.models import Order
-    from apps.inventory.models import Stock
     from django.db import models as db_models
+
+    from apps.inventory.models import Stock
+    from apps.orders.models import Order
 
     stale_orders = Order.objects.stale_pending(minutes=30).prefetch_related("items__variant")
 

@@ -1,4 +1,5 @@
 import os
+
 import django
 from django.core.asgi import get_asgi_application
 
@@ -7,6 +8,7 @@ django.setup()
 
 from channels.routing import ProtocolTypeRouter, URLRouter  # noqa: E402
 from channels.security.websocket import AllowedHostsOriginValidator  # noqa: E402
+
 from realtime.middleware import JWTAuthMiddleware  # noqa: E402
 from realtime.routing import websocket_urlpatterns  # noqa: E402
 

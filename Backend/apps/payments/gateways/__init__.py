@@ -1,14 +1,13 @@
 # =============================================================================
 # apps/payments/gateways/__init__.py
 # =============================================================================
-from .stripe import StripeGateway
-from .paypal import PayPalGateway
 from .base import BaseGateway
+from .paypal import PayPalGateway
+from .stripe import StripeGateway
 
 
 class GatewayFactory:
-    """
-    Resolves the correct gateway instance by name.
+    """Resolves the correct gateway instance by name.
     Add new gateways here — nothing else needs to change.
 
     Usage:

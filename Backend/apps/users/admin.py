@@ -2,9 +2,10 @@
 # apps/users/admin.py
 # =============================================================================
 from django.contrib import admin
-from unfold.admin import ModelAdmin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
-from apps.users.models import User, Address
+from unfold.admin import ModelAdmin
+
+from apps.users.models import Address, User
 
 
 class AddressInline(admin.TabularInline):

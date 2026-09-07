@@ -4,7 +4,7 @@ import uuid
 
 from django.db import connection
 
-from core.timing import reset_serialization_timer, get_serialization_time_ms
+from core.timing import get_serialization_time_ms, reset_serialization_timer
 
 logger = logging.getLogger("core.timing")
 
@@ -25,8 +25,7 @@ class RequestIDMiddleware:
 
 
 class RequestTimingMiddleware:
-    """
-    Logs a stage-by-stage timing breakdown for every request: inbound
+    """Logs a stage-by-stage timing breakdown for every request: inbound
     network hop from the caller (Next.js), Django processing, DB query
     time/count, and JSON serialization time. force_debug_cursor is set so
     connection.queries is populated even in production (DEBUG=False), where

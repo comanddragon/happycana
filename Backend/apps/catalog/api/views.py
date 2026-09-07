@@ -1,12 +1,11 @@
-from rest_framework import generics, filters, permissions
-from rest_framework.parsers import MultiPartParser, FormParser
-from rest_framework.response import Response
-from rest_framework.views import APIView
-from django.db.models import Count, Q, Prefetch
+from django.db.models import Count, Prefetch, Q
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema
-from core.permissions import IsAdminOrReadOnly
-from core.cache import cache_category_tree_response, get_cached_category_tree_response
+from rest_framework import filters, generics, permissions
+from rest_framework.parsers import FormParser, MultiPartParser
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
 from apps.catalog.models import (
     Brand,
     Category,
@@ -18,14 +17,18 @@ from apps.catalog.models import (
     ProductVariant,
     ProductVideo,
 )
+from core.cache import cache_category_tree_response, get_cached_category_tree_response
+from core.permissions import IsAdminOrReadOnly
+
+from .filters import CategoryFilter, ProductFilter, ProductVariantFilter
 from .serializers import (
     BrandSerializer,
     CategorySerializer,
     CollectionSerializer,
     EffectSerializer,
     LabResultSerializer,
-    ListingSerializer,
     ListingDetailSerializer,
+    ListingSerializer,
     ProductImageSerializer,
     ProductListSerializer,
     ProductSerializer,
@@ -34,7 +37,6 @@ from .serializers import (
     ProductVideoSerializer,
     ProductWriteSerializer,
 )
-from .filters import ProductFilter, ProductVariantFilter, CategoryFilter
 
 
 class EffectListView(generics.ListAPIView):
@@ -419,7 +421,8 @@ class LabResultListView(generics.ListAPIView):
     """Public, read-only list of every variant with a real, on-file
     certificate of analysis — backs the /learn/lab-results index page so
     the site's lab-testing claims are independently checkable rather than
-    just a badge graphic on the homepage."""
+    just a badge graphic on the homepage.
+    """
     serializer_class    = LabResultSerializer
     permission_classes  = [IsAdminOrReadOnly]
     filter_backends     = [filters.OrderingFilter]

@@ -1,14 +1,16 @@
 # =============================================================================
 # apps/notifications/api/views.py
 # =============================================================================
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema
 from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from drf_spectacular.utils import extend_schema
-from drf_spectacular.types import OpenApiTypes
+
 from apps.notifications.models import Notification
 from apps.storefronts.querysets import for_request
-from .serializers import NotificationSerializer, MarkReadSerializer
+
+from .serializers import MarkReadSerializer, NotificationSerializer
 
 
 class NotificationListView(generics.ListAPIView):

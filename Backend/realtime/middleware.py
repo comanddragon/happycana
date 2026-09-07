@@ -3,11 +3,12 @@
 # realtime/middleware.py
 # =============================================================================
 from urllib.parse import parse_qs
+
 from channels.db import database_sync_to_async
 from channels.middleware import BaseMiddleware
 from django.contrib.auth.models import AnonymousUser
-from rest_framework_simplejwt.tokens import AccessToken
 from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
+from rest_framework_simplejwt.tokens import AccessToken
 
 
 @database_sync_to_async
@@ -21,8 +22,7 @@ def get_user_from_token(token_key):
 
 
 class JWTAuthMiddleware(BaseMiddleware):
-    """
-    Authenticates WebSocket connections via a JWT token passed as
+    """Authenticates WebSocket connections via a JWT token passed as
     a query parameter:  ws://host/ws/orders/123/?token=<access_token>
     """
     async def __call__(self, scope, receive, send):

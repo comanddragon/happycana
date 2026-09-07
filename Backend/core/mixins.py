@@ -5,8 +5,7 @@ from django.utils import timezone
 
 
 class SoftDeleteMixin:
-    """
-    Adds soft-delete behaviour to any model.
+    """Adds soft-delete behaviour to any model.
     Call obj.soft_delete() instead of obj.delete().
     Filter active records with Model.objects.filter(deleted_at__isnull=True).
     """

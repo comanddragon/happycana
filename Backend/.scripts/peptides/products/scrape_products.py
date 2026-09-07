@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-PeptidesDirect catalog scraper.
+"""PeptidesDirect catalog scraper.
 Scrapes the public PeptidesDirect catalog without authentication.
 Source:
     https://peptidesdirect.com/shop/
@@ -30,11 +29,13 @@ import time
 from dataclasses import asdict, dataclass, field
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
-from urllib.parse import parse_qsl, urlencode, urljoin, urlparse, urlunsplit
+from urllib.parse import parse_qsl, urljoin, urlparse, urlunsplit
+
 from bs4 import BeautifulSoup
 from playwright.sync_api import Error as PlaywrightError
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 from playwright.sync_api import sync_playwright
+
 SCRIPT_DIR = Path(__file__).resolve().parent
 BACKEND_DIR = SCRIPT_DIR.parents[2]
 DEFAULT_OUTPUT = (
@@ -128,18 +129,16 @@ class CategoryStat:
 # HTTP (headless-browser backed, so client-rendered content is visible)
 # ---------------------------------------------------------------------------
 class RenderedResponse:
-    """
-    Minimal shim so the rest of the script can keep treating a fetch
+    """Minimal shim so the rest of the script can keep treating a fetch
     result like a `requests.Response` (only `.text` is actually used).
     """
-    __slots__ = ("text", "url", "status_code")
+    __slots__ = ("status_code", "text", "url")
     def __init__(self, text, url, status_code=200):
         self.text = text
         self.url = url
         self.status_code = status_code
 class BrowserSession:
-    """
-    A persistent headless-Chromium session (via Playwright) used in place
+    """A persistent headless-Chromium session (via Playwright) used in place
     of a `requests.Session`. Reused across every page fetch in a run so we
     only pay the browser-launch cost once.
     """
@@ -320,8 +319,7 @@ def infer_profile(name, strength=""):
 # Category discovery
 # ---------------------------------------------------------------------------
 def discover_categories(html, base_url):
-    """
-    Discover categories from links such as:
+    """Discover categories from links such as:
         /shop?cat=GLP-1+%26+Metabolic
     Also accepts normal /shop?cat=... links whose display text is the
     category name.
@@ -395,8 +393,7 @@ def discover_product_urls(html, base_url):
 # Product card parsing
 # ---------------------------------------------------------------------------
 def find_product_card(anchor):
-    """
-    Walk upward looking for a useful product-card container.
+    """Walk upward looking for a useful product-card container.
     PeptidesDirect isn't WooCommerce, so don't depend on a specific CSS class.
     """
     current = anchor

@@ -3,18 +3,18 @@
 # Centralises payment confirmation and refund orchestration.
 # =============================================================================
 from django.db import transaction
-from apps.payments.models import Payment, Refund
-from apps.orders.state_machine import OrderStateMachine
-from services.order_fulfillment import FulfillmentService
+
 from apps.notifications.models import Notification
+from apps.orders.state_machine import OrderStateMachine
+from apps.payments.models import Payment, Refund
+from services.order_fulfillment import FulfillmentService
 
 
 class PaymentService:
     @classmethod
     @transaction.atomic
     def confirm_payment(cls, order, gateway, gateway_ref, amount, currency="USD"):
-        """
-        Records a successful payment and triggers order confirmation.
+        """Records a successful payment and triggers order confirmation.
         Called by the Stripe/PayPal webhook handler.
         """
         payment = Payment.objects.create(
@@ -44,8 +44,7 @@ class PaymentService:
     @classmethod
     @transaction.atomic
     def process_refund(cls, refund):
-        """
-        Calls the gateway to process the refund, then marks it approved/rejected.
+        """Calls the gateway to process the refund, then marks it approved/rejected.
         """
         from apps.payments.gateways.stripe import StripeGateway
 

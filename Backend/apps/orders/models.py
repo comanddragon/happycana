@@ -1,8 +1,11 @@
 import uuid
+
 from django.db import models
-from apps.users.models import User, Address
+
 from apps.catalog.models import ProductVariant
 from apps.promotions.models import Coupon
+from apps.users.models import Address, User
+
 from .managers import CartManager, OrderManager
 
 

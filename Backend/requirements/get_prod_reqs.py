@@ -2,9 +2,10 @@ import os
 import re
 import subprocess
 
+
 def get_pkgs(filepath):
     try:
-        with open(filepath, 'r') as file:
+        with open(filepath) as file:
             lines = file.read().splitlines()
         return [
             re.split(r'==|>|<|\[', l.strip())[0].lower().replace('-', '_')

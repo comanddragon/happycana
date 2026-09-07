@@ -1,22 +1,23 @@
 # =============================================================================
 # apps/analytics/api/views.py
 # =============================================================================
-from rest_framework import generics, permissions, status
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import filters, generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import filters
+
 from apps.analytics.models import (
+    ConversionFunnel,
     DailySalesSnapshot,
     ProductPerformance,
-    ConversionFunnel,
 )
 from apps.storefronts.querysets import for_request
+
 from .serializers import (
-    EventIngestSerializer,
-    DailySalesSnapshotSerializer,
-    ProductPerformanceSerializer,
     ConversionFunnelSerializer,
+    DailySalesSnapshotSerializer,
+    EventIngestSerializer,
+    ProductPerformanceSerializer,
 )
 
 

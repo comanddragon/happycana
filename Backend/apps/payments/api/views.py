@@ -3,14 +3,16 @@
 # =============================================================================
 from django.utils.decorators import method_decorator
 from django_ratelimit.decorators import ratelimit
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from drf_spectacular.utils import extend_schema
-from drf_spectacular.types import OpenApiTypes
-from apps.payments.models import Payment, PaymentMethod
+
 from apps.payments.gateways import GatewayFactory
+from apps.payments.models import Payment, PaymentMethod
 from apps.storefronts.querysets import for_request, options_for_request
+
 from .serializers import PaymentMethodSerializer, PaymentSerializer, RefundSerializer
 
 
@@ -144,8 +146,7 @@ class PayPalWebhookView(APIView):
     ratelimit(key="user_or_ip", rate="20/m", method="POST", block=True), name="dispatch"
 )
 class CapturePayPalPaymentView(APIView):
-    """
-    Called after the user returns from PayPal's approval URL.
+    """Called after the user returns from PayPal's approval URL.
     Captures the payment and confirms the order.
     """
 

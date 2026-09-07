@@ -1,14 +1,15 @@
 import uuid
+
 from django.core.validators import MinValueValidator
-from django.utils import timezone
 from django.db import models
-from apps.orders.models import Order
+from django.utils import timezone
+
 from apps.inventory.models import Warehouse
+from apps.orders.models import Order
 
 
 class ShippingMethod(models.Model):
-    """
-    A reusable shipping option shown to customers at checkout
+    """A reusable shipping option shown to customers at checkout
     (e.g. "DHL Express", "FedEx Ground").
 
     Admins manage these via the API; customers get a read-only list
@@ -42,7 +43,7 @@ class ShippingMethod(models.Model):
         ordering = ["price"]
 
     def __str__(self):
-        return f"{self.name} ({self.estimated_days_min}–{self.estimated_days_max} days, ${self.price})"
+        return f"{self.name} ({self.estimated_days_min}-{self.estimated_days_max} days, ${self.price})"
 
     def clean(self):
         from django.core.exceptions import ValidationError
@@ -97,8 +98,7 @@ class Shipment(models.Model):
         return f"Shipment {self.tracking_number} — {self.status}"
 
     def transition_to(self, new_status: str) -> None:
-        """
-        Moves the shipment to new_status, auto-stamping timestamps,
+        """Moves the shipment to new_status, auto-stamping timestamps,
         and raising ValueError for illegal transitions.
         """
         allowed = self.TRANSITIONS.get(self.status, [])

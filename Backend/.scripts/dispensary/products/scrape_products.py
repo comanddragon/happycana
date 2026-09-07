@@ -8,7 +8,6 @@ from urllib.parse import urljoin, urlparse
 import requests
 from bs4 import BeautifulSoup
 
-
 BASE_URL = "https://9realms.eu"
 HAPPY_BASE_URL = "https://api.dispenseapp.com"
 HAPPY_STOREFRONT = "https://happydaysli.com"

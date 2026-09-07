@@ -1,5 +1,4 @@
-"""
-Seed BlogPost rows into the database from scrape_blogs.py's cleaned CSV.
+"""Seed BlogPost rows into the database from scrape_blogs.py's cleaned CSV.
 
 Usage:
     python Backend/.scripts/blogs/seed_blogs.py [--file PATH] [--dry-run]

@@ -1,4 +1,5 @@
 import uuid
+
 from django.contrib.auth.base_user import BaseUserManager
 
 
@@ -13,8 +14,7 @@ class UserManager(BaseUserManager):
         return user
 
     def create_guest(self, email=None):
-        """
-        Creates a passwordless guest account so unauthenticated visitors can
+        """Creates a passwordless guest account so unauthenticated visitors can
         get a real JWT and use the normal cart/order/chat endpoints unchanged.
         If no email is given yet (e.g. opening chat before checkout), a
         placeholder is used until the guest supplies a real one at checkout.

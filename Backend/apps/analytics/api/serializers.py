@@ -4,7 +4,13 @@
 # apps/analytics/api/serializers.py
 # =============================================================================
 from rest_framework import serializers
-from apps.analytics.models import Event, DailySalesSnapshot, ProductPerformance, ConversionFunnel
+
+from apps.analytics.models import (
+    ConversionFunnel,
+    DailySalesSnapshot,
+    Event,
+    ProductPerformance,
+)
 
 
 class EventSerializer(serializers.ModelSerializer):
@@ -15,8 +21,7 @@ class EventSerializer(serializers.ModelSerializer):
 
 
 class EventIngestSerializer(serializers.ModelSerializer):
-    """
-    Accepts inbound tracking events from the frontend.
+    """Accepts inbound tracking events from the frontend.
     user and ip_address are set automatically in the view.
     """
     class Meta:

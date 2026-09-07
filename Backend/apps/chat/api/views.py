@@ -1,17 +1,19 @@
 # =============================================================================
 # apps/chat/api/views.py
 # =============================================================================
+from django.db.models import Prefetch, Q
 from rest_framework import permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
-from django.db.models import Prefetch, Q
-from apps.chat.models import ChatRoom, ChatMessage
+
+from apps.chat.models import ChatMessage, ChatRoom
 from apps.storefronts.querysets import for_request
+
 from .serializers import (
+    ChatMessageSerializer,
     ChatRoomSerializer,
     CreateChatRoomSerializer,
-    ChatMessageSerializer,
     SendMessageSerializer,
 )
 
@@ -31,8 +33,7 @@ class IsParticipant(permissions.BasePermission):
 
 
 class ChatRoomViewSet(ModelViewSet):
-    """
-    Customers see their own rooms; staff sees all (filterable by status).
+    """Customers see their own rooms; staff sees all (filterable by status).
 
     GET    /api/chat/rooms/           — list rooms
     POST   /api/chat/rooms/           — open a new room

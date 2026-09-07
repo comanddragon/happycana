@@ -18,13 +18,14 @@ def send_order_confirmation_email(order_id: str):
 
 @task()
 def auto_complete_delivered_orders():
-    """
-    Marks orders as DELIVERED if they've been in SHIPPED status
+    """Marks orders as DELIVERED if they've been in SHIPPED status
     for more than 14 days with no manual update.
     Run nightly via cron.
     """
-    from django.utils import timezone
     from datetime import timedelta
+
+    from django.utils import timezone
+
     from apps.orders.models import Order
     from apps.shipping.models import Shipment
 

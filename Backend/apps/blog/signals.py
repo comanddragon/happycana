@@ -1,7 +1,7 @@
 # =============================================================================
 # apps/blog/signals.py — Invalidates the blog response cache on writes
 # =============================================================================
-from django.db.models.signals import post_save, post_delete
+from django.db.models.signals import post_delete, post_save
 from django.dispatch import receiver
 
 from apps.blog.models import BlogPost

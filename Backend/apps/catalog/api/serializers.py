@@ -1,15 +1,26 @@
-from rest_framework import serializers
-from apps.catalog.models import (
-    Category, Product, ProductVariant, Brand, Effect, Lab,
-    Attribute, AttributeType,
-    ProductImage, ProductVideo, VariantImage, VariantVideo,
-    ProductDiscount,
-    Listing,
-)
 from django.utils import timezone
+from rest_framework import serializers
+
+from apps.catalog.models import (
+    Attribute,
+    AttributeType,
+    Brand,
+    Category,
+    Effect,
+    Lab,
+    Listing,
+    Product,
+    ProductDiscount,
+    ProductImage,
+    ProductVariant,
+    ProductVideo,
+    VariantImage,
+    VariantVideo,
+)
 from apps.catalog_cannabis.models import CannabisProfile
-from apps.catalog_peptides.models import PeptideProfile
 from apps.catalog_footwear.models import FootwearProfile
+from apps.catalog_peptides.models import PeptideProfile
+
 
 class CategorySerializer(serializers.ModelSerializer):
     children  = serializers.SerializerMethodField()
@@ -299,7 +310,8 @@ class LabSummarySerializer(serializers.ModelSerializer):
 
 class ProductVariantSummarySerializer(serializers.ModelSerializer):
     """Just what the product grid needs (price, weight, THC, and an id to
-    add to cart) — no attributes/images/videos, unlike ProductVariantSerializer."""
+    add to cart) — no attributes/images/videos, unlike ProductVariantSerializer.
+    """
     lab = LabSummarySerializer(read_only=True)
     in_stock = serializers.SerializerMethodField()
 
@@ -337,7 +349,8 @@ def current_discount(product):
 
 class ProductListSerializer(serializers.ModelSerializer):
     """Lean serializer for the product grid: no nested images/videos on
-    variants, since the grid only renders name/price/primary image/brand/category/THC."""
+    variants, since the grid only renders name/price/primary image/brand/category/THC.
+    """
     category      = CategoryMinimalSerializer(many=True, read_only=True, source="categories")
     brand         = BrandMinimalSerializer(read_only=True)
     primary_image = ProductImageSerializer(read_only=True)
@@ -502,7 +515,8 @@ class ListingDetailSerializer(ListingSerializer):
 
 class LabResultProductSerializer(serializers.ModelSerializer):
     """Just what the public Lab Results index needs to display and link
-    back to the product — leaner than ProductSerializer/ProductListSerializer."""
+    back to the product — leaner than ProductSerializer/ProductListSerializer.
+    """
     brand         = BrandMinimalSerializer(read_only=True)
     primary_image = ProductImageSerializer(read_only=True)
     cannabis_type = serializers.CharField(source="cannabis_profile.cannabis_type", read_only=True, default="")
@@ -516,7 +530,8 @@ class LabResultProductSerializer(serializers.ModelSerializer):
 class LabResultSerializer(serializers.ModelSerializer):
     """One row per variant that carries a real, on-file Lab record with a
     certificate of analysis — powers the public /catalog/labs/ endpoint
-    (a verifiable-trust page: every row here links to an actual COA)."""
+    (a verifiable-trust page: every row here links to an actual COA).
+    """
     product = LabResultProductSerializer(read_only=True)
     lab     = LabSerializer(read_only=True)
 

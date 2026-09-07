@@ -7,8 +7,7 @@ from django.tasks import task
 
 @task()
 def send_push_notification(user_id: str, title: str, body: str):
-    """
-    Sends a push notification via FCM (Firebase Cloud Messaging).
+    """Sends a push notification via FCM (Firebase Cloud Messaging).
     Extend with your FCM credentials and device token model.
     """
     import logging
@@ -25,8 +24,7 @@ def send_push_notification(user_id: str, title: str, body: str):
 
 @task()
 def cleanup_old_notifications():
-    """
-    Deletes read notifications older than 30 days.
+    """Deletes read notifications older than 30 days.
     Run nightly via cron to keep the notifications table lean.
     """
     from apps.notifications.models import Notification

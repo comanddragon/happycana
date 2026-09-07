@@ -4,7 +4,8 @@
 # =============================================================================
 from django.contrib import admin
 from unfold.admin import ModelAdmin
-from apps.inventory.models import Warehouse, Stock, StockMovement
+
+from apps.inventory.models import Stock, StockMovement, Warehouse
 
 
 class StockMovementInline(admin.TabularInline):

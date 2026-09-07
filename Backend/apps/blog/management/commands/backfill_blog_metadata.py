@@ -10,6 +10,7 @@
 # blog-performance notes, this table may currently be large enough that a
 # naive full-table pass is itself slow.
 from django.core.management.base import BaseCommand
+
 from apps.blog.models import BlogPost
 
 

@@ -2,13 +2,14 @@
 # apps/chat/models.py
 # =============================================================================
 import uuid
+
 from django.db import models
+
 from apps.users.models import User
 
 
 class ChatRoom(models.Model):
-    """
-    A chat room between a customer and support agent.
+    """A chat room between a customer and support agent.
     Can be tied to an order (for order-related support) or standalone.
     """
 

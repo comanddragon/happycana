@@ -135,7 +135,8 @@ class EmailService:
     def send_order_placed(cls, order):
         """Sent immediately at checkout — a receipt of what was ordered.
         Distinct from send_order_confirmation, which fires once payment is
-        actually confirmed."""
+        actually confirmed.
+        """
         cls.send_template(
             subject       = f"We've received your order #{order.short_id}",
             template_name = "emails/order_placed.html",

@@ -2,14 +2,14 @@
 # =============================================================================
 # realtime/consumers/base.py
 # =============================================================================
+import logging
+
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
 from django.contrib.auth.models import AnonymousUser
-import logging
 
 
 class BaseConsumer(AsyncJsonWebsocketConsumer):
-    """
-    Shared base for all consumers.
+    """Shared base for all consumers.
     - Rejects unauthenticated connections unless allow_anonymous = True
     - Provides helpers: push(), join_group(), leave_group()
     """

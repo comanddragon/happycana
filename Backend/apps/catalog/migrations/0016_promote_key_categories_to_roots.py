@@ -1,6 +1,5 @@
 from django.db import migrations
 
-
 KEY_SLUGS = (
     "flower",
     "edibles",

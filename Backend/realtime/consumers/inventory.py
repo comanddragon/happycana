@@ -6,8 +6,7 @@ from .base import BaseConsumer
 
 
 class InventoryConsumer(BaseConsumer):
-    """
-    WebSocket: ws/inventory/
+    """WebSocket: ws/inventory/
     - Admin-only feed of live stock level changes.
     - Broadcasts whenever a StockMovement is saved (via signal).
 

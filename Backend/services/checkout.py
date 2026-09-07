@@ -2,15 +2,17 @@
 # services/checkout.py
 # Orchestrates the full cart → order → stock reservation → payment flow.
 # =============================================================================
-from decimal import Decimal
 import logging
+from decimal import Decimal
+
 from django.db import transaction
 from django.db.models import F, Q
+
+from apps.notifications.models import Notification
 from apps.orders.models import Cart, Order, OrderItem
-from apps.shipping.models import ShippingMethod
 from apps.payments.models import PaymentMethod
 from apps.promotions.models import Coupon
-from apps.notifications.models import Notification
+from apps.shipping.models import ShippingMethod
 from services.email import EmailService
 
 logger = logging.getLogger(__name__)
@@ -32,8 +34,7 @@ class CheckoutService:
         coupon_code=None,
         storefront=None,
     ):
-        """
-        Full checkout pipeline:
+        """Full checkout pipeline:
           1. Validate cart is not empty
           2. Validate & reserve stock for every item
           3. Apply coupon if provided
@@ -79,7 +80,7 @@ class CheckoutService:
         stock_reservations = cls._reserve_stock(items, storefront)
 
         # 2. Resolve coupon & calculate totals via PromotionEngine
-        from apps.promotions.engine import PromotionEngine, CartContext
+        from apps.promotions.engine import CartContext, PromotionEngine
 
         unit_prices = {
             item.id: (
@@ -209,8 +210,7 @@ class CheckoutService:
 
     @staticmethod
     def _reserve_stock(items, storefront=None):
-        """
-        Checks availability and increments the reserved counter for every
+        """Checks availability and increments the reserved counter for every
         item. Done inside the atomic transaction so concurrent checkouts
         can't oversell. Returns a list of (stock, qty) tuples to commit.
         """

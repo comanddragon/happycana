@@ -3,22 +3,24 @@
 # =============================================================================
 from django.utils.decorators import method_decorator
 from django_ratelimit.decorators import ratelimit
-from rest_framework import generics, status, permissions
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema
+from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.tokens import RefreshToken
-from drf_spectacular.utils import extend_schema
-from drf_spectacular.types import OpenApiTypes
-from apps.users.models import User, Address
+from rest_framework_simplejwt.views import TokenObtainPairView
+
+from apps.users.models import Address, User
 from apps.users.tasks import send_welcome_email
+
 from .serializers import (
-    UserSerializer,
-    RegisterSerializer,
-    ChangePasswordSerializer,
     AddressSerializer,
+    ChangePasswordSerializer,
     CustomTokenObtainPairSerializer,
     GuestSessionSerializer,
+    RegisterSerializer,
+    UserSerializer,
 )
 
 
@@ -59,8 +61,7 @@ class RegisterView(generics.CreateAPIView):
     ratelimit(key="ip", rate="30/m", method="POST", block=True), name="dispatch"
 )
 class GuestSessionView(APIView):
-    """
-    Issues a passwordless guest identity so unauthenticated visitors can hit
+    """Issues a passwordless guest identity so unauthenticated visitors can hit
     the exact same cart/order/chat endpoints as a logged-in user — those all
     key off request.user/JWT and need no special-casing once this exists.
 
@@ -120,8 +121,7 @@ class GuestSessionView(APIView):
 
     @staticmethod
     def _merge_guest_into(target_user, stale_user):
-        """
-        Folds a just-created guest session's data into a returning guest's
+        """Folds a just-created guest session's data into a returning guest's
         account before the stale identity is dropped. Without this, any
         address or cart items built up under `stale_user` this visit become
         orphaned the moment the session swaps to `target_user` — the address

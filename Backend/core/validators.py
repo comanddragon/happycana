@@ -1,8 +1,9 @@
 # =============================================================================
 # core/validators.py
 # =============================================================================
-from django.core.exceptions import ValidationError
 import re
+
+from django.core.exceptions import ValidationError
 
 
 def validate_phone(value):

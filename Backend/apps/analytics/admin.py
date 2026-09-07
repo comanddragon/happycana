@@ -3,7 +3,13 @@
 # =============================================================================
 from django.contrib import admin
 from unfold.admin import ModelAdmin
-from apps.analytics.models import Event, DailySalesSnapshot, ProductPerformance, ConversionFunnel
+
+from apps.analytics.models import (
+    ConversionFunnel,
+    DailySalesSnapshot,
+    Event,
+    ProductPerformance,
+)
 
 
 @admin.register(Event)

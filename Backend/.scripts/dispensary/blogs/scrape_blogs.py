@@ -7,7 +7,6 @@ from urllib.parse import parse_qsl, urlencode, urljoin, urlsplit, urlunsplit
 import requests
 from bs4 import BeautifulSoup
 
-
 # ============================================================
 # CONFIG
 # ============================================================
@@ -56,8 +55,7 @@ session.headers.update(HEADERS)
 # ============================================================
 
 def fetch_html(url):
-    """
-    Download a page and return its HTML.
+    """Download a page and return its HTML.
     """
     for attempt in range(MAX_RETRIES + 1):
         try:
@@ -90,8 +88,7 @@ def fetch_html(url):
 # ============================================================
 
 def clean_text(element):
-    """
-    Convert an HTML element into clean text.
+    """Convert an HTML element into clean text.
     """
     if not element:
         return ""
@@ -160,13 +157,11 @@ def clean_content_html(html):
 # ============================================================
 
 def get_article_urls(page_url):
-    """
-    Extract article URLs from a Shopify blog listing page.
+    """Extract article URLs from a Shopify blog listing page.
 
     Returns a SET so URLs can easily be compared with
     already-discovered URLs.
     """
-
     html = fetch_html(page_url)
     soup = BeautifulSoup(html, "html.parser")
 
@@ -210,10 +205,8 @@ def get_article_urls(page_url):
 # ============================================================
 
 def extract_article(url):
+    """Extract information from an individual blog article.
     """
-    Extract information from an individual blog article.
-    """
-
     html = fetch_html(url)
     soup = BeautifulSoup(
         html,
@@ -473,12 +466,10 @@ def extract_article(url):
 # ============================================================
 
 def load_existing_articles():
-    """
-    Load blogs.csv if it already exists.
+    """Load blogs.csv if it already exists.
 
     This allows the scraper to resume after interruption.
     """
-
     if not OUTPUT_FILE.exists():
         return []
 
@@ -496,13 +487,11 @@ def load_existing_articles():
 # ============================================================
 
 def save_articles(articles):
-    """
-    Save articles to disk.
+    """Save articles to disk.
 
     This is called after EVERY article so data is not lost
     if the scraper crashes.
     """
-
     OUTPUT_DIR.mkdir(
         parents=True,
         exist_ok=True,
@@ -533,10 +522,8 @@ def save_articles(articles):
 # ============================================================
 
 def discover_all_article_urls():
+    """Crawl Shopify blog pagination and collect article URLs.
     """
-    Crawl Shopify blog pagination and collect article URLs.
-    """
-
     all_urls = set()
 
     page = 1

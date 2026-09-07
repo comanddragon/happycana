@@ -3,15 +3,16 @@
 # =============================================================================
 import logging
 from decimal import Decimal
+
 from django.conf import settings
-from .base import BaseGateway, PaymentIntent, ChargeResult, RefundResult
+
+from .base import BaseGateway, ChargeResult, PaymentIntent, RefundResult
 
 logger = logging.getLogger(__name__)
 
 
 class StripeGateway(BaseGateway):
-    """
-    Stripe integration using stripe-python SDK.
+    """Stripe integration using stripe-python SDK.
     Requires settings:
         STRIPE_SECRET_KEY
         STRIPE_WEBHOOK_SECRET
@@ -27,8 +28,7 @@ class StripeGateway(BaseGateway):
     # ------------------------------------------------------------------
 
     def create_payment_intent(self, order) -> PaymentIntent:
-        """
-        Creates a Stripe PaymentIntent.
+        """Creates a Stripe PaymentIntent.
         The frontend uses the returned client_secret with Stripe.js
         to complete the payment without sensitive data touching your server.
         """
@@ -62,8 +62,7 @@ class StripeGateway(BaseGateway):
             raise
 
     def capture(self, gateway_ref: str) -> ChargeResult:
-        """
-        Capture a PaymentIntent that was created with capture_method="manual".
+        """Capture a PaymentIntent that was created with capture_method="manual".
         For automatic capture this is handled by Stripe itself after confirmation.
         """
         try:
@@ -80,8 +79,7 @@ class StripeGateway(BaseGateway):
             raise
 
     def refund(self, gateway_ref: str, amount: float) -> RefundResult:
-        """
-        Issues a partial or full refund.
+        """Issues a partial or full refund.
         gateway_ref is the PaymentIntent ID — Stripe resolves the charge internally.
         """
         try:
@@ -126,8 +124,7 @@ class StripeGateway(BaseGateway):
     # ------------------------------------------------------------------
 
     def construct_webhook_event(self, payload: bytes, sig_header: str):
-        """
-        Verifies and constructs a Stripe webhook event.
+        """Verifies and constructs a Stripe webhook event.
         Called by StripeWebhookView before enqueueing handle_stripe_event.
         """
         return self._stripe.Webhook.construct_event(
@@ -139,8 +136,7 @@ class StripeGateway(BaseGateway):
         return dict(self._stripe.PaymentMethod.retrieve(payment_method_id))
 
     def create_customer(self, user) -> str:
-        """
-        Creates a Stripe Customer for a user and returns the customer ID.
+        """Creates a Stripe Customer for a user and returns the customer ID.
         Store this on the User model if you want to support saved cards.
         """
         customer = self._stripe.Customer.create(

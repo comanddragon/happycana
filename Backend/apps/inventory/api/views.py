@@ -2,13 +2,15 @@
 # apps/inventory/api/views.py
 # =============================================================================
 from rest_framework import generics, permissions
-from apps.inventory.models import Warehouse, Stock, StockMovement
+
+from apps.inventory.models import Stock, StockMovement, Warehouse
 from apps.storefronts.querysets import for_request
+
 from .serializers import (
-    WarehouseSerializer,
+    StockMovementSerializer,
     StockSerializer,
     StockWriteSerializer,
-    StockMovementSerializer,
+    WarehouseSerializer,
 )
 
 

@@ -3,12 +3,12 @@
 # realtime/consumers/order_status.py
 # =============================================================================
 from channels.db import database_sync_to_async
+
 from .base import BaseConsumer
 
 
 class OrderStatusConsumer(BaseConsumer):
-    """
-    WebSocket: ws/orders/<order_id>/
+    """WebSocket: ws/orders/<order_id>/
     - Authenticated user connects to track their order in real time.
     - Broadcasts status changes pushed by the orders app signal.
 

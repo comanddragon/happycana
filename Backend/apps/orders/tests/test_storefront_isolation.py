@@ -4,8 +4,8 @@ import pytest
 from model_bakery import baker
 from rest_framework.test import APIClient
 
-from apps.orders.models import Cart
 from apps.notifications.models import Notification
+from apps.orders.models import Cart
 from services.checkout import CheckoutService
 
 

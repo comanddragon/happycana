@@ -2,7 +2,8 @@
 # apps/chat/api/serializers.py
 # =============================================================================
 from rest_framework import serializers
-from apps.chat.models import ChatRoom, ChatMessage
+
+from apps.chat.models import ChatMessage, ChatRoom
 from apps.users.models import User
 
 

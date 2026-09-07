@@ -3,17 +3,18 @@
 # apps/payments/gateways/paypal.py
 # =============================================================================
 import logging
-import requests
 from decimal import Decimal
+
+import requests
 from django.conf import settings
-from .base import BaseGateway, PaymentIntent, ChargeResult, RefundResult
+
+from .base import BaseGateway, ChargeResult, PaymentIntent, RefundResult
 
 logger = logging.getLogger(__name__)
 
 
 class PayPalGateway(BaseGateway):
-    """
-    PayPal REST API v2 integration (Orders API).
+    """PayPal REST API v2 integration (Orders API).
     Requires settings:
         PAYPAL_CLIENT_ID
         PAYPAL_CLIENT_SECRET
@@ -32,8 +33,7 @@ class PayPalGateway(BaseGateway):
     # ------------------------------------------------------------------
 
     def create_payment_intent(self, order) -> PaymentIntent:
-        """
-        Creates a PayPal Order and returns the approval URL.
+        """Creates a PayPal Order and returns the approval URL.
         The frontend redirects the user to approval_url to authorise payment.
         After approval PayPal redirects back to your PAYPAL_RETURN_URL.
         """
@@ -80,8 +80,7 @@ class PayPalGateway(BaseGateway):
             raise
 
     def capture(self, gateway_ref: str) -> ChargeResult:
-        """
-        Captures an approved PayPal order.
+        """Captures an approved PayPal order.
         Called after the user returns from the PayPal approval URL.
         """
         try:
@@ -100,8 +99,7 @@ class PayPalGateway(BaseGateway):
             raise
 
     def refund(self, gateway_ref: str, amount: float) -> RefundResult:
-        """
-        Issues a refund against a PayPal capture ID.
+        """Issues a refund against a PayPal capture ID.
         gateway_ref here should be the capture ID, not the order ID.
         """
         try:
@@ -131,8 +129,7 @@ class PayPalGateway(BaseGateway):
             raise
 
     def cancel(self, gateway_ref: str) -> dict:
-        """
-        PayPal orders in CREATED or APPROVED status can simply be abandoned —
+        """PayPal orders in CREATED or APPROVED status can simply be abandoned —
         there is no explicit cancel endpoint for Orders API v2.
         For authorised payments use /v2/payments/authorizations/{id}/void.
         """
@@ -152,8 +149,7 @@ class PayPalGateway(BaseGateway):
     # ------------------------------------------------------------------
 
     def handle_webhook(self, headers: dict, body: dict) -> dict:
-        """
-        Verifies and returns a PayPal webhook event.
+        """Verifies and returns a PayPal webhook event.
         Called by a PayPalWebhookView (add to payments/api/views.py).
         """
         verified = self._post("/v1/notifications/verify-webhook-signature", {

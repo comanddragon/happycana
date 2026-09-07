@@ -3,6 +3,7 @@
 # apps/catalog/tasks.py
 # =============================================================================
 from django.tasks import task
+
 from services.search import SearchService
 
 
@@ -25,8 +26,7 @@ def delete_product_from_index(product_id: str):
 
 @task()
 def reindex_all_products():
-    """
-    Nightly full reindex — run via cron or management command.
+    """Nightly full reindex — run via cron or management command.
     Syncs the entire product catalogue with the search index.
     """
     from apps.catalog.models import Product

@@ -4,21 +4,21 @@
 import django_filters
 from django.db.models import Q
 from django.utils import timezone
-from apps.catalog.models import Product, ProductVariant, Category
+
+from apps.catalog.models import Category, Product, ProductVariant
 
 
 class ProductFilter(django_filters.FilterSet):
-    """
-    Supports the following query params on GET /api/v1/products/:
+    """Supports the following query params on GET /api/v1/products/:
 
-        ?category=<uuid>
-        ?category_slug=shoes
-        ?min_price=10&max_price=250
-        ?in_stock=true
-        ?is_active=true
-        ?search=running+shoes          # name, description, SKU
-        ?has_variant_attribute=Color   # products with a specific attribute name
-        ?ordering=base_price           # base_price | -base_price | created_at | name
+    ?category=<uuid>
+    ?category_slug=shoes
+    ?min_price=10&max_price=250
+    ?in_stock=true
+    ?is_active=true
+    ?search=running+shoes          # name, description, SKU
+    ?has_variant_attribute=Color   # products with a specific attribute name
+    ?ordering=base_price           # base_price | -base_price | created_at | name
     """
 
     # -- Category --
@@ -135,8 +135,7 @@ class ProductFilter(django_filters.FilterSet):
         return queryset
 
     def filter_search(self, queryset, name, value):
-        """
-        ORM fallback search. For production traffic use
+        """ORM fallback search. For production traffic use
         SearchService.search_products() at the view level instead.
         """
         return queryset.filter(
@@ -149,8 +148,7 @@ class ProductFilter(django_filters.FilterSet):
         return queryset.filter(variants__attributes__attribute_type__name__iexact=value).distinct()
 
     def filter_by_attribute_value(self, queryset, name, value):
-        """
-        Pairs with has_variant_attribute.
+        """Pairs with has_variant_attribute.
         ?has_variant_attribute=Color&attribute_value=Red
         returns all products that have a Red Color variant.
         """
@@ -164,13 +162,12 @@ class ProductFilter(django_filters.FilterSet):
 # =============================================================================
 
 class ProductVariantFilter(django_filters.FilterSet):
-    """
-    Supports the following query params on GET /api/v1/products/<id>/variants/:
+    """Supports the following query params on GET /api/v1/products/<id>/variants/:
 
-        ?min_price=10&max_price=100
-        ?is_active=true
-        ?in_stock=true
-        ?attribute_name=Color&attribute_value=Red
+    ?min_price=10&max_price=100
+    ?is_active=true
+    ?in_stock=true
+    ?attribute_name=Color&attribute_value=Red
     """
 
     min_price = django_filters.NumberFilter(field_name="price", lookup_expr="gte")
@@ -208,12 +205,11 @@ class ProductVariantFilter(django_filters.FilterSet):
 
 
 class CategoryFilter(django_filters.FilterSet):
-    """
-    Supports the following query params on GET /api/v1/categories/:
+    """Supports the following query params on GET /api/v1/categories/:
 
-        ?is_active=true
-        ?parent=<uuid>
-        ?root_only=true        # top-level categories only
+    ?is_active=true
+    ?parent=<uuid>
+    ?root_only=true        # top-level categories only
     """
 
     is_active = django_filters.BooleanFilter(field_name="is_active")

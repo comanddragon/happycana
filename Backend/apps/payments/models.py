@@ -1,6 +1,9 @@
 import uuid
+
 from django.db import models
+
 from apps.orders.models import Order
+
 from .managers import PaymentManager, RefundManager
 
 

@@ -2,6 +2,7 @@
 # apps/shipping/api/serializers.py
 # =============================================================================
 from rest_framework import serializers
+
 from apps.shipping.models import Shipment, ShippingMethod, TrackingEvent
 
 
@@ -47,8 +48,7 @@ class ShipmentSerializer(serializers.ModelSerializer):
 
 
 class ShipmentUpdateSerializer(serializers.ModelSerializer):
-    """
-    Used by admins or provider webhooks to update shipment status.
+    """Used by admins or provider webhooks to update shipment status.
 
     - `status`           — validated against allowed transitions; timestamps
                            are stamped automatically via Shipment.transition_to().

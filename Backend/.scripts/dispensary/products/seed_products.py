@@ -20,7 +20,6 @@ from urllib.parse import urlparse
 import django
 from dotenv import load_dotenv
 
-
 SCRIPT_DIR = Path(__file__).resolve().parent
 BACKEND_DIR = SCRIPT_DIR.parent.parent
 DEFAULT_DATA_DIR = BACKEND_DIR / ".output" / "dispensary" / "products"
@@ -31,8 +30,8 @@ sys.path.insert(0, str(BACKEND_DIR))
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings.development")
 django.setup()
 
-from django.db import transaction  # noqa: E402
 from django.conf import settings  # noqa: E402
+from django.db import transaction  # noqa: E402
 from django.utils.text import slugify  # noqa: E402
 
 from apps.catalog.models import (  # noqa: E402
@@ -43,12 +42,11 @@ from apps.catalog.models import (  # noqa: E402
     Effect,
     Lab,
     Product,
-    ProductImage,
     ProductDiscount,
+    ProductImage,
     ProductVariant,
 )
 from apps.inventory.models import Stock, Warehouse  # noqa: E402
-
 
 COMPLIANCE_TYPES = {
     "flower": "flower",

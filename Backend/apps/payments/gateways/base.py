@@ -7,18 +7,16 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from decimal import Decimal
-from typing import Optional
 
 
 @dataclass
 class PaymentIntent:
-    """
-    Returned by create_payment_intent().
+    """Returned by create_payment_intent().
     Contains everything the frontend needs to complete the payment.
     """
     gateway_ref:   str           # e.g. Stripe's pi_xxx or PayPal's order ID
-    client_secret: Optional[str] # Stripe client secret for frontend SDK
-    approval_url:  Optional[str] # PayPal redirect URL
+    client_secret: str | None # Stripe client secret for frontend SDK
+    approval_url:  str | None # PayPal redirect URL
     amount:        Decimal
     currency:      str
     status:        str           # "requires_payment_method" | "created" | etc.
@@ -49,16 +47,14 @@ class BaseGateway(ABC):
 
     @abstractmethod
     def create_payment_intent(self, order) -> PaymentIntent:
-        """
-        Initialise a payment with the gateway and return a PaymentIntent.
+        """Initialise a payment with the gateway and return a PaymentIntent.
         For Stripe this creates a PaymentIntent.
         For PayPal this creates an Order and returns an approval URL.
         """
 
     @abstractmethod
     def capture(self, gateway_ref: str) -> ChargeResult:
-        """
-        Capture a previously authorised payment.
+        """Capture a previously authorised payment.
         Called after the frontend confirms the payment.
         """
 

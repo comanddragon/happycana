@@ -3,10 +3,11 @@
 # Single source of truth for all discount calculation logic.
 # Used by CheckoutService, the coupon validation serializer, and the API.
 # =============================================================================
-from decimal import Decimal, ROUND_HALF_UP
 from dataclasses import dataclass, field
-from typing import Optional
+from decimal import ROUND_HALF_UP, Decimal
+
 from django.utils import timezone
+
 from apps.promotions.models import Coupon
 
 
@@ -16,21 +17,20 @@ class PromotionError(Exception):
 
 @dataclass
 class CartContext:
-    """
-    Snapshot of the cart passed into the engine.
+    """Snapshot of the cart passed into the engine.
     Decoupled from the ORM so the engine is fully unit-testable
     without hitting the database.
     """
 
     subtotal: Decimal
     item_count: int
-    user_id: Optional[str] = None
+    user_id: str | None = None
     item_skus: list = field(default_factory=list)
 
 
 @dataclass
 class DiscountResult:
-    coupon: Optional[Coupon]
+    coupon: Coupon | None
     discount_amount: Decimal
     discount_type: str  # "percentage" | "fixed" | "none"
     applied_value: Decimal  # the raw coupon value before capping
@@ -39,8 +39,7 @@ class DiscountResult:
 
 
 class PromotionEngine:
-    """
-    Evaluates coupons against a CartContext and returns a DiscountResult.
+    """Evaluates coupons against a CartContext and returns a DiscountResult.
 
     Usage:
         context = CartContext(subtotal=Decimal("125.00"), item_count=3)
@@ -60,8 +59,7 @@ class PromotionEngine:
     def preview_coupon(
         cls, code: str, context: CartContext, storefront=None
     ) -> DiscountResult:
-        """
-        Same as apply_coupon but does NOT raise on validation failure —
+        """Same as apply_coupon but does NOT raise on validation failure —
         returns a zero-discount result with an error summary instead.
         Safe to call from the frontend for live coupon previews.
         """

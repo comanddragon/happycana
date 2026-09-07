@@ -3,9 +3,9 @@ import os
 import uuid
 
 import pillow_avif  # noqa: F401  registers AVIF read/write support with Pillow
-from PIL import Image as PILImage
 from django.core.files.base import ContentFile
 from django.db import models
+from PIL import Image as PILImage
 
 from .managers import CategoryManager, ProductManager, ProductVariantManager
 

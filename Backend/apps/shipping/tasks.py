@@ -3,16 +3,16 @@
 # =============================================================================
 # Uses the same Django Tasks backend configured for every other application.
 # =============================================================================
+import logging
+
 from django.tasks import task
 
-import logging
 logger = logging.getLogger(__name__)
 
 
 @task()
 def poll_tracking_updates():
-    """
-    Fetches latest tracking events from shipping providers for all
+    """Fetches latest tracking events from shipping providers for all
     in-transit shipments. Schedule every 2 hours via Celery Beat.
     """
     from apps.shipping.models import Shipment, TrackingEvent

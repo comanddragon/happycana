@@ -4,9 +4,10 @@
 # confirming, fulfilling, and cancelling orders.
 # =============================================================================
 from django.db import transaction
-from apps.orders.models import Order
+
 from apps.inventory.models import Stock, StockMovement
 from apps.notifications.models import Notification
+from apps.orders.models import Order
 from services.email import EmailService
 from services.sms import SMSService
 
@@ -15,8 +16,7 @@ class FulfillmentService:
     @classmethod
     @transaction.atomic
     def confirm_order(cls, order):
-        """
-        Called after a successful payment.
+        """Called after a successful payment.
         Moves order from PENDING → CONFIRMED and notifies the user.
         """
         if order.status != Order.Status.PENDING:
@@ -37,8 +37,7 @@ class FulfillmentService:
     @classmethod
     @transaction.atomic
     def mark_shipped(cls, order, shipment):
-        """
-        Moves order CONFIRMED/PROCESSING → SHIPPED.
+        """Moves order CONFIRMED/PROCESSING → SHIPPED.
         Converts stock reservations into actual deductions.
         """
         if order.status not in (Order.Status.CONFIRMED, Order.Status.PROCESSING):
@@ -97,8 +96,7 @@ class FulfillmentService:
     @classmethod
     @transaction.atomic
     def cancel_order(cls, order):
-        """
-        Cancels an order and releases any stock reservations.
+        """Cancels an order and releases any stock reservations.
         Only allowed before shipment.
         """
         if order.status in (Order.Status.SHIPPED, Order.Status.DELIVERED):

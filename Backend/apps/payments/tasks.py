@@ -17,8 +17,7 @@ def process_refund(refund_id: str):
 
 @task()
 def handle_stripe_event(event_data: dict):
-    """
-    Processes inbound Stripe webhook events asynchronously.
+    """Processes inbound Stripe webhook events asynchronously.
     Dispatches to the relevant handler based on event type.
     """
     from apps.orders.models import Order
@@ -61,8 +60,7 @@ def handle_stripe_event(event_data: dict):
 
 @task()
 def handle_paypal_event(event_data: dict):
-    """
-    Processes inbound PayPal webhook events asynchronously.
+    """Processes inbound PayPal webhook events asynchronously.
     PayPal uses different event type names from Stripe.
     """
     from apps.orders.models import Order

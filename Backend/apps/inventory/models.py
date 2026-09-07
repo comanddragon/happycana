@@ -1,6 +1,9 @@
 import uuid
+
 from django.db import models
+
 from apps.catalog.models import ProductVariant
+
 from .managers import StockManager, StockMovementManager
 
 

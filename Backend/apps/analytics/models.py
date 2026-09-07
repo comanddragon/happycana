@@ -2,10 +2,13 @@
 # apps/analytics/models.py
 # =============================================================================
 import uuid
+
 from django.db import models
-from apps.users.models import User
+
 from apps.catalog.models import Product
-from .managers import EventManager, DailySalesSnapshotManager, ProductPerformanceManager
+from apps.users.models import User
+
+from .managers import DailySalesSnapshotManager, EventManager, ProductPerformanceManager
 
 
 class Event(models.Model):
@@ -54,8 +57,7 @@ class Event(models.Model):
 
 
 class DailySalesSnapshot(models.Model):
-    """
-    Pre-aggregated daily sales figures computed by a nightly task.
+    """Pre-aggregated daily sales figures computed by a nightly task.
     Avoids expensive live aggregations on large orders tables.
     """
 
@@ -98,8 +100,7 @@ class DailySalesSnapshot(models.Model):
 
 
 class ProductPerformance(models.Model):
-    """
-    Per-product daily stats: views, add-to-carts, purchases.
+    """Per-product daily stats: views, add-to-carts, purchases.
     Rolled up nightly so dashboards stay fast.
     """
 
@@ -142,8 +143,7 @@ class ProductPerformance(models.Model):
 
 
 class ConversionFunnel(models.Model):
-    """
-    Tracks how many sessions progress through each checkout stage daily.
+    """Tracks how many sessions progress through each checkout stage daily.
     Used to identify where users drop off.
     """
 

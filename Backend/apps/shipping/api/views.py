@@ -2,10 +2,12 @@
 # apps/shipping/api/views.py
 # =============================================================================
 from rest_framework import generics, permissions
-from rest_framework.exceptions import PermissionDenied, NotFound
-from core.permissions import IsOwnerOrAdmin
+from rest_framework.exceptions import NotFound, PermissionDenied
+
 from apps.shipping.models import Shipment, ShippingMethod, TrackingEvent
 from apps.storefronts.querysets import for_request, options_for_request
+from core.permissions import IsOwnerOrAdmin
+
 from .serializers import (
     ShipmentSerializer,
     ShipmentUpdateSerializer,
@@ -13,13 +15,11 @@ from .serializers import (
     TrackingEventSerializer,
 )
 
-
 # ── Shipping Methods ───────────────────────────────────────────────────────────
 
 
 class ShippingMethodListView(generics.ListCreateAPIView):
-    """
-    GET  — public; returns only active methods (for checkout dropdowns).
+    """GET  — public; returns only active methods (for checkout dropdowns).
     POST — admin only; creates a new shipping method.
     """
 
@@ -42,8 +42,7 @@ class ShippingMethodListView(generics.ListCreateAPIView):
 
 
 class ShippingMethodDetailView(generics.RetrieveUpdateDestroyAPIView):
-    """
-    GET    — public (customers can deep-link to a method).
+    """GET    — public (customers can deep-link to a method).
     PUT / PATCH / DELETE — admin only.
     """
 

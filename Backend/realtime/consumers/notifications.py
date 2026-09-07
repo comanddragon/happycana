@@ -3,12 +3,12 @@
 # realtime/consumers/notifications.py
 # =============================================================================
 from channels.db import database_sync_to_async
+
 from .base import BaseConsumer
 
 
 class NotificationConsumer(BaseConsumer):
-    """
-    WebSocket: ws/notifications/
+    """WebSocket: ws/notifications/
     - Each authenticated user gets their own private group channel.
     - New Notification model instances are pushed here by a signal.
 
