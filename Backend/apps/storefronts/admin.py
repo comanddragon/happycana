@@ -1,5 +1,5 @@
 from django.contrib import admin
-
+from unfold.admin import ModelAdmin
 from .models import Storefront, StorefrontDomain, StorefrontOrigin
 
 
@@ -14,7 +14,7 @@ class StorefrontOriginInline(admin.TabularInline):
 
 
 @admin.register(Storefront)
-class StorefrontAdmin(admin.ModelAdmin):
+class StorefrontAdmin(ModelAdmin):
     list_display = ("name", "slug", "kind", "currency", "from_email", "is_active")
     list_filter = ("kind", "is_active")
     search_fields = ("name", "slug")

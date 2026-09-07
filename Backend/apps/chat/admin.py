@@ -2,6 +2,7 @@
 # apps/chat/admin.py
 # =============================================================================
 from django.contrib import admin
+from unfold.admin import ModelAdmin
 from apps.chat.models import ChatRoom, ChatMessage
 
 
@@ -14,7 +15,7 @@ class ChatMessageInline(admin.TabularInline):
 
 
 @admin.register(ChatRoom)
-class ChatRoomAdmin(admin.ModelAdmin):
+class ChatRoomAdmin(ModelAdmin):
     inlines         = [ChatMessageInline]
     list_display    = ["id", "customer", "agent", "subject", "status", "created_at", "updated_at"]
     list_filter     = ["status", "created_at"]
@@ -33,7 +34,7 @@ class ChatRoomAdmin(admin.ModelAdmin):
 
 
 @admin.register(ChatMessage)
-class ChatMessageAdmin(admin.ModelAdmin):
+class ChatMessageAdmin(ModelAdmin):
     list_display    = ["id", "room", "sender", "message_type", "body_preview", "is_read", "created_at"]
     list_filter     = ["message_type", "is_read", "created_at"]
     search_fields   = ["sender__email", "body"]

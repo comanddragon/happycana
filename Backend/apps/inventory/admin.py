@@ -3,6 +3,7 @@
 # apps/inventory/admin.py
 # =============================================================================
 from django.contrib import admin
+from unfold.admin import ModelAdmin
 from apps.inventory.models import Warehouse, Stock, StockMovement
 
 
@@ -14,14 +15,14 @@ class StockMovementInline(admin.TabularInline):
 
 
 @admin.register(Warehouse)
-class WarehouseAdmin(admin.ModelAdmin):
+class WarehouseAdmin(ModelAdmin):
     list_display  = ["name", "address", "is_active"]
     list_filter   = ["is_active"]
     search_fields = ["name"]
 
 
 @admin.register(Stock)
-class StockAdmin(admin.ModelAdmin):
+class StockAdmin(ModelAdmin):
     inlines        = [StockMovementInline]
     list_display   = ["variant", "warehouse", "quantity", "reserved", "available_display", "updated_at"]
     list_filter    = ["warehouse"]
@@ -35,7 +36,7 @@ class StockAdmin(admin.ModelAdmin):
 
 
 @admin.register(StockMovement)
-class StockMovementAdmin(admin.ModelAdmin):
+class StockMovementAdmin(ModelAdmin):
     list_display   = ["stock", "quantity_delta", "reason", "created_at"]
     list_filter    = ["reason", "created_at"]
     readonly_fields= ["created_at"]

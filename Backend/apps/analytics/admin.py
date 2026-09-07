@@ -2,11 +2,12 @@
 # apps/analytics/admin.py
 # =============================================================================
 from django.contrib import admin
+from unfold.admin import ModelAdmin
 from apps.analytics.models import Event, DailySalesSnapshot, ProductPerformance, ConversionFunnel
 
 
 @admin.register(Event)
-class EventAdmin(admin.ModelAdmin):
+class EventAdmin(ModelAdmin):
     list_display = ["event_type", "user", "session_key", "ip_address", "occurred_at"]
     list_filter = ["event_type", "occurred_at"]
     search_fields = ["user__email", "session_key"]
@@ -15,7 +16,7 @@ class EventAdmin(admin.ModelAdmin):
 
 
 @admin.register(DailySalesSnapshot)
-class DailySalesSnapshotAdmin(admin.ModelAdmin):
+class DailySalesSnapshotAdmin(ModelAdmin):
     list_display = ["date", "total_orders", "total_revenue", "total_refunds", "net_revenue", "new_customers"]
     list_filter = ["date"]
     readonly_fields = [
@@ -32,7 +33,7 @@ class DailySalesSnapshotAdmin(admin.ModelAdmin):
 
 
 @admin.register(ProductPerformance)
-class ProductPerformanceAdmin(admin.ModelAdmin):
+class ProductPerformanceAdmin(ModelAdmin):
     list_display = ["product", "date", "views", "add_to_carts", "purchases", "revenue"]
     list_filter = ["date"]
     search_fields = ["product__name"]
@@ -47,7 +48,7 @@ class ProductPerformanceAdmin(admin.ModelAdmin):
 
 
 @admin.register(ConversionFunnel)
-class ConversionFunnelAdmin(admin.ModelAdmin):
+class ConversionFunnelAdmin(ModelAdmin):
     list_display = ["date", "sessions", "product_views", "cart_adds", "checkout_starts", "purchases"]
     list_filter = ["date"]
     readonly_fields = [

@@ -1,4 +1,5 @@
 from django.contrib import admin
+from unfold.admin import ModelAdmin
 from apps.catalog.models import Category, Product, ProductVariant, Attribute, ProductImage, ProductVideo, VariantImage, \
     VariantVideo, Effect, Brand, Lab
 
@@ -53,7 +54,7 @@ class LabInline(admin.StackedInline):
 
 
 @admin.register(Category)
-class CategoryAdmin(admin.ModelAdmin):
+class CategoryAdmin(ModelAdmin):
     list_display  = ["name", "parent", "is_active"]
     list_filter   = ["is_active"]
     search_fields = ["name", "slug"]
@@ -65,7 +66,7 @@ class CategoryAdmin(admin.ModelAdmin):
 
 
 @admin.register(Brand)
-class BrandAdmin(admin.ModelAdmin):
+class BrandAdmin(ModelAdmin):
     list_display  = ["name", "is_active", "website"]
     list_filter   = ["is_active"]
     search_fields = ["name", "slug"]
@@ -77,7 +78,7 @@ class BrandAdmin(admin.ModelAdmin):
 
 
 @admin.register(Effect)
-class EffectAdmin(admin.ModelAdmin):
+class EffectAdmin(ModelAdmin):
     list_display  = ["name", "slug"]
     list_filter   = ["slug"]
     search_fields = ["name", "slug"]
@@ -85,7 +86,7 @@ class EffectAdmin(admin.ModelAdmin):
 
 
 @admin.register(Product)
-class ProductAdmin(admin.ModelAdmin):
+class ProductAdmin(ModelAdmin):
     inlines         = [ProductImageInline, ProductVideoInline, ProductVariantInline]
     list_display    = ["name", "category_list", "base_price", "is_active", "created_at"]
     list_filter     = ["is_active", "categories", "created_at"]
@@ -100,7 +101,7 @@ class ProductAdmin(admin.ModelAdmin):
 
 
 @admin.register(ProductVariant)
-class ProductVariantAdmin(admin.ModelAdmin):
+class ProductVariantAdmin(ModelAdmin):
     inlines       = [LabInline, VariantImageInline, VariantVideoInline, AttributeInline]
     list_display  = ["sku", "product", "price", "is_active"]
     list_filter   = ["is_active"]
@@ -109,7 +110,7 @@ class ProductVariantAdmin(admin.ModelAdmin):
 
 
 @admin.register(ProductImage)
-class ProductImageAdmin(admin.ModelAdmin):
+class ProductImageAdmin(ModelAdmin):
     list_display   = ["product", "alt_text", "is_primary", "order", "created_at"]
     list_filter    = ["is_primary"]
     search_fields  = ["product__name", "alt_text"]
@@ -118,7 +119,7 @@ class ProductImageAdmin(admin.ModelAdmin):
 
 
 @admin.register(ProductVideo)
-class ProductVideoAdmin(admin.ModelAdmin):
+class ProductVideoAdmin(ModelAdmin):
     list_display   = ["product", "title", "video_type", "is_primary", "order", "created_at"]
     list_filter    = ["video_type", "is_primary"]
     search_fields  = ["product__name", "title"]
@@ -126,7 +127,7 @@ class ProductVideoAdmin(admin.ModelAdmin):
     readonly_fields= ["created_at"]
 
 @admin.register(VariantImage)
-class VariantImageAdmin(admin.ModelAdmin):
+class VariantImageAdmin(ModelAdmin):
     list_display   = ["variant", "alt_text", "is_primary", "order", "created_at"]
     list_filter    = ["is_primary"]
     search_fields = ["variant__attributes__attribute_type__name", "alt_text"]
@@ -135,7 +136,7 @@ class VariantImageAdmin(admin.ModelAdmin):
 
 
 @admin.register(VariantVideo)
-class VariantVideoAdmin(admin.ModelAdmin):
+class VariantVideoAdmin(ModelAdmin):
     list_display   = ["variant", "title", "video_type", "is_primary", "order", "created_at"]
     list_filter    = ["video_type", "is_primary"]
     search_fields = ["variant__attributes__attribute_type__name", "title"]

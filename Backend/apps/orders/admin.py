@@ -3,6 +3,7 @@
 # apps/orders/admin.py
 # =============================================================================
 from django.contrib import admin
+from unfold.admin import ModelAdmin
 from apps.orders.models import Cart, CartItem, Order, OrderItem
 
 
@@ -21,14 +22,14 @@ class OrderItemInline(admin.TabularInline):
 
 
 @admin.register(Cart)
-class CartAdmin(admin.ModelAdmin):
+class CartAdmin(ModelAdmin):
     inlines      = [CartItemInline]
     list_display = ["user", "session_key", "updated_at"]
     raw_id_fields= ["user"]
 
 
 @admin.register(Order)
-class OrderAdmin(admin.ModelAdmin):
+class OrderAdmin(ModelAdmin):
     inlines         = [OrderItemInline]
     list_display    = ["id", "user", "payment_method", "status", "total", "created_at"]
     list_filter     = ["payment_method", "status", "created_at"]

@@ -2,6 +2,7 @@
 # apps/users/admin.py
 # =============================================================================
 from django.contrib import admin
+from unfold.admin import ModelAdmin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from apps.users.models import User, Address
 
@@ -35,7 +36,7 @@ class UserAdmin(BaseUserAdmin):
 
 
 @admin.register(Address)
-class AddressAdmin(admin.ModelAdmin):
+class AddressAdmin(ModelAdmin):
     list_display  = ["user", "line1", "city", "country", "is_default"]
     list_filter   = ["country", "is_default"]
     search_fields = ["user__email", "line1", "city"]

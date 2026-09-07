@@ -3,11 +3,12 @@
 # apps/payments/admin.py
 # =============================================================================
 from django.contrib import admin
+from unfold.admin import ModelAdmin
 from apps.payments.models import Payment, PaymentMethod, Refund
 
 
 @admin.register(PaymentMethod)
-class PaymentMethodAdmin(admin.ModelAdmin):
+class PaymentMethodAdmin(ModelAdmin):
     list_display = ["name", "slug", "is_global", "is_active", "sort_order"]
     list_filter = ["is_global", "storefronts", "is_active"]
     filter_horizontal = ["storefronts"]
@@ -21,7 +22,7 @@ class RefundInline(admin.TabularInline):
 
 
 @admin.register(Payment)
-class PaymentAdmin(admin.ModelAdmin):
+class PaymentAdmin(ModelAdmin):
     inlines         = [RefundInline]
     list_display    = ["id", "order", "gateway", "amount", "currency", "status", "created_at"]
     list_filter     = ["gateway", "status", "created_at"]
@@ -31,7 +32,7 @@ class PaymentAdmin(admin.ModelAdmin):
 
 
 @admin.register(Refund)
-class RefundAdmin(admin.ModelAdmin):
+class RefundAdmin(ModelAdmin):
     list_display  = ["id", "payment", "amount", "status", "created_at"]
     list_filter   = ["status", "created_at"]
     readonly_fields = ["created_at"]
