@@ -4,12 +4,12 @@
 # apps/shipping/admin.py
 # =============================================================================
 from django.contrib import admin
-from unfold.admin import ModelAdmin
+from unfold.admin import ModelAdmin, TabularInline
 
 from apps.shipping.models import Shipment, ShippingMethod, TrackingEvent
 
 
-class TrackingEventInline(admin.TabularInline):
+class TrackingEventInline(TabularInline):
     model           = TrackingEvent
     extra           = 0
     readonly_fields = ["status", "location", "description", "occurred_at"]

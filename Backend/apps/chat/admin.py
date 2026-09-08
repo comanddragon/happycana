@@ -2,12 +2,12 @@
 # apps/chat/admin.py
 # =============================================================================
 from django.contrib import admin
-from unfold.admin import ModelAdmin
+from unfold.admin import ModelAdmin, TabularInline
 
 from apps.chat.models import ChatMessage, ChatRoom
 
 
-class ChatMessageInline(admin.TabularInline):
+class ChatMessageInline(TabularInline):
     model           = ChatMessage
     extra           = 0
     readonly_fields = ["sender", "message_type", "body", "is_read", "created_at"]

@@ -1,15 +1,15 @@
 from django.contrib import admin
-from unfold.admin import ModelAdmin
+from unfold.admin import ModelAdmin, TabularInline
 
 from .models import Storefront, StorefrontDomain, StorefrontOrigin
 
 
-class StorefrontDomainInline(admin.TabularInline):
+class StorefrontDomainInline(TabularInline):
     model = StorefrontDomain
     extra = 0
 
 
-class StorefrontOriginInline(admin.TabularInline):
+class StorefrontOriginInline(TabularInline):
     model = StorefrontOrigin
     extra = 0
 

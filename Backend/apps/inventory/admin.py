@@ -3,12 +3,12 @@
 # apps/inventory/admin.py
 # =============================================================================
 from django.contrib import admin
-from unfold.admin import ModelAdmin
+from unfold.admin import ModelAdmin, TabularInline
 
 from apps.inventory.models import Stock, StockMovement, Warehouse
 
 
-class StockMovementInline(admin.TabularInline):
+class StockMovementInline(TabularInline):
     model          = StockMovement
     extra          = 0
     readonly_fields= ["quantity_delta", "reason", "created_at"]

@@ -188,6 +188,7 @@ UNFOLD = {
     "SITE_SUBHEADER": _("Store operations"),
     "DASHBOARD_CALLBACK": "core.admin_dashboard.dashboard_callback",
     "STYLES": [lambda request: static("admin/dashboard.css")],
+    "SCRIPTS": [lambda request: static("admin/navigation.js")],
     "SITE_ICON": {
         "light": lambda request: static("branding/axiom-commerce-mark-light.png"),
         "dark": lambda request: static("branding/axiom-commerce-mark-dark.png"),
@@ -226,6 +227,7 @@ UNFOLD = {
             },
             {
                 "title": _("Catalog"),
+                "collapsible": True,
                 "separator": True,
                 "items": [
                     {"title": _("Products"), "icon": "inventory_2", "link": reverse_lazy("admin:catalog_product_changelist")},
@@ -241,6 +243,7 @@ UNFOLD = {
             },
             {
                 "title": _("Commerce"),
+                "collapsible": True,
                 "separator": True,
                 "items": [
                     {"title": _("Storefronts"), "icon": "storefront", "link": reverse_lazy("admin:storefronts_storefront_changelist")},
@@ -251,6 +254,7 @@ UNFOLD = {
             },
             {
                 "title": _("Operations"),
+                "collapsible": True,
                 "separator": True,
                 "items": [
                     {"title": _("Stock"), "icon": "inventory", "link": reverse_lazy("admin:inventory_stock_changelist")},
@@ -266,6 +270,7 @@ UNFOLD = {
             },
             {
                 "title": _("Customers"),
+                "collapsible": True,
                 "separator": True,
                 "items": [
                     {"title": _("Users"), "icon": "group", "link": reverse_lazy("admin:users_user_changelist")},
@@ -277,6 +282,7 @@ UNFOLD = {
             },
             {
                 "title": _("Insights & content"),
+                "collapsible": True,
                 "separator": True,
                 "items": [
                     {"title": _("Events"), "icon": "data_object", "link": reverse_lazy("admin:analytics_event_changelist")},

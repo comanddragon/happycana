@@ -1,6 +1,7 @@
-"""Development ``runserver`` command backed by Gunicorn instead of Daphne."""
+"""Development ``runserver`` command for the project's ASGI application."""
 
 import os
+import subprocess
 import sys
 
 from django.conf import settings
@@ -8,7 +9,7 @@ from django.core.management.base import BaseCommand, CommandError
 
 
 class Command(BaseCommand):
-    help = "Run the ASGI application with Gunicorn and a Uvicorn worker."
+    help = "Run the ASGI application with Gunicorn, or Uvicorn on Windows."
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -23,7 +24,7 @@ class Command(BaseCommand):
         )
         parser.add_argument(
             "--noreload", "--no-reload", action="store_false", dest="reload",
-            help="Disable Gunicorn's development file reloader.",
+            help="Disable the development file reloader.",
         )
         parser.set_defaults(reload=True)
 
@@ -36,22 +37,47 @@ class Command(BaseCommand):
         if options["workers"] < 1:
             raise CommandError("--workers must be at least 1.")
 
-        command = [
-            sys.executable,
-            "-m", "gunicorn",
-            "config.asgi:application",
-            "--chdir", str(settings.BASE_DIR),
-            "--worker-class", "uvicorn.workers.UvicornWorker",
-            "--workers", str(options["workers"]),
-            "--bind", addrport,
-        ]
-        if options["reload"]:
-            command.append("--reload")
+        if os.name == "nt":
+            host, port = addrport.rsplit(":", maxsplit=1)
+            command = [
+                sys.executable,
+                "-m", "uvicorn",
+                "config.asgi:application",
+                "--app-dir", str(settings.BASE_DIR),
+                "--host", host,
+                "--port", port,
+            ]
+            if options["reload"]:
+                command.append("--reload")
+                process_description = "with auto-reload"
+            else:
+                command.extend(["--workers", str(options["workers"])])
+                process_description = f"with {options['workers']} workers"
+            server_name = "Uvicorn"
+        else:
+            command = [
+                sys.executable,
+                "-m", "gunicorn",
+                "config.asgi:application",
+                "--chdir", str(settings.BASE_DIR),
+                "--worker-class", "uvicorn.workers.UvicornWorker",
+                "--workers", str(options["workers"]),
+                "--bind", addrport,
+            ]
+            if options["reload"]:
+                command.append("--reload")
+            process_description = f"with {options['workers']} workers"
+            server_name = "Gunicorn"
 
         self.stdout.write(
             self.style.SUCCESS(
-                f"Starting Gunicorn ASGI server at http://{addrport}/ "
-                f"with {options['workers']} workers"
+                f"Starting {server_name} ASGI server at http://{addrport}/ "
+                f"{process_description}"
             )
         )
+        if os.name == "nt":
+            try:
+                raise SystemExit(subprocess.call(command))
+            except KeyboardInterrupt:
+                return
         os.execv(sys.executable, command)

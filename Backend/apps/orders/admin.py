@@ -3,19 +3,19 @@
 # apps/orders/admin.py
 # =============================================================================
 from django.contrib import admin
-from unfold.admin import ModelAdmin
+from unfold.admin import ModelAdmin, TabularInline
 
 from apps.orders.models import Cart, CartItem, Order, OrderItem
 
 
-class CartItemInline(admin.TabularInline):
+class CartItemInline(TabularInline):
     model  = CartItem
     extra  = 0
     fields = ["variant", "quantity", "added_at"]
     readonly_fields = ["added_at"]
 
 
-class OrderItemInline(admin.TabularInline):
+class OrderItemInline(TabularInline):
     model           = OrderItem
     extra           = 0
     readonly_fields = ["unit_price", "total_price"]

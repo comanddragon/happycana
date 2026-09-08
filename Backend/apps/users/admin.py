@@ -3,19 +3,19 @@
 # =============================================================================
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
-from unfold.admin import ModelAdmin
+from unfold.admin import ModelAdmin, TabularInline
 
 from apps.users.models import Address, User
 
 
-class AddressInline(admin.TabularInline):
+class AddressInline(TabularInline):
     model  = Address
     extra  = 0
     fields = ["line1", "city", "country", "is_default"]
 
 
 @admin.register(User)
-class UserAdmin(BaseUserAdmin):
+class UserAdmin(BaseUserAdmin, ModelAdmin):
     inlines         = [AddressInline]
     list_display    = ["email", "first_name", "last_name", "is_active", "is_staff", "created_at"]
     list_filter     = ["is_active", "is_staff", "created_at"]

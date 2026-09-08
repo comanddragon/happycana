@@ -42,6 +42,11 @@ def _money(value: Decimal | int, currency: str = "USD") -> str:
     return f"{symbols.get(currency, f'{currency} ')}{Decimal(value or 0):,.2f}"
 
 
+def _month_day(dt) -> str:
+    """Cross-platform 'Mon D' formatting (avoids %-d, unsupported on Windows)."""
+    return f"{dt.strftime('%b')} {dt.day}"
+
+
 def dashboard_callback(request, context):
     """Add fast, aggregate commerce metrics to the admin index context."""
     today = timezone.localdate()
@@ -95,7 +100,7 @@ def dashboard_callback(request, context):
     }
     chart_days = [today - timedelta(days=13 - offset) for offset in range(14)]
     revenue_chart = {
-        "labels": [day.strftime("%b %-d") for day in chart_days],
+        "labels": [_month_day(day) for day in chart_days],
         "datasets": [
             {
                 "label": "Revenue",
@@ -173,8 +178,9 @@ def dashboard_callback(request, context):
 
     recent_orders = []
     for order in Order.objects.select_related("user", "storefront").order_by(
-        "-created_at"
+            "-created_at"
     )[:7]:
+        order_dt = timezone.localtime(order.created_at)
         recent_orders.append(
             {
                 "id": order.short_id,
@@ -187,13 +193,15 @@ def dashboard_callback(request, context):
                     order.total,
                     order.storefront.currency if order.storefront else "USD",
                 ),
-                "date": timezone.localtime(order.created_at).strftime("%b %-d, %H:%M"),
+                "date": f"{_month_day(order_dt)}, {order_dt.strftime('%H:%M')}",
             }
         )
 
     context.update(
         {
-            "dashboard_period": f"{period_start:%b %-d} - {today:%b %-d, %Y}",
+            "dashboard_period": (
+                f"{_month_day(period_start)} - {_month_day(today)}, {today.year}"
+            ),
             "dashboard_kpis": [
                 {
                     "label": "Confirmed revenue",

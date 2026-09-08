@@ -7,6 +7,7 @@ Backend/static/*
 !Backend/static/admin/
 Backend/static/admin/*
 !Backend/static/admin/dashboard.css
+!Backend/static/admin/navigation.js
 Backend/staticfiles/
 storefront/public
 node_modules/

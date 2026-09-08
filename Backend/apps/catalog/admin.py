@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.db.models import Prefetch
-from unfold.admin import ModelAdmin
+from unfold.admin import ModelAdmin, StackedInline, TabularInline
 
 from apps.catalog.models import (
     Attribute,
@@ -18,27 +18,27 @@ from apps.catalog.models import (
 from core.admin_display import image_thumbnail
 
 
-class AttributeInline(admin.TabularInline):
+class AttributeInline(TabularInline):
     model = Attribute
     extra = 1
     fields = ["attribute_type", "value"]
 
 
-class ProductImageInline(admin.TabularInline):
+class ProductImageInline(TabularInline):
     model = ProductImage
     extra = 1
     fields = ["image", "alt_text", "is_primary", "order"]
     readonly_fields = ["created_at"]
 
 
-class VariantImageInline(admin.TabularInline):
+class VariantImageInline(TabularInline):
     model = VariantImage
     extra = 1
     fields = ["image", "alt_text", "is_primary", "order"]
     readonly_fields = ["created_at"]
 
 
-class ProductVideoInline(admin.TabularInline):
+class ProductVideoInline(TabularInline):
     model = ProductVideo
     extra = 1
     fields = [
@@ -53,7 +53,7 @@ class ProductVideoInline(admin.TabularInline):
     readonly_fields = ["created_at"]
 
 
-class VariantVideoInline(admin.TabularInline):
+class VariantVideoInline(TabularInline):
     model = VariantVideo
     extra = 1
     fields = [
@@ -68,14 +68,14 @@ class VariantVideoInline(admin.TabularInline):
     readonly_fields = ["created_at"]
 
 
-class ProductVariantInline(admin.TabularInline):
+class ProductVariantInline(TabularInline):
     model = ProductVariant
     extra = 0
     fields = ["sku", "price", "is_active"]
     show_change_link = True
 
 
-class LabInline(admin.StackedInline):
+class LabInline(StackedInline):
     model = Lab
     extra = 0
     fields = [

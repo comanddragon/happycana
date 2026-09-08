@@ -3,7 +3,7 @@
 # apps/payments/admin.py
 # =============================================================================
 from django.contrib import admin
-from unfold.admin import ModelAdmin
+from unfold.admin import ModelAdmin, TabularInline
 
 from apps.payments.models import Payment, PaymentMethod, Refund
 
@@ -16,7 +16,7 @@ class PaymentMethodAdmin(ModelAdmin):
     list_editable = ["is_active", "sort_order"]
 
 
-class RefundInline(admin.TabularInline):
+class RefundInline(TabularInline):
     model           = Refund
     extra           = 0
     readonly_fields = ["status", "created_at"]
