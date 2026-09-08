@@ -42,3 +42,6 @@ resend==2.43.0
 requests==2.34.2
 beautifulsoup4==4.15.0          # HTML parsing for catalog scraper scripts
 python-decouple
+
+gunicorn==26.2.0
+uvicorn[standard]==0.52.4
