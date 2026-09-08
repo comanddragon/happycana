@@ -5,8 +5,6 @@
 
 # Error tracking
 sentry-sdk==2.68.1
-gunicorn==26.2.0
-uvicorn[standard]==0.52.4
 
 # Structured JSON logging
 python-json-logger==4.2.0

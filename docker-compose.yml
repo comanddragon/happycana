@@ -1,0 +1,47 @@
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: ecommerce
+      POSTGRES_USER: silkkeith
+      POSTGRES_PASSWORD: "85213"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7
+
+  backend:
+    build:
+      context: ./Backend
+      dockerfile: dev.Dockerfile
+    volumes:
+      - ./Backend:/app
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+      - redis
+    environment:
+      DJANGO_SECRET_KEY: dev-secret-key-change-me
+      DB_NAME: ecommerce
+      DB_USER: silkkeith
+      DB_PASSWORD: "85213"
+      DB_HOST: db
+      DB_PORT: "5432"
+      REDIS_URL: redis://redis:6379/0
+
+  frontend:
+    build: ./storefront
+    volumes:
+      - ./storefront:/app
+      - /app/node_modules
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8000
+
+volumes:
+  pgdata:
